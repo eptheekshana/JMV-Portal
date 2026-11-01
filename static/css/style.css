@@ -1,0 +1,1747 @@
+/* ==========================================================================
+   Jayakody Maha Vidyalaya (JMV) Portal Stylesheet
+   Referenced directly from JMV-Web Theme & Color Specifications
+   Theme: Royal Maroon (#6b0f1a, #5c0d1b, #38050b) & Imperial Gold (#d4af37, #fde047)
+   ========================================================================== */
+
+:root {
+  /* JMV-Web Exact Color Palette */
+  --jmv-maroon-950: #38050b;
+  --jmv-maroon-900: #540a14;
+  --jmv-maroon-800: #5c0d1b;
+  --jmv-maroon: #6b0f1a;
+  --jmv-maroon-700: #800020;
+  --jmv-maroon-600: #a92141;
+  --jmv-maroon-50: #fdf2f4;
+
+  --jmv-gold-300: #fde047;
+  --jmv-gold-400: #facc15;
+  --jmv-gold: #d4af37;
+  --jmv-gold-600: #b89225;
+  --jmv-gold-700: #92701c;
+  --jmv-gold-bg: #fefce8;
+
+  /* Surfaces & Neutrals */
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --text-light: #94a3b8;
+  --border-color: #e2e8f0;
+
+  /* JMV-Web School Houses: Thisara (Gold), Mayura (Blue), Paravi (Maroon) */
+  --house-thisara-bg: #fef3c7;
+  --house-thisara-text: #92400e;
+  --house-thisara-border: #f59e0b;
+
+  --house-mayura-bg: #dbeafe;
+  --house-mayura-text: #1e40af;
+  --house-mayura-border: #3b82f6;
+
+  --house-paravi-bg: #fee2e2;
+  --house-paravi-text: #800020;
+  --house-paravi-border: #94172b;
+
+  /* Status Colors */
+  --status-active-bg: #dcfce7;
+  --status-active-text: #15803d;
+  --status-leave-bg: #fef9c3;
+  --status-leave-text: #a16207;
+  --status-inactive-bg: #fee2e2;
+  --status-inactive-text: #b91c1c;
+
+  /* Shadows */
+  --shadow-soft: 0 10px 40px -10px rgba(107, 15, 26, 0.09);
+  --shadow-card: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+  --shadow-maroon: 0 10px 25px -5px rgba(92, 13, 27, 0.3);
+  --shadow-gold: 0 4px 20px -2px rgba(212, 175, 55, 0.25);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+}
+
+/* Base Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', 'Inter', 'Noto Sans Sinhala', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.icon-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.ui-icon {
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+  flex: 0 0 auto;
+  vertical-align: -0.15em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ui-icon-lg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.nav-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(212, 175, 55, 0.55);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .main-header {
+    padding: 1rem;
+  }
+
+  .brand-text h1 {
+    font-size: 1.1rem;
+  }
+
+  .brand-text h2 {
+    font-size: 0.72rem;
+  }
+
+  .school-crest-img {
+    width: 52px;
+    height: 52px;
+  }
+}
+
+/* Professional interaction and surface treatment */
+.dashboard-footer {
+  margin-top: 2rem;
+}
+
+.dashboard-footer #footerDetails {
+  display: none;
+}
+
+.dashboard-footer .border-t {
+  border-top: 0;
+}
+
+main {
+  position: relative;
+}
+
+main::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 220px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(253, 242, 244, 0.75), transparent);
+  z-index: -1;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  transition: color 0.18s ease, background-color 0.18s ease,
+    border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+table thead th {
+  letter-spacing: 0.055em;
+}
+
+table tbody tr {
+  transition: background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+table tbody tr:hover {
+  box-shadow: inset 3px 0 0 var(--jmv-gold);
+}
+
+input,
+select,
+textarea {
+  min-height: 2.5rem;
+}
+
+input::placeholder {
+  color: #94a3b8;
+}
+
+.modal-panel {
+  animation: modal-enter 0.2s ease-out;
+}
+
+@keyframes modal-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 768px) {
+  .top-notice-bar {
+    padding-inline: 0.75rem;
+  }
+
+  .stats-strip-container {
+    gap: 0.5rem;
+  }
+
+  .stats-strip-val {
+    font-size: 1.75rem !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Top Utility Bar (Deep Maroon #38050b with Gold Accents)
+   -------------------------------------------------------------------------- */
+.top-notice-bar {
+  background: var(--jmv-maroon-950);
+  color: #ffe4e6;
+  font-size: 0.78rem;
+  padding: 6px 20px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.35);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.top-notice-bar a {
+  color: #ffe4e6;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.top-notice-bar a:hover {
+  color: var(--jmv-gold-300);
+}
+
+.top-contacts {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.top-contacts .divider {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.top-contacts .contact-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.top-contacts .contact-icon {
+  color: var(--jmv-gold);
+}
+
+.top-right-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.census-tag {
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: var(--jmv-gold-300);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.lang-switch-group {
+  display: flex;
+  background: var(--jmv-maroon-800);
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  border-radius: 20px;
+  padding: 2px;
+}
+
+.lang-btn {
+  border: none;
+  background: none;
+  padding: 2px 10px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #ffe4e6;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lang-btn.active {
+  background: var(--jmv-gold);
+  color: var(--jmv-maroon-950);
+}
+
+/* --------------------------------------------------------------------------
+   Main School Branding Header (From JMV-Web: Gradient + 4px Gold Border)
+   -------------------------------------------------------------------------- */
+.main-header {
+  background: linear-gradient(90deg, #5c0d1b 0%, #6b0f1a 50%, #5c0d1b 100%);
+  color: #ffffff;
+  padding: 1.15rem 2rem;
+  border-bottom: 4px solid var(--jmv-gold);
+  box-shadow: var(--shadow-maroon);
+  position: relative;
+}
+
+.header-container {
+  max-width: 1360px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.school-brand {
+  display: flex;
+  align-items: center;
+  gap: 1.15rem;
+  text-decoration: none;
+}
+
+.school-crest-img {
+  width: 68px;
+  height: 68px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+  transition: transform 0.25s ease;
+}
+
+.school-crest-img:hover {
+  transform: scale(1.05);
+}
+
+.brand-text h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #ffffff;
+  text-transform: uppercase;
+  line-height: 1.1;
+  margin-bottom: 3px;
+}
+
+.brand-text h2 {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #ffe4e6;
+  letter-spacing: 0.3px;
+  margin-bottom: 4px;
+}
+
+.motto-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(56, 5, 11, 0.45);
+  border-left: 3px solid var(--jmv-gold);
+  padding: 2px 10px;
+  border-radius: 0 4px 4px 0;
+  font-size: 0.78rem;
+  color: var(--jmv-gold-300);
+  font-weight: 600;
+}
+
+.header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.portal-tag {
+  background: var(--jmv-gold);
+  color: #38050b;
+  font-weight: 800;
+  padding: 4px 14px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.live-time-display {
+  font-size: 0.82rem;
+  color: #fecdd3;
+  opacity: 0.95;
+}
+
+/* --------------------------------------------------------------------------
+   Sticky Portal Navigation Bar
+   -------------------------------------------------------------------------- */
+.portal-nav {
+  background: #ffffff;
+  border-bottom: 2px solid #e2e8f0;
+  box-shadow: var(--shadow-card);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-container {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-tabs {
+  display: flex;
+  list-style: none;
+  gap: 4px;
+}
+
+.nav-tab-btn {
+  background: none;
+  border: none;
+  padding: 0.9rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  transition: all 0.2s ease;
+}
+
+.nav-tab-btn:hover {
+  color: var(--jmv-maroon);
+  background: var(--jmv-maroon-50);
+}
+
+.nav-tab-btn.active {
+  color: var(--jmv-maroon);
+  font-weight: 800;
+}
+
+.nav-tab-btn.active::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--jmv-maroon);
+  border-radius: 3px 3px 0 0;
+}
+
+.nav-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* --------------------------------------------------------------------------
+   JMV-Web Statistics Counter Strip (#5c0d1b with #d4af37 borders)
+   -------------------------------------------------------------------------- */
+.jmv-stats-strip {
+  background: var(--jmv-maroon-800);
+  color: #ffffff;
+  border-bottom: 4px solid var(--jmv-gold);
+  padding: 1.25rem 1.5rem;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stats-strip-container {
+  max-width: 1360px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  text-align: center;
+}
+
+.stats-strip-item {
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 0 1rem;
+}
+
+.stats-strip-item:last-child {
+  border-right: none;
+}
+
+.stats-strip-val {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--jmv-gold-300);
+  line-height: 1.1;
+}
+
+.stats-strip-lbl {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #ffffff;
+  margin-top: 3px;
+}
+
+.stats-strip-sub {
+  font-size: 0.72rem;
+  color: #fecdd3;
+  margin-top: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Main Content Area
+   -------------------------------------------------------------------------- */
+.main-wrapper {
+  max-width: 1360px;
+  margin: 1.75rem auto 3.5rem auto;
+  padding: 0 1.5rem;
+}
+
+.tab-pane {
+  display: none;
+}
+
+.tab-pane.active {
+  display: block;
+  animation: fadeIn 0.25s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --------------------------------------------------------------------------
+   Universal ID Lookup Hero Section
+   -------------------------------------------------------------------------- */
+.hero-lookup-card {
+  background: #ffffff;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-card);
+  padding: 2.25rem 2rem;
+  margin-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-lookup-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, #5c0d1b 0%, #d4af37 50%, #5c0d1b 100%);
+}
+
+.lookup-header-title {
+  text-align: center;
+  margin-bottom: 1.75rem;
+}
+
+.lookup-header-title .section-tag {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--jmv-maroon-700);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.lookup-header-title h2 {
+  font-size: 1.85rem;
+  color: #0f172a;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.5px;
+  margin-bottom: 0.5rem;
+}
+
+.lookup-header-title p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+/* Universal Search Input */
+.search-input-wrapper {
+  position: relative;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 2px solid var(--jmv-maroon-800);
+  border-radius: 50px;
+  padding: 6px 10px 6px 20px;
+  box-shadow: 0 4px 14px rgba(92, 13, 27, 0.12);
+  transition: all 0.25s ease;
+}
+
+.search-box:focus-within {
+  border-color: var(--jmv-gold);
+  box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.25);
+}
+
+.search-box .search-icon {
+  color: var(--jmv-maroon);
+  font-size: 1.3rem;
+  margin-right: 12px;
+}
+
+.search-box input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-main);
+  background: transparent;
+}
+
+.search-box input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+  font-size: 0.95rem;
+}
+
+.search-btn {
+  background: linear-gradient(135deg, var(--jmv-maroon-800) 0%, var(--jmv-maroon-950) 100%);
+  color: var(--jmv-gold-300);
+  border: none;
+  padding: 10px 24px;
+  border-radius: 35px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.search-btn:hover {
+  background: var(--jmv-maroon-700);
+  transform: translateY(-1px);
+}
+
+.clear-search-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 6px;
+  font-size: 1.1rem;
+  margin-right: 6px;
+  display: none;
+}
+
+.clear-search-btn:hover {
+  color: var(--jmv-maroon);
+}
+
+/* Suggestions Dropdown */
+.suggestions-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border-color);
+  max-height: 380px;
+  overflow-y: auto;
+  z-index: 50;
+  display: none;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover, .suggestion-item.selected {
+  background: var(--jmv-maroon-50);
+}
+
+.suggestion-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--jmv-gold);
+}
+
+.suggestion-details {
+  flex: 1;
+}
+
+.suggestion-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-main);
+}
+
+.suggestion-sub {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.suggestion-type-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.badge-stu {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.badge-stf {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Quick Test ID Pills */
+.sample-pills-bar {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.sample-id-pill {
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--jmv-maroon-800);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sample-id-pill:hover {
+  background: var(--jmv-maroon-800);
+  color: #ffffff;
+  border-color: var(--jmv-maroon-800);
+  transform: translateY(-1px);
+}
+
+/* --------------------------------------------------------------------------
+   Lookup Result Presentation (ID Card / Detailed Dossier)
+   -------------------------------------------------------------------------- */
+.lookup-result-section {
+  display: none;
+  margin-top: 2rem;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.result-card-container {
+  background: #ffffff;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.result-top-controls {
+  background: #f8fafc;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.result-status-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mode-toggle-group {
+  display: flex;
+  background: #e2e8f0;
+  border-radius: 30px;
+  padding: 3px;
+}
+
+.mode-btn {
+  border: none;
+  background: none;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mode-btn.active {
+  background: #ffffff;
+  color: var(--jmv-maroon-800);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.action-btn-group {
+  display: flex;
+  gap: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   Digital ID Card Badge View
+   -------------------------------------------------------------------------- */
+.id-badge-view {
+  padding: 2.5rem 1.5rem;
+  display: flex;
+  justify-content: center;
+  background: radial-gradient(circle, #fdf8f9 0%, #f1f5f9 100%);
+}
+
+.school-id-card {
+  width: 420px;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 16px 36px rgba(92, 13, 27, 0.18);
+  border: 2px solid var(--jmv-gold);
+  overflow: hidden;
+  position: relative;
+}
+
+.card-top-lanyard-hole {
+  width: 50px;
+  height: 10px;
+  background: #e2e8f0;
+  border-radius: 10px;
+  margin: 10px auto 0 auto;
+}
+
+.id-card-header {
+  background: linear-gradient(135deg, var(--jmv-maroon-950) 0%, var(--jmv-maroon-800) 100%);
+  color: #ffffff;
+  padding: 1.25rem 1rem;
+  text-align: center;
+  position: relative;
+  border-bottom: 3px solid var(--jmv-gold);
+}
+
+.id-card-header .id-crest {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  margin-bottom: 6px;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+}
+
+.id-card-header h3 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+.id-card-header .sinhala-title {
+  font-size: 0.85rem;
+  color: var(--jmv-gold-300);
+  font-weight: 600;
+}
+
+.id-card-header .id-card-type-label {
+  display: inline-block;
+  margin-top: 6px;
+  background: var(--jmv-gold);
+  color: var(--jmv-maroon-950);
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 14px;
+  border-radius: 12px;
+  letter-spacing: 1px;
+}
+
+.id-card-body {
+  padding: 1.5rem 1.5rem 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+}
+
+/* Watermark in background of ID Card */
+.id-card-body::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 180px;
+  height: 180px;
+  background-image: url('../img/JMV_Logo.png');
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
+  opacity: 0.05;
+  pointer-events: none;
+}
+
+.id-photo-container {
+  width: 110px;
+  height: 110px;
+  border-radius: 16px;
+  padding: 4px;
+  background: linear-gradient(135deg, var(--jmv-gold) 0%, var(--jmv-maroon-800) 100%);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  margin-bottom: 1rem;
+}
+
+.id-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+  background: #e2e8f0;
+}
+
+.id-card-name {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--jmv-maroon-950);
+  margin-bottom: 2px;
+}
+
+.id-card-fullname {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.id-card-primary-id {
+  background: var(--jmv-maroon-50);
+  border: 1px dashed var(--jmv-maroon-800);
+  color: var(--jmv-maroon-800);
+  font-family: monospace;
+  font-size: 1.05rem;
+  font-weight: 800;
+  padding: 4px 16px;
+  border-radius: 6px;
+  margin-bottom: 1.25rem;
+  letter-spacing: 1px;
+}
+
+.id-card-grid {
+  width: 100%;
+  border-top: 1px solid var(--border-color);
+  padding-top: 0.85rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.id-card-grid-item span.label {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.id-card-grid-item span.val {
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.id-card-footer {
+  width: 100%;
+  padding: 0.75rem 1.5rem 1.25rem 1.5rem;
+  background: #ffffff;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.mock-barcode {
+  height: 32px;
+  width: 80%;
+  background: repeating-linear-gradient(
+    90deg,
+    #000 0px,
+    #000 2px,
+    #fff 2px,
+    #fff 4px,
+    #000 4px,
+    #000 7px,
+    #fff 7px,
+    #fff 9px
+  );
+  opacity: 0.85;
+}
+
+.barcode-text {
+  font-family: monospace;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  letter-spacing: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Detailed Dossier / Academic Profile View
+   -------------------------------------------------------------------------- */
+.dossier-view {
+  padding: 2rem;
+  display: none;
+}
+
+.dossier-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 2rem;
+}
+
+.dossier-sidebar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-right: 1.5rem;
+  border-right: 1px solid var(--border-color);
+}
+
+.dossier-avatar {
+  width: 140px;
+  height: 140px;
+  border-radius: 20px;
+  object-fit: cover;
+  border: 4px solid var(--jmv-gold);
+  box-shadow: var(--shadow-card);
+  margin-bottom: 1rem;
+}
+
+.dossier-name {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--jmv-maroon-800);
+}
+
+.dossier-role {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.dossier-main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.dossier-section-card {
+  background: #f8fafc;
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--border-color);
+}
+
+.dossier-section-card h4 {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--jmv-maroon-800);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+.dossier-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.field-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.field-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.field-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* --------------------------------------------------------------------------
+   Data Tables (Students & Staff Views)
+   -------------------------------------------------------------------------- */
+.directory-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.directory-header-bar h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--jmv-maroon-800);
+}
+
+.filter-bar {
+  background: #ffffff;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--shadow-card);
+}
+
+.filter-input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-input-group label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.filter-control {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  outline: none;
+  background: #ffffff;
+  color: var(--text-main);
+  transition: border 0.2s ease;
+}
+
+.filter-control:focus {
+  border-color: var(--jmv-maroon-800);
+  box-shadow: 0 0 0 2px rgba(92, 13, 27, 0.15);
+}
+
+.table-responsive {
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-card);
+  overflow-x: auto;
+}
+
+.jmv-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.92rem;
+}
+
+.jmv-table th {
+  background: var(--jmv-maroon-50);
+  color: var(--jmv-maroon-950);
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  letter-spacing: 0.5px;
+  padding: 12px 16px;
+  border-bottom: 2px solid var(--jmv-gold);
+  white-space: nowrap;
+}
+
+.jmv-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.jmv-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.jmv-table tbody tr:hover {
+  background: #fdf8f9;
+}
+
+.table-id-badge {
+  font-family: monospace;
+  font-weight: 700;
+  background: #f1f5f9;
+  padding: 3px 8px;
+  border-radius: 4px;
+  color: var(--jmv-maroon-800);
+  display: inline-block;
+  cursor: pointer;
+  border: 1px solid #cbd5e1;
+}
+
+.table-id-badge:hover {
+  background: var(--jmv-maroon-800);
+  color: #ffffff;
+}
+
+.table-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.table-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--jmv-gold);
+}
+
+/* JMV-Web Houses: Thisara, Mayura, Paravi */
+.house-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 2px 10px;
+  border-radius: 12px;
+  letter-spacing: 0.3px;
+}
+
+.house-Thisara { background: var(--house-thisara-bg); color: var(--house-thisara-text); border: 1px solid var(--house-thisara-border); }
+.house-Mayura { background: var(--house-mayura-bg); color: var(--house-mayura-text); border: 1px solid var(--house-mayura-border); }
+.house-Paravi { background: var(--house-paravi-bg); color: var(--house-paravi-text); border: 1px solid var(--house-paravi-border); }
+
+.status-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.status-Active { background: var(--status-active-bg); color: var(--status-active-text); }
+.status-Leave { background: var(--status-leave-bg); color: var(--status-leave-text); }
+.status-Inactive { background: var(--status-inactive-bg); color: var(--status-inactive-text); }
+
+.table-actions-cell {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-icon-action {
+  border: none;
+  background: #f1f5f9;
+  color: var(--text-muted);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-icon-action:hover {
+  background: var(--jmv-maroon-800);
+  color: #ffffff;
+}
+
+.btn-icon-action.delete-action:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   Buttons & Controls
+   -------------------------------------------------------------------------- */
+.btn {
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--jmv-maroon-800) 0%, var(--jmv-maroon-950) 100%);
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background: var(--jmv-maroon-700);
+  transform: translateY(-1px);
+}
+
+.btn-gold {
+  background: var(--jmv-gold);
+  color: var(--jmv-maroon-950);
+}
+
+.btn-gold:hover {
+  background: var(--jmv-gold-300);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.35);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+
+.btn-outline:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+/* --------------------------------------------------------------------------
+   Modal Dialogs
+   -------------------------------------------------------------------------- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+}
+
+.modal-card {
+  background: #ffffff;
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+  border: 2px solid var(--jmv-gold);
+  animation: zoomIn 0.2s ease-out;
+}
+
+@keyframes zoomIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.modal-header {
+  background: linear-gradient(135deg, var(--jmv-maroon-950) 0%, var(--jmv-maroon-800) 100%);
+  color: #ffffff;
+  padding: 1.25rem 1.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid var(--jmv-gold);
+}
+
+.modal-header h3 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.close-modal-btn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.modal-body {
+  padding: 1.75rem;
+  overflow-y: auto;
+}
+
+.modal-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.full-col {
+  grid-column: span 2;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-group label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-main);
+}
+
+.form-group input, 
+.form-group select, 
+.form-group textarea {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 0.92rem;
+  outline: none;
+  transition: border 0.2s ease;
+  font-family: inherit;
+}
+
+.form-group input:focus, 
+.form-group select:focus, 
+.form-group textarea:focus {
+  border-color: var(--jmv-maroon-800);
+  box-shadow: 0 0 0 2px rgba(92, 13, 27, 0.15);
+}
+
+.modal-footer {
+  padding: 1rem 1.75rem;
+  border-top: 1px solid var(--border-color);
+  background: #f8fafc;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* --------------------------------------------------------------------------
+   Toast Notifications
+   -------------------------------------------------------------------------- */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  background: #1e293b;
+  color: #ffffff;
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  border-left: 4px solid var(--jmv-gold);
+  animation: slideInRight 0.25s ease-out;
+}
+
+.toast.toast-error {
+  border-left-color: #ef4444;
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* --------------------------------------------------------------------------
+   4-Column Maroon & Gold Footer (Identical to JMV-Web)
+   -------------------------------------------------------------------------- */
+.main-footer {
+  background: var(--jmv-maroon-950);
+  color: #ffe4e6;
+  padding: 3rem 1.5rem 1.5rem 1.5rem;
+  border-top: 4px solid var(--jmv-gold);
+  margin-top: 4rem;
+}
+
+.footer-content {
+  max-width: 1360px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.5fr 1fr;
+  gap: 2.5rem;
+  margin-bottom: 2rem;
+}
+
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footer-brand-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.footer-crest {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.footer-brand h4 {
+  color: #ffffff;
+  font-size: 1.1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.footer-brand .sinhala-name {
+  color: var(--jmv-gold-300);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.footer-brand p {
+  font-size: 0.82rem;
+  color: rgba(255, 228, 230, 0.8);
+  line-height: 1.6;
+}
+
+.footer-col h5 {
+  color: var(--jmv-gold-300);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--jmv-maroon-800);
+  padding-bottom: 6px;
+}
+
+.footer-col ul {
+  list-style: none;
+  font-size: 0.82rem;
+}
+
+.footer-col li {
+  margin-bottom: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.footer-col a {
+  color: #ffe4e6;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-col a:hover {
+  color: var(--jmv-gold-300);
+}
+
+.footer-bottom {
+  max-width: 1360px;
+  margin: 0 auto;
+  border-top: 1px solid var(--jmv-maroon-800);
+  padding-top: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: rgba(255, 228, 230, 0.7);
+}
+
+.footer-bottom .developer-credit {
+  color: var(--jmv-gold-300);
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   Print Stylesheet
+   -------------------------------------------------------------------------- */
+@media print {
+  body {
+    background: #ffffff;
+  }
+  .top-notice-bar, .main-header, .portal-nav, .jmv-stats-strip, .hero-lookup-card, .result-top-controls, .main-footer, .action-btn-group, .sample-pills-bar, .nav-actions {
+    display: none !important;
+  }
+  .lookup-result-section {
+    display: block !important;
+    margin: 0;
+  }
+  .result-card-container {
+    border: none;
+    box-shadow: none;
+  }
+  .id-badge-view {
+    padding: 0;
+    background: #ffffff;
+  }
+  .school-id-card {
+    box-shadow: none;
+    border: 2px solid #000000;
+    page-break-inside: avoid;
+  }
+  .dossier-view {
+    display: block !important;
+    padding: 0;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Layout
+   -------------------------------------------------------------------------- */
+@media (max-width: 992px) {
+  .header-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .header-right {
+    align-items: flex-start;
+  }
+  .stats-strip-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .stats-strip-item:nth-child(2) {
+    border-right: none;
+  }
+  .footer-content {
+    grid-template-columns: 1fr 1fr;
+  }
+  .dossier-grid {
+    grid-template-columns: 1fr;
+  }
+  .dossier-sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .stats-strip-container {
+    grid-template-columns: 1fr;
+  }
+  .stats-strip-item {
+    border-right: none;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    padding-bottom: 10px;
+  }
+  .modal-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .full-col {
+    grid-column: span 1;
+  }
+  .school-id-card {
+    width: 100%;
+  }
+  .footer-content {
+    grid-template-columns: 1fr;
+  }
+}

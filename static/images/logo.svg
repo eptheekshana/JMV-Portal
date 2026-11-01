@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="maroonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8f1426" />
+      <stop offset="50%" stop-color="#6d0b1a" />
+      <stop offset="100%" stop-color="#4a0410" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fde047" />
+      <stop offset="50%" stop-color="#eab308" />
+      <stop offset="100%" stop-color="#ca8a04" />
+    </linearGradient>
+    <linearGradient id="brightGold" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ca8a04" />
+      <stop offset="50%" stop-color="#facc15" />
+      <stop offset="100%" stop-color="#fef08a" />
+    </linearGradient>
+    <filter id="dropShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Outer Aura / Rays -->
+  <g opacity="0.85">
+    <circle cx="250" cy="240" r="215" fill="none" stroke="url(#goldGrad)" stroke-width="2" stroke-dasharray="6 4" opacity="0.6"/>
+    <circle cx="250" cy="240" r="225" fill="none" stroke="#eab308" stroke-width="1" opacity="0.4"/>
+  </g>
+
+  <!-- Main Shield Outer Shape -->
+  <g filter="url(#dropShadow)">
+    <!-- Gold Border Shield -->
+    <path d="M 250 45 C 370 45 410 75 410 170 C 410 310 320 395 250 435 C 180 395 90 310 90 170 C 90 75 130 45 250 45 Z" 
+          fill="url(#goldGrad)" />
+
+    <!-- Maroon Inner Shield -->
+    <path d="M 250 56 C 358 56 395 83 395 170 C 395 298 314 380 250 418 C 186 380 105 298 105 170 C 105 83 142 56 250 56 Z" 
+          fill="url(#maroonGrad)" />
+    
+    <!-- Shield Inner Gold Inlay Trim -->
+    <path d="M 250 66 C 348 66 382 91 382 170 C 382 288 308 365 250 402 C 192 365 118 288 118 170 C 118 91 152 66 250 66 Z" 
+          fill="none" stroke="url(#brightGold)" stroke-width="2.5" opacity="0.85"/>
+  </g>
+
+  <!-- Sunburst of Knowledge -->
+  <g stroke="url(#brightGold)" stroke-width="2" opacity="0.4" stroke-linecap="round">
+    <line x1="250" y1="180" x2="250" y2="105" />
+    <line x1="250" y1="180" x2="295" y2="120" />
+    <line x1="250" y1="180" x2="325" y2="155" />
+    <line x1="250" y1="180" x2="205" y2="120" />
+    <line x1="250" y1="180" x2="175" y2="155" />
+  </g>
+
+  <!-- Oil Lamp of Wisdom (පහන) -->
+  <!-- Lamp Flame -->
+  <path d="M 250 115 C 242 135 237 150 245 162 C 248 167 252 167 255 162 C 263 150 258 135 250 115 Z" 
+        fill="#fef08a" />
+  <path d="M 250 126 C 246 138 243 148 248 156 C 249 158 251 158 252 156 C 257 148 254 138 250 126 Z" 
+        fill="#f97316" />
+
+  <!-- Lamp Vessel (Pahana) -->
+  <path d="M 235 165 C 242 168 258 168 265 165 C 275 168 285 174 278 181 C 268 188 232 188 222 181 C 215 174 225 168 235 165 Z" 
+        fill="url(#brightGold)" />
+  <!-- Lamp Stem & Base -->
+  <path d="M 246 181 L 254 181 L 256 195 L 244 195 Z" fill="url(#goldGrad)" />
+  <ellipse cx="250" cy="197" rx="16" ry="4" fill="url(#brightGold)" />
+
+  <!-- Open Book of Knowledge (පොත) -->
+  <g transform="translate(0, 15)">
+    <!-- Book Pages -->
+    <path d="M 250 230 C 230 215 180 215 160 225 L 160 270 C 180 260 230 260 250 275 Z" 
+          fill="#ffffff" stroke="#d97706" stroke-width="2" />
+    <path d="M 250 230 C 270 215 320 215 340 225 L 340 270 C 320 260 270 260 250 275 Z" 
+          fill="#fffbeb" stroke="#d97706" stroke-width="2" />
+    
+    <!-- Spine -->
+    <path d="M 248 230 L 252 230 L 252 276 L 248 276 Z" fill="#92400e" />
+    
+    <!-- Page text lines hint -->
+    <line x1="175" y1="234" x2="235" y2="234" stroke="#ca8a04" stroke-width="1.5" stroke-linecap="round" />
+    <line x1="175" y1="243" x2="235" y2="243" stroke="#ca8a04" stroke-width="1.5" stroke-linecap="round" />
+    <line x1="175" y1="252" x2="225" y2="252" stroke="#ca8a04" stroke-width="1.5" stroke-linecap="round" />
+
+    <line x1="265" y1="234" x2="325" y2="234" stroke="#ca8a04" stroke-width="1.5" stroke-linecap="round" />
+    <line x1="265" y1="243" x2="325" y2="243" stroke="#ca8a04" stroke-width="1.5" stroke-linecap="round" />
+    <line x1="265" y1="252" x2="315" y2="252" stroke="#ca8a04" stroke-width="1.5" stroke-linecap="round" />
+  </g>
+
+  <!-- Golden Sheaves of Paddy (ගොයම් කරල්) flanking the sides -->
+  <!-- Left Sheaf -->
+  <g fill="url(#brightGold)" stroke="#92400e" stroke-width="0.8">
+    <ellipse cx="145" cy="220" rx="9" ry="4" transform="rotate(-30 145 220)" />
+    <ellipse cx="140" cy="238" rx="9" ry="4" transform="rotate(-20 140 238)" />
+    <ellipse cx="140" cy="256" rx="9" ry="4" transform="rotate(-10 140 256)" />
+    <ellipse cx="145" cy="274" rx="9" ry="4" transform="rotate(10 145 274)" />
+    <ellipse cx="155" cy="292" rx="9" ry="4" transform="rotate(30 155 292)" />
+    <ellipse cx="170" cy="310" rx="9" ry="4" transform="rotate(45 170 310)" />
+    <ellipse cx="190" cy="326" rx="9" ry="4" transform="rotate(60 190 326)" />
+  </g>
+  <!-- Right Sheaf -->
+  <g fill="url(#brightGold)" stroke="#92400e" stroke-width="0.8">
+    <ellipse cx="355" cy="220" rx="9" ry="4" transform="rotate(30 355 220)" />
+    <ellipse cx="360" cy="238" rx="9" ry="4" transform="rotate(20 360 238)" />
+    <ellipse cx="360" cy="256" rx="9" ry="4" transform="rotate(10 360 256)" />
+    <ellipse cx="355" cy="274" rx="9" ry="4" transform="rotate(-10 355 274)" />
+    <ellipse cx="345" cy="292" rx="9" ry="4" transform="rotate(-30 345 292)" />
+    <ellipse cx="330" cy="310" rx="9" ry="4" transform="rotate(-45 330 310)" />
+    <ellipse cx="310" cy="326" rx="9" ry="4" transform="rotate(-60 310 326)" />
+  </g>
+
+  <!-- Established 1956 Text -->
+  <text x="250" y="325" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#fef08a" text-anchor="middle" letter-spacing="2">
+    ESTD 1956
+  </text>
+  <text x="250" y="342" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#facc15" text-anchor="middle" letter-spacing="1.5">
+    GANEMULLA
+  </text>
+
+  <!-- Motto Banner Scroll at Bottom -->
+  <g filter="url(#dropShadow)" transform="translate(0, 30)">
+    <!-- Ribbon Shadow/Fold Background -->
+    <path d="M 50 420 L 100 395 L 100 435 Z" fill="#78350f" />
+    <path d="M 450 420 L 400 395 L 400 435 Z" fill="#78350f" />
+    
+    <!-- Left Ribbon Tail -->
+    <path d="M 50 420 L 95 385 L 120 395 L 100 435 L 50 420 Z" fill="url(#goldGrad)" stroke="#78350f" stroke-width="1.5" />
+    <!-- Right Ribbon Tail -->
+    <path d="M 450 420 L 405 385 L 380 395 L 400 435 L 450 420 Z" fill="url(#goldGrad)" stroke="#78350f" stroke-width="1.5" />
+
+    <!-- Center Main Ribbon -->
+    <path d="M 90 405 C 170 385 330 385 410 405 C 400 435 375 448 250 448 C 125 448 100 435 90 405 Z" 
+          fill="url(#brightGold)" stroke="#78350f" stroke-width="2" />
+
+    <!-- Motto Text in Sinhala: "ගුණ නැණ වඩව් - ජය දද නඟව්" -->
+    <text x="250" y="426" font-family="'Iskoola Pota', 'Noto Sans Sinhala', 'Segoe UI', Arial, sans-serif" 
+          font-size="14" font-weight="bold" fill="#4a0410" text-anchor="middle">
+      ගුණ නැණ වඩව් • ජය දද නඟව්
+    </text>
+    <text x="250" y="440" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" 
+          font-size="9" font-weight="800" fill="#713f12" text-anchor="middle" letter-spacing="1">
+      JAYAKODY MAHA VIDYALAYA
+    </text>
+  </g>
+</svg>
+
