@@ -52,12 +52,19 @@ ACTIVE_ENGINE = "unknown"  # "mariadb" or "sqlite"
 ENGINE_STATUS_MSG = ""
 
 def _get_mariadb_config():
+    raw_pw = os.environ.get("DB_PASSWORD", "")
+    if raw_pw:
+        # Sanitize Unicode asterisks (e.g. \u2217, \ufe61, \uff0a) introduced by copy-pasting from rich text
+        raw_pw = (raw_pw.replace('\u2217', '*')
+                        .replace('\ufe61', '*')
+                        .replace('\uff0a', '*')
+                        .strip())
     return {
-        "host": os.environ.get("DB_HOST", ""),
+        "host": os.environ.get("DB_HOST", "").strip(),
         "port": int(os.environ.get("DB_PORT", "3306")),
-        "user": os.environ.get("DB_USER", ""),
-        "password": os.environ.get("DB_PASSWORD", ""),
-        "database": os.environ.get("DB_NAME", ""),
+        "user": os.environ.get("DB_USER", "").strip(),
+        "password": raw_pw,
+        "database": os.environ.get("DB_NAME", "").strip(),
         "charset": "utf8mb4",
         "cursorclass": pymysql.cursors.DictCursor if pymysql else None,
         "connect_timeout": 5,
