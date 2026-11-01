@@ -97,6 +97,13 @@ production persistence. Configure a reachable MariaDB/MySQL database and allow
 connections from Vercel before deploying. Do not commit `.env` or database
 credentials to the repository.
 
+On the first successful MariaDB startup, the application performs a
+non-destructive compatibility migration for the existing schema. It adds the
+portal fields missing from the existing `students` table, copies
+`admission_no` into the compatibility `id` field, and adds timetable metadata
+and uniqueness indexes. Existing records are preserved; take a database backup
+before the first production deployment.
+
 ### Create the first developer account
 
 The Developer Console is available only to users with the `developer` role.

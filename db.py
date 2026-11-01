@@ -204,6 +204,8 @@ def init_mariadb_schema(conn):
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         """)
 
+        _migrate_existing_mariadb_schema(cur)
+
         # Seed if empty
         cur.execute("SELECT COUNT(*) as cnt FROM students")
         if cur.fetchone()["cnt"] == 0:
@@ -238,6 +240,74 @@ def init_mariadb_schema(conn):
             placeholders = ", ".join(["%s"] * len(MARK_FIELDS))
             cur.executemany(f"INSERT INTO student_marks ({cols}) VALUES ({placeholders})", SAMPLE_MARKS)
     conn.commit()
+
+
+def _migrate_existing_mariadb_schema(cur):
+    """Add the portal's compatibility fields to an existing MariaDB schema."""
+    cur.execute("SHOW COLUMNS FROM students")
+    student_columns = {row["Field"] for row in cur.fetchall()}
+    additions = {
+        "id": "VARCHAR(32) NULL",
+        "name_with_initials": "VARCHAR(150) NOT NULL DEFAULT ''",
+        "gender": "VARCHAR(16) NOT NULL DEFAULT 'Unknown'",
+        "grade": "VARCHAR(32) NOT NULL DEFAULT ''",
+        "stream": "VARCHAR(100) NOT NULL DEFAULT ''",
+        "medium": "VARCHAR(32) NOT NULL DEFAULT 'Sinhala'",
+        "house": "VARCHAR(32) NOT NULL DEFAULT ''",
+        "guardian_contact": "VARCHAR(32) NOT NULL DEFAULT ''",
+        "status": "VARCHAR(20) NOT NULL DEFAULT 'Active'",
+        "extracurricular": "TEXT NULL",
+        "photo_url": "VARCHAR(500) NULL",
+        "notes": "TEXT NULL",
+    }
+    for column, definition in additions.items():
+        if column not in student_columns:
+            cur.execute(f"ALTER TABLE students ADD COLUMN `{column}` {definition}")
+
+    cur.execute("""
+        UPDATE students
+        SET id = admission_no
+        WHERE id IS NULL OR id = ''
+    """)
+    cur.execute("""
+        UPDATE students
+        SET name_with_initials = LEFT(full_name, 150)
+        WHERE name_with_initials IS NULL OR name_with_initials = ''
+    """)
+    cur.execute("""
+        UPDATE students
+        SET grade = COALESCE(NULLIF(academic_level, ''), NULLIF(`class`, ''), '')
+        WHERE grade IS NULL OR grade = ''
+    """)
+    cur.execute("""
+        UPDATE students
+        SET guardian_contact = COALESCE(guardian_mobile, '')
+        WHERE guardian_contact IS NULL OR guardian_contact = ''
+    """)
+    cur.execute("SHOW INDEX FROM students")
+    student_indexes = {row["Key_name"] for row in cur.fetchall()}
+    if "uq_students_id" not in student_indexes:
+        cur.execute("ALTER TABLE students ADD UNIQUE KEY uq_students_id (id)")
+
+    cur.execute("SHOW COLUMNS FROM school_timetable")
+    timetable_columns = {row["Field"] for row in cur.fetchall()}
+    if "updated_at" not in timetable_columns:
+        cur.execute(
+            "ALTER TABLE school_timetable ADD COLUMN updated_at TIMESTAMP "
+            "DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+        )
+    cur.execute("SHOW INDEX FROM school_timetable")
+    timetable_indexes = {row["Key_name"] for row in cur.fetchall()}
+    if "uq_class_slot" not in timetable_indexes:
+        cur.execute(
+            "ALTER TABLE school_timetable ADD UNIQUE KEY "
+            "uq_class_slot (class_name, day_of_week, period_no)"
+        )
+    if "uq_teacher_slot" not in timetable_indexes:
+        cur.execute(
+            "ALTER TABLE school_timetable ADD UNIQUE KEY "
+            "uq_teacher_slot (teacher_id, day_of_week, period_no)"
+        )
 
 def init_sqlite_schema(conn):
     cur = conn.cursor()
