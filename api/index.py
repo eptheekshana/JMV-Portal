@@ -59,11 +59,7 @@ def protect_data_routes():
     if not user:
         return jsonify(error="Authentication required. Please log in.",
                        code="AUTH_REQUIRED"), 401
-    if request.path.startswith("/api/users"):
-        if user.get("role") != "developer":
-            return jsonify(error="Only developers can access account management.",
-                           code="DEVELOPER_ACCESS_REQUIRED"), 403
-    elif user.get("role") not in {"admin", "teacher"}:
+    if user.get("role") not in {"admin", "teacher"}:
         return jsonify(error="Access denied. Only teachers and administrators can view portal data.",
                        code="DATA_ACCESS_RESTRICTED"), 403
     return None
@@ -117,34 +113,6 @@ def me():
 @requires_roles("admin", "teacher")
 def stats(_user):
     return jsonify(db.get_system_stats())
-
-
-@app.get("/api/users")
-@requires_roles("developer")
-def users(_user):
-    return jsonify(db.get_all_users())
-
-
-@app.post("/api/users")
-@requires_roles("developer")
-def create_user(_user):
-    data = request.get_json(silent=True) or {}
-    username = str(data.get("username", "")).strip()
-    password = str(data.get("password", ""))
-    role = str(data.get("role", "")).strip()
-    full_name = str(data.get("full_name", "")).strip()
-    if not username or not password or role not in {"admin", "teacher"} or not full_name:
-        return jsonify(error="username, password, full_name, and role (admin or teacher) are required"), 400
-    try:
-        return jsonify(db.create_user({
-            **data,
-            "username": username,
-            "password": password,
-            "role": role,
-            "full_name": full_name
-        })), 201
-    except Exception as error:
-        return jsonify(error=str(error)), 409
 
 
 @app.get("/api/lookup")
