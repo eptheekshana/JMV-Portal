@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jayakody MV — School Database &amp; ID Portal</title>
+  
+  <!-- JMV-Web Favicons -->
+  <link rel="icon" type="image/png" sizes="256x256" href="/static/img/jmv_icon.png">
+  <link rel="shortcut icon" href="/static/favicon.ico">
+  <link rel="apple-touch-icon" href="/static/img/jmv_icon.png">
+
+  <!-- JMV-Web Google Fonts: Plus Jakarta Sans, Inter & Noto Sans Sinhala -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Sinhala:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN (Identical to JMV-Web) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            maroon: {
+              50: "#fdf2f4",
+              100: "#fce7ea",
+              200: "#f9d2d8",
+              300: "#f4adb8",
+              400: "#ec7e91",
+              500: "#df506c",
+              600: "#a92141",
+              700: "#800020",
+              800: "#6b0f1a",
+              900: "#5c0d1b",
+              950: "#38050b",
+            },
+            gold: {
+              50: "#fefce8",
+              100: "#fef9c3",
+              200: "#fef08a",
+              300: "#fde047",
+              400: "#facc15",
+              500: "#d4af37",
+              600: "#b89225",
+              700: "#92701c",
+            },
+          },
+          fontFamily: {
+            sans: ["'Plus Jakarta Sans'", "'Inter'", "'Noto Sans Sinhala'", "system-ui", "sans-serif"],
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- Local Standalone JMV Theme Stylesheet (Resilient fallback when offline/no CDN) -->
+  <link rel="stylesheet" href="/static/css/style.css">
+
+  <style>
+    /* Global & Offline Theme Fallbacks */
+    body {
+      font-family: 'Plus Jakarta Sans', 'Inter', 'Noto Sans Sinhala', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f8fafc;
+      color: #1e293b;
+    }
+    .hidden {
+      display: none !important;
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+    }
+    
+    /* Top Bar Styling */
+    .top-notice-bar {
+      background-color: #38050b !important;
+      color: #ffe4e6 !important;
+      font-size: 0.75rem !important;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.35) !important;
+      padding: 0.5rem 1rem !important;
+    }
+    .top-notice-bar a {
+      color: #fecdd3 !important;
+      text-decoration: none !important;
+    }
+    .top-notice-bar a:hover {
+      color: #fde047 !important;
+    }
+
+    /* Main Header */
+    .main-school-header {
+      background: linear-gradient(90deg, #5c0d1b 0%, #6b0f1a 50%, #5c0d1b 100%) !important;
+      border-bottom: 4px solid #d4af37 !important;
+      box-shadow: 0 10px 25px -5px rgba(92, 13, 27, 0.3) !important;
+    }
+
+    /* 4-Metric Counter Strip Fallback */
+    .jmv-stats-strip {
+      background-color: #5c0d1b !important;
+      color: #ffffff !important;
+      padding: 1.5rem 1rem !important;
+      border-bottom: 4px solid #d4af37 !important;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.15) !important;
+    }
+    .stats-strip-container {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+      text-align: center;
+    }
+    @media (max-width: 768px) {
+      .stats-strip-container {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    .stats-strip-item {
+      padding: 0.25rem 0.5rem;
+    }
+    .stats-strip-val {
+      font-size: 2.25rem !important;
+      font-weight: 800 !important;
+      color: #fde047 !important;
+      line-height: 1.1 !important;
+    }
+    .stats-strip-lbl {
+      font-size: 0.85rem !important;
+      font-weight: 700 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.05em !important;
+      color: #ffffff !important;
+      margin-top: 0.25rem !important;
+    }
+    .stats-strip-sub {
+      font-size: 0.75rem !important;
+      color: #fecdd3 !important;
+      margin-top: 0.15rem !important;
+    }
+
+    /* Navigation Tab Fallbacks */
+    .nav-tab-btn {
+      cursor: pointer;
+      border-radius: 8px;
+    }
+    .nav-tab-btn.active {
+      color: #6b0f1a !important;
+      background-color: #fdf2f4 !important;
+      border-color: #800020 !important;
+    }
+
+    /* Sample ID Pills */
+    .sample-id-pill {
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .sample-id-pill:hover {
+      background-color: #800020 !important;
+      color: #ffffff !important;
+    }
+
+    /* Print View */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #printArea, #printArea * {
+        visibility: visible;
+      }
+      #printArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased selection:bg-[#800020] selection:text-white min-h-screen flex flex-col">
+  <div id="portalAuthGate" class="fixed inset-0 z-[60] hidden bg-slate-950/95 items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-2xl border-t-4 border-[#d4af37]">
+      <img src="/static/img/JMV_Logo.png" alt="Jayakody Maha Vidyalaya" class="mx-auto mb-4 h-20 w-20 object-contain">
+      <h2 class="text-xl font-extrabold text-slate-900">Account sign-in required</h2>
+      <p class="mt-2 text-sm text-slate-600">This portal is available only to authorized school account holders.</p>
+      <button onclick="openLoginModal()" class="mt-6 inline-flex items-center gap-2 rounded-lg bg-[#800020] px-5 py-2.5 text-xs font-extrabold uppercase text-white shadow hover:bg-[#5c0d1b]">
+        <svg class="ui-icon" aria-hidden="true"><use href="#icon-lock"></use></svg>
+        Sign in to continue
+      </button>
+    </div>
+  </div>
+  <svg class="icon-sprite" aria-hidden="true">
+    <symbol id="icon-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 5.18 2 2 0 0 1 4.11 3h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L8 10.73a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92z"/></symbol>
+    <symbol id="icon-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></symbol>
+    <symbol id="icon-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></symbol>
+    <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+    <symbol id="icon-graduation" viewBox="0 0 24 24"><path d="m3 9 9-5 9 5-9 5-9-5Z"/><path d="M7 11v5c3 2 7 2 10 0v-5M21 10v6"/></symbol>
+    <symbol id="icon-chart" viewBox="0 0 24 24"><path d="M4 19V5M4 19h16"/><path d="m7 15 3-4 3 2 5-6"/></symbol>
+    <symbol id="icon-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 2-5 6-5s6 2 6 5M16 5a3 3 0 0 1 0 6M18 15c2 .5 3 2 3 5"/></symbol>
+    <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></symbol>
+    <symbol id="icon-building" viewBox="0 0 24 24"><path d="M4 21V5l8-3 8 3v16M2 21h20M8 9h1M15 9h1M8 13h1M15 13h1M8 17h1M15 17h1"/></symbol>
+    <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.9-3L3 11M3 5v6h6M4 13a8 8 0 0 0 14.9 3L21 13m0 6v-6h-6"/></symbol>
+    <symbol id="icon-alert" viewBox="0 0 24 24"><path d="m12 3 10 18H2L12 3Z"/><path d="M12 9v4M12 17h.01"/></symbol>
+    <symbol id="icon-id" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8" cy="11" r="2"/><path d="M13 10h5M13 14h4"/></symbol>
+    <symbol id="icon-clipboard" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M8 9h8M8 13h8M8 17h5"/></symbol>
+    <symbol id="icon-printer" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6zM18 12h.01"/></symbol>
+    <symbol id="icon-scan" viewBox="0 0 24 24"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2M3 12h18"/></symbol>
+    <symbol id="icon-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></symbol>
+    <symbol id="icon-edit" viewBox="0 0 24 24"><path d="m4 20 4.5-1L19 8.5a2.1 2.1 0 0 0-3-3L5.5 16 4 20Z"/><path d="m14.5 7.5 2 2"/></symbol>
+    <symbol id="icon-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 14h10l1-14M9 7V4h6v3"/></symbol>
+    <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="icon-trophy" viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0V4ZM5 5H3v2a4 4 0 0 0 4 4M19 5h2v2a4 4 0 0 1-4 4M12 13v5M8 21h8M9 18h6"/></symbol>
+    <symbol id="icon-shield" viewBox="0 0 24 24"><path d="M12 3 20 6v5c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V6l8-3Z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="icon-pin" viewBox="0 0 24 24"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+  </svg>
+
+  <!-- ======================================================================
+       1. TOP NOTICE & UTILITY BAR (Deep Maroon #38050b from JMV-Web)
+       ====================================================================== -->
+  <div class="top-notice-bar bg-[#38050b] text-white text-xs border-b border-[#d4af37]/30 py-2 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <!-- Language and authentication controls -->
+      <div class="flex items-center space-x-3 ml-auto flex-wrap">
+        <div class="flex items-center bg-[#5c0d1b] border border-[#d4af37]/50 rounded-full p-0.5">
+          <button id="langEnBtn" onclick="setLanguage('en')" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#d4af37] text-[#38050b] transition-all">
+            EN
+          </button>
+          <button id="langSiBtn" onclick="setLanguage('si')" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold text-rose-100 transition-all">
+            සිං
+          </button>
+        </div>
+
+        <!-- Auth Status Container -->
+        <div id="authStatusWidget" class="flex items-center">
+          <button id="openLoginBtn" onclick="openLoginModal()" class="inline-flex items-center gap-1.5 bg-[#d4af37] text-[#38050b] hover:bg-[#fde047] font-extrabold px-3 py-1 rounded text-xs uppercase shadow transition-all cursor-pointer">
+            <svg class="ui-icon" aria-hidden="true"><use href="#icon-lock"></use></svg>
+            <span data-en="Staff / Admin Login" data-si="පද්ධතියට ඇතුල්වීම">Staff / Admin Login</span>
+          </button>
+          <div id="userProfilePill" class="hidden flex items-center gap-2 bg-[#5c0d1b] border border-[#d4af37]/60 px-3 py-0.5 rounded-full text-xs">
+            <span id="userRoleBadge" class="bg-[#d4af37] text-[#38050b] text-[10px] font-extrabold uppercase px-2 py-0.5 rounded">ADMIN</span>
+            <span id="userNameDisplay" class="font-bold text-white text-xs truncate max-w-[150px]">Administrator</span>
+            <button onclick="handleUserLogout()" class="text-rose-200 hover:text-white text-[11px] font-semibold underline ml-1 cursor-pointer" title="Sign out">
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       2. MAIN SCHOOL BRANDING HEADER (Gradient from #5c0d1b with 4px Gold Border)
+       ====================================================================== -->
+  <header class="main-school-header bg-gradient-to-r from-[#5c0d1b] via-[#6b0f1a] to-[#5c0d1b] border-b-4 border-[#d4af37] shadow-xl">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5 flex flex-col md:flex-row items-center justify-between gap-4">
+      
+      <!-- Brand Logo + Name -->
+      <div class="flex items-center gap-4 text-left">
+        <img src="/static/img/JMV_Logo.png" alt="WP/KE/Jayakody Maha Vidyalaya Official Crest" class="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-md select-none">
+        <div>
+          <h1 id="headerSchoolName" class="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-white uppercase leading-none">
+            JAYAKODY MAHA VIDYALAYA
+          </h1>
+          <p id="headerSubTitle" class="text-xs sm:text-sm font-semibold text-rose-100 mt-1">
+            බප / කැල / ජයකොඩි ම.වි - ගණේමුල්ල 
+          </p>
+        </div>
+      </div>
+
+      <!-- Portal context -->
+      <div class="flex flex-col md:items-end items-center gap-1.5">
+        <span class="bg-[#d4af37] text-[#38050b] text-xs font-extrabold uppercase px-3.5 py-1 rounded shadow tracking-wider">
+          Admin Portal
+        </span>
+        <span class="text-[11px] text-rose-200">Secure Staff Workspace</span>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ======================================================================
+       3. JMV-WEB 4-METRIC COUNTER STRIP (#5c0d1b with Gold Borders)
+       ====================================================================== -->
+  <section class="jmv-stats-strip bg-[#5c0d1b] text-white py-6 border-b-4 border-[#d4af37] shadow-inner">
+    <div class="stats-strip-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-2 lg:grid-cols-4 gap-6 text-center divide-y sm:divide-y-0 sm:divide-x divide-white/15">
+      <div class="stats-strip-item pt-3 sm:pt-0 px-2">
+        <div id="stripStudents" class="stats-strip-val text-3xl sm:text-4xl font-extrabold text-[#fde047]">0</div>
+        <div class="stats-strip-lbl text-xs sm:text-sm font-bold uppercase tracking-wider text-white mt-1" data-en="Students Enrolled" data-si="ලියාපදිංචි සිසු පිරිස">Students Enrolled</div>
+        <div class="stats-strip-sub text-[11px] text-rose-200 mt-0.5" data-en="Current database records" data-si="වත්මන් දත්ත වාර්තා">Current database records</div>
+      </div>
+      <div class="stats-strip-item pt-3 sm:pt-0 px-2">
+        <div id="stripStaff" class="stats-strip-val text-3xl sm:text-4xl font-extrabold text-[#fde047]">0</div>
+        <div class="stats-strip-lbl text-xs sm:text-sm font-bold uppercase tracking-wider text-white mt-1" data-en="Academic Staff" data-si="ආචාර්ය මණ්ඩලය">Academic Staff</div>
+        <div class="stats-strip-sub text-[11px] text-rose-200 mt-0.5" data-en="Current database records" data-si="වත්මන් දත්ත වාර්තා">Current database records</div>
+      </div>
+      <div class="stats-strip-item pt-3 sm:pt-0 px-2">
+        <div id="stripNonAcademicStaff" class="stats-strip-val text-3xl sm:text-4xl font-extrabold text-[#fde047]">0</div>
+        <div class="stats-strip-lbl text-xs sm:text-sm font-bold uppercase tracking-wider text-white mt-1" data-en="Non-Academic Staff" data-si="අනධ්‍යයන කාර්ය මණ්ඩලය">Non-Academic Staff</div>
+        <div class="stats-strip-sub text-[11px] text-rose-200 mt-0.5" data-en="Current database records" data-si="වත්මන් දත්ත වාර්තා">Current database records</div>
+      </div>
+      <div class="stats-strip-item pt-3 sm:pt-0 px-2">
+        <div class="stats-strip-val text-3xl sm:text-4xl font-extrabold text-[#fde047]">—</div>
+        <div class="stats-strip-lbl text-xs sm:text-sm font-bold uppercase tracking-wider text-white mt-1" data-en="System Status" data-si="පද්ධති තත්ත්වය">System Status</div>
+        <div class="stats-strip-sub text-[11px] text-rose-200 mt-0.5">Local database active</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================================
+       4. STICKY NAVIGATION TABS
+       ====================================================================== -->
+  <nav class="sticky top-0 z-40 bg-white border-b-2 border-slate-200 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between">
+      <div class="flex space-x-1 sm:space-x-2 overflow-x-auto py-2">
+        <button class="nav-tab-btn active px-4 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wide transition-all rounded-lg border-2 border-transparent text-[#6b0f1a] bg-[#fdf2f4] border-[#800020]" data-tab="lookup">
+          <svg class="ui-icon" aria-hidden="true"><use href="#icon-search"></use></svg> <span data-en="Instant ID Lookup" data-si="ක්ෂණික අංක සෙවීම">Instant ID Lookup</span>
+        </button>
+        <button class="nav-tab-btn px-4 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wide transition-all rounded-lg border-2 border-transparent text-slate-600 hover:text-[#800020] hover:bg-[#fdf2f4]" data-tab="students">
+          <svg class="ui-icon" aria-hidden="true"><use href="#icon-graduation"></use></svg> <span data-en="Students Directory" data-si="ශිෂ්‍ය දත්ත පද්ධතිය">Students Directory</span>
+        </button>
+        <button class="nav-tab-btn px-4 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wide transition-all rounded-lg border-2 border-transparent text-slate-600 hover:text-[#800020] hover:bg-[#fdf2f4]" data-tab="marks">
+          <svg class="ui-icon" aria-hidden="true"><use href="#icon-chart"></use></svg> <span data-en="Marks &amp; Academic Progress" data-si="ශිෂ්‍ය ලකුණු හා ප්‍රගතිය">Marks &amp; Academic Progress</span>
+        </button>
+        <button id="navStaffTab" class="nav-tab-btn px-4 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wide transition-all rounded-lg border-2 border-transparent text-slate-600 hover:text-[#800020] hover:bg-[#fdf2f4]" data-tab="staff">
+          <svg class="ui-icon" aria-hidden="true"><use href="#icon-users"></use></svg> <span data-en="Faculty &amp; Staff" data-si="ගුරු හා අනධ්‍යයන මණ්ඩලය">Faculty &amp; Staff</span>
+          <span id="staffAdminLockBadge" class="hidden text-[10px] ml-1 bg-amber-100 text-amber-800 font-bold px-1.5 py-0.2 rounded border border-amber-300">ADMIN</span>
+        </button>
+        <button id="navTimetableTab" class="nav-tab-btn px-4 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wide transition-all rounded-lg border-2 border-transparent text-slate-600 hover:text-[#800020] hover:bg-[#fdf2f4]" data-tab="timetable">
+          <svg class="ui-icon" aria-hidden="true"><use href="#icon-calendar"></use></svg> <span>School Timetable</span>
+          <span class="text-[10px] ml-1 bg-amber-100 text-amber-800 font-bold px-1.5 py-0.2 rounded border border-amber-300">ADMIN</span>
+        </button>
+      </div>
+
+    </div>
+  </nav>
+
+  <!-- ======================================================================
+       5. MAIN CONTENT PANES
+       ====================================================================== -->
+  <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+
+    <!-- Database connection status banner (shown only when the DB is unreachable) -->
+    <div id="dbStatusBanner" class="hidden mb-6 rounded-xl border-l-4 border-[#800020] bg-[#fdf2f4] p-4 text-sm text-[#38050b] shadow-sm">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <strong class="uppercase text-[#800020] inline-flex items-center gap-2"><svg class="ui-icon" aria-hidden="true"><use href="#icon-alert"></use></svg>School database unavailable</strong>
+          <p id="dbStatusMessage" class="mt-1 text-xs text-slate-700 break-all"></p>
+          <p class="mt-1 text-xs text-slate-500">Check the credentials in <code>.env</code> and that remote access is enabled for this machine's IP.</p>
+        </div>
+        <button onclick="checkDbHealth(true)" class="shrink-0 px-3 py-1.5 bg-[#800020] hover:bg-[#5c0d1b] text-white text-xs font-bold uppercase rounded">Retry</button>
+      </div>
+    </div>
+
+    <!-- --------------------------------------------------------------------
+         TAB 1: INSTANT UNIVERSAL ID LOOKUP
+         -------------------------------------------------------------------- -->
+    <section id="tab-lookup" class="tab-pane active space-y-8">
+      
+      <!-- Lookup Hero Box -->
+      <div class="bg-white rounded-2xl p-6 sm:p-10 shadow-lg border-2 border-[#d4af37] relative overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#5c0d1b] via-[#d4af37] to-[#5c0d1b]"></div>
+        
+        <div class="text-center max-w-2xl mx-auto space-y-2 mb-8">
+          <span class="text-xs font-extrabold uppercase tracking-widest text-[#800020]" data-en="Records workspace" data-si="දත්ත වාර්තා වැඩබිම">
+            Records workspace
+          </span>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 uppercase tracking-tight" data-en="Find a record" data-si="වාර්තාවක් සොයන්න">
+            Find a record
+          </h2>
+          <p class="text-sm text-slate-600 leading-relaxed" data-en="Search by student or staff ID, admission number, EPF number, or name."
+             data-si="සිසු හැඳුනුම්පත් අංකය (උදා: JMV-STU-1001), ඇතුළත් වීමේ අංකය, හෝ ගුරු හැඳුනුම්පත් අංකය (උදා: JMV-STF-001) ඇතුළත් කර සම්පූර්ණ තොරතුරු හා ඩිජිටල් හැඳුනුම්පත ලබාගන්න.">
+            Search by student or staff ID, admission number, EPF number, or name.
+          </p>
+        </div>
+
+        <!-- Big Search Box with Live Auto-Suggestions -->
+        <div class="relative max-w-2xl mx-auto">
+          <div class="flex items-center bg-white border-2 border-[#800020] rounded-full p-1.5 shadow-md focus-within:ring-4 focus-within:ring-[#d4af37]/30 transition-all">
+            <span class="pl-4 pr-2 text-lg text-[#800020]"><svg class="ui-icon ui-icon-lg" aria-hidden="true"><use href="#icon-search"></use></svg></span>
+            <input 
+              type="text" 
+              id="universalSearchInput" 
+              placeholder="Enter admission number, staff ID, EPF, or name..." 
+              autocomplete="off" 
+              spellcheck="false"
+              class="w-full py-2.5 px-2 text-slate-800 text-sm sm:text-base font-semibold focus:outline-none bg-transparent"
+            >
+            <button id="clearSearchBtn" class="text-slate-400 hover:text-slate-600 px-2 text-sm hidden font-bold" title="Clear">✕</button>
+            <button id="universalSearchBtn" class="bg-[#800020] hover:bg-[#5c0d1b] text-[#fde047] font-extrabold px-6 py-2.5 rounded-full text-xs sm:text-sm uppercase tracking-wider transition-all shadow">
+              <span data-en="Search Details" data-si="විස්තර සොයන්න">Search Details</span>
+            </button>
+          </div>
+
+          <!-- Typeahead Dropdown -->
+          <div id="searchSuggestionsDropdown" class="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 max-h-80 overflow-y-auto hidden"></div>
+        </div>
+
+      </div>
+
+      <!-- ==================================================================
+           RESULT CONTAINER (Never destroyed - child components toggle cleanly)
+           ================================================================== -->
+      <div id="lookupResultSection" class="hidden bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+        
+        <!-- Controls Bar -->
+        <div class="bg-slate-100 px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center space-x-3">
+            <span id="resultTypeBadge" class="bg-[#d4af37] text-[#38050b] text-xs font-extrabold uppercase px-3 py-1 rounded">
+              Profile Details
+            </span>
+            <span class="text-xs text-slate-500 font-semibold">
+              Verified WP/KE/Jayakody Maha Vidyalaya Record
+            </span>
+          </div>
+
+          <!-- Mode Toggle: ID Card vs Detailed Dossier -->
+          <div class="flex bg-slate-200 rounded-full p-1">
+            <button id="viewModeBadgeBtn" onclick="toggleViewMode('badge')" class="px-4 py-1.5 text-xs font-extrabold uppercase rounded-full bg-white text-[#800020] shadow-sm transition-all flex items-center gap-1.5">
+              <svg class="ui-icon" aria-hidden="true"><use href="#icon-id"></use></svg> <span data-en="Digital ID Card" data-si="ඩිජිටල් හැඳුනුම්පත">Digital ID Card</span>
+            </button>
+            <button id="viewModeDossierBtn" onclick="toggleViewMode('dossier')" class="px-4 py-1.5 text-xs font-extrabold uppercase rounded-full text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1.5">
+              <svg class="ui-icon" aria-hidden="true"><use href="#icon-clipboard"></use></svg> <span data-en="Comprehensive Dossier" data-si="සම්පූර්ණ වාර්තාව">Comprehensive Dossier</span>
+            </button>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex items-center space-x-2">
+            <button id="copyIdBtn" class="px-3.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded shadow-sm">
+              <svg class="ui-icon" aria-hidden="true"><use href="#icon-clipboard"></use></svg> <span data-en="Copy Admission No" data-si="ඇතුළත් අංකය පිටපත් කරන්න">Copy Admission No</span>
+            </button>
+            <button id="printResultBtn" class="px-4 py-1.5 bg-[#d4af37] hover:bg-[#fde047] text-[#38050b] text-xs font-extrabold uppercase rounded shadow transition-all">
+              <svg class="ui-icon" aria-hidden="true"><use href="#icon-printer"></use></svg> <span data-en="Print ID Card" data-si="මුද්‍රණය">Print ID Card</span>
+            </button>
+            <button id="editResultBtn" class="px-4 py-1.5 bg-[#800020] hover:bg-[#5c0d1b] text-white text-xs font-bold uppercase rounded shadow transition-all">
+              <svg class="ui-icon" aria-hidden="true"><use href="#icon-edit"></use></svg> <span data-en="Edit Record" data-si="සංස්කරණය">Edit</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Render Target Area -->
+        <div id="idCardRenderArea" class="p-6 sm:p-10">
+          
+          <!-- State 1: Loading (hidden by default) -->
+          <div id="idCardLoading" class="py-12 text-center text-[#800020] hidden">
+            <div class="text-4xl mb-3 animate-spin inline-block">⏳</div>
+            <h3 class="text-lg font-extrabold uppercase">Searching Jayakody Maha Vidyalaya Records...</h3>
+            <p id="loadingTargetText" class="text-sm text-slate-500 mt-1">Verifying identity credentials...</p>
+          </div>
+
+          <!-- State 2: Not Found (hidden by default) -->
+          <div id="idCardNotFound" class="py-12 text-center max-w-md mx-auto hidden">
+            <div class="text-5xl mb-3 text-[#800020]"><svg class="ui-icon" style="width:3rem;height:3rem" aria-hidden="true"><use href="#icon-scan"></use></svg></div>
+            <h3 class="text-xl font-extrabold text-[#800020] uppercase mb-1">Record Not Found</h3>
+            <p id="notFoundMsgText" class="text-sm text-slate-600 mb-6 leading-relaxed">
+              No matching Student or Faculty member found with this ID.
+            </p>
+            <div class="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-4 text-xs text-left mb-6">
+              <strong class="text-amber-800 uppercase block mb-1">Quick Search Tips:</strong>
+              <ul class="list-disc ml-4 space-y-1">
+                <li>Students: Try <code class="font-bold">JMV-STU-1001</code>, <code class="font-bold">2020/0412</code>, or student name</li>
+                <li>Faculty: Try <code class="font-bold">JMV-STF-001</code> (Principal) or <code class="font-bold">EPF-38410</code></li>
+              </ul>
+            </div>
+            <button onclick="document.getElementById('universalSearchInput').focus();" class="px-6 py-2.5 bg-[#800020] text-white text-xs font-bold uppercase rounded-lg shadow">
+              Try Another ID
+            </button>
+          </div>
+
+          <!-- State 3: Badge View (Digital ID Card) -->
+          <div id="idCardBadgeView" class="flex justify-center py-6">
+            <!-- Populated via JS -->
+          </div>
+
+          <!-- State 4: Detailed Dossier View -->
+          <div id="idCardDossierView" class="hidden">
+            <!-- Populated via JS -->
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- --------------------------------------------------------------------
+         TAB 2: STUDENTS DIRECTORY
+         -------------------------------------------------------------------- -->
+    <section id="tab-students" class="tab-pane hidden space-y-6">
+      
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-extrabold text-slate-900 uppercase" data-en="Student Admissions & Enrollment Directory" data-si="සිසු ඇතුළත් කිරීම් නාමාවලිය">
+            Student Admissions &amp; Enrollment Directory
+          </h2>
+          <p class="text-sm text-slate-600">
+            Primary (1–5), Junior Secondary (6–9), G.C.E. O/L (10–11), and Collegiate A/L Commerce &amp; Arts scholars.
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="studentsCountBadge" class="bg-blue-100 text-blue-800 text-xs font-extrabold px-3 py-1 rounded-full">
+            0 Enrolled
+          </span>
+          <button id="addStudentBtn" onclick="openAddStudentModal()" class="px-4 py-2 bg-[#800020] hover:bg-[#5c0d1b] text-white text-xs font-bold uppercase rounded-lg shadow transition-all flex items-center gap-1.5 cursor-pointer">
+            <svg class="ui-icon" aria-hidden="true"><use href="#icon-plus"></use></svg> <span data-en="Enroll New Student" data-si="නව සිසුවෙකු ඇතුළත් කරන්න">Enroll New Student</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-4 items-center">
+        <div class="flex-1 min-w-[220px]">
+          <input 
+            type="text" 
+            id="studentFilterSearch" 
+            placeholder="Search by student name, ID, or admission no..." 
+            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#800020]"
+          >
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="text-xs font-bold text-slate-500 uppercase">Grade:</label>
+          <select id="studentFilterGrade" class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#800020]">
+            <option value="">All Grades (1–13)</option>
+            <option value="4-A">Grade 4-A (Primary)</option>
+            <option value="6-A">Grade 6-A (Junior)</option>
+            <option value="8-B">Grade 8-B (Junior)</option>
+            <option value="9-A">Grade 9-A (Junior)</option>
+            <option value="11-A">Grade 11-A (O/L)</option>
+            <option value="11-B">Grade 11-B (O/L)</option>
+            <option value="12-Com">Grade 12-Com (A/L)</option>
+            <option value="12-Art">Grade 12-Art (A/L)</option>
+            <option value="13-Com">Grade 13-Com (A/L)</option>
+            <option value="13-Art">Grade 13-Art (A/L)</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="text-xs font-bold text-slate-500 uppercase">House:</label>
+          <select id="studentFilterHouse" class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#800020]">
+            <option value="">All Houses (Thisara, Mayura, Paravi)</option>
+            <option value="Thisara">Thisara House (තිසර)</option>
+            <option value="Mayura">Mayura House (මයුර)</option>
+            <option value="Paravi">Paravi House (පරවි)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Students Table -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-[#fdf2f4] text-[#38050b] border-b-2 border-[#d4af37] uppercase text-xs">
+              <th class="p-3.5 font-extrabold">Admission No</th>
+              <th class="p-3.5 font-extrabold">Full Name &amp; Initials</th>
+              <th class="p-3.5 font-extrabold">Grade &amp; Stream</th>
+              <th class="p-3.5 font-extrabold">Admission No</th>
+              <th class="p-3.5 font-extrabold">House</th>
+              <th class="p-3.5 font-extrabold">Status</th>
+              <th class="p-3.5 font-extrabold">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="studentsTableBody" class="divide-y divide-slate-100">
+            <!-- Populated via JS -->
+          </tbody>
+        </table>
+      </div>
+
+    </section>
+
+    <!-- --------------------------------------------------------------------
+         TAB 3: STUDENT MARKS & ACADEMIC PROGRESS (Role: Teachers & Admins)
+         -------------------------------------------------------------------- -->
+    <section id="tab-marks" class="tab-pane hidden space-y-6">
+      
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-extrabold text-slate-900 uppercase" data-en="Student Marks &amp; Academic Progress" data-si="ශිෂ්‍ය ලකුණු හා ප්‍රගති වාර්තා">
+            Student Marks &amp; Academic Progress
+          </h2>
+          <p class="text-sm text-slate-600">
+            Term examination results, grading (A, B, C, S, F), and teacher comments across school streams.
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button onclick="openAddMarkModal()" class="px-4 py-2 bg-[#800020] hover:bg-[#5c0d1b] text-white text-xs font-bold uppercase rounded-lg shadow transition-all flex items-center gap-1.5 cursor-pointer">
+            <svg class="ui-icon" aria-hidden="true"><use href="#icon-plus"></use></svg> <span data-en="Record Student Marks" data-si="ලකුණු ඇතුළත් කරන්න">Record Student Marks</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters for Marks -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-4 items-center">
+        <div class="flex-1 min-w-[200px]">
+          <input 
+            type="text" 
+            id="marksFilterSearch" 
+            placeholder="Search by Student ID, Name, or Subject..." 
+            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-[#800020] focus:outline-none"
+          >
+        </div>
+        <div>
+          <select id="marksFilterTerm" class="border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-[#800020] focus:outline-none bg-white">
+            <option value="">All Terms</option>
+            <option value="Term 1" selected>Term 1</option>
+            <option value="Term 2">Term 2</option>
+            <option value="Term 3">Term 3</option>
+          </select>
+        </div>
+        <div>
+          <select id="marksFilterYear" class="border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-[#800020] focus:outline-none bg-white">
+            <option value="2026" selected>2026</option>
+            <option value="2025">2025</option>
+          </select>
+        </div>
+        <button onclick="loadAllMarksLedger()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg border border-slate-300 transition-colors cursor-pointer">
+          <svg class="ui-icon" aria-hidden="true"><use href="#icon-refresh"></use></svg> Refresh
+        </button>
+      </div>
+
+      <!-- Marks Ledger Table -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50 text-slate-700 uppercase font-bold text-[11px] border-b border-slate-200">
+            <tr>
+              <th class="p-3.5 font-extrabold">Admission No &amp; Name</th>
+              <th class="p-3.5 font-extrabold">Grade</th>
+              <th class="p-3.5 font-extrabold">Subject</th>
+              <th class="p-3.5 font-extrabold">Term &amp; Year</th>
+              <th class="p-3.5 font-extrabold text-center">Marks</th>
+              <th class="p-3.5 font-extrabold text-center">Grade</th>
+              <th class="p-3.5 font-extrabold">Teacher Remarks</th>
+              <th class="p-3.5 font-extrabold">Recorded By</th>
+              <th class="p-3.5 font-extrabold text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="marksTableBody" class="divide-y divide-slate-100">
+            <!-- Populated via JS -->
+          </tbody>
+        </table>
+      </div>
+
+    </section>
+
+    <!-- --------------------------------------------------------------------
+         TAB 4: SCHOOL TIMETABLE (Admin only)
+         -------------------------------------------------------------------- -->
+    <section id="tab-timetable" class="tab-pane hidden space-y-6">
+      <div id="timetableRestrictedBanner" class="hidden bg-amber-50 border-2 border-amber-300 rounded-2xl p-8 text-center space-y-3">
+        <div class="text-amber-800"><svg class="ui-icon" style="width:2.25rem;height:2.25rem" aria-hidden="true"><use href="#icon-lock"></use></svg></div>
+        <h3 class="text-lg font-extrabold text-amber-900 uppercase">Timetable Management Restricted</h3>
+        <p class="text-sm text-amber-800">Only school administrators can create and manage the school timetable.</p>
+      </div>
+      <div id="timetableAdminContainer" class="space-y-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-extrabold text-slate-900 uppercase">School Timetable</h2>
+            <p class="text-sm text-slate-600">Create an eight-period schedule for each class, with one teacher assigned per period.</p>
+          </div>
+          <button id="timetableRefreshBtn" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg border border-slate-300">
+            <svg class="ui-icon" aria-hidden="true"><use href="#icon-refresh"></use></svg> Refresh
+          </button>
+        </div>
+        <form id="timetableForm" class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+          <input type="hidden" id="timetableEntryId">
+          <input id="timetableClass" required placeholder="Class (e.g. 10-A)" class="border border-slate-300 rounded-lg px-3 py-2 text-sm">
+          <select id="timetableDay" required class="border border-slate-300 rounded-lg px-3 py-2 text-sm">
+            <option value="">Weekday</option><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option>
+          </select>
+          <select id="timetablePeriod" required class="border border-slate-300 rounded-lg px-3 py-2 text-sm">
+            <option value="">Period</option>
+            <option value="1">Period 1</option><option value="2">Period 2</option><option value="3">Period 3</option><option value="4">Period 4</option>
+            <option value="5">Period 5</option><option value="6">Period 6</option><option value="7">Period 7</option><option value="8">Period 8</option>
+          </select>
+          <input id="timetableSubject" required placeholder="Subject" class="border border-slate-300 rounded-lg px-3 py-2 text-sm">
+          <select id="timetableTeacher" required class="border border-slate-300 rounded-lg px-3 py-2 text-sm"><option value="">Select teacher</option></select>
+          <div class="flex gap-2">
+            <button type="submit" class="flex-1 px-3 py-2 bg-[#800020] hover:bg-[#5c0d1b] text-white text-xs font-bold uppercase rounded-lg">Save Entry</button>
+            <button type="button" id="timetableCancelBtn" class="hidden px-3 py-2 border border-slate-300 text-slate-700 text-xs font-bold rounded-lg">Cancel</button>
+          </div>
+        </form>
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-[#fdf2f4] text-[#38050b] uppercase text-xs border-b-2 border-[#d4af37]">
+              <tr><th class="p-3">Class</th><th class="p-3">Day</th><th class="p-3">Period</th><th class="p-3">Subject</th><th class="p-3">Teacher</th><th class="p-3 text-right">Actions</th></tr>
+            </thead>
+            <tbody id="timetableTableBody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- --------------------------------------------------------------------
+         TAB 5: FACULTY & STAFF DIRECTORY (Admin Full Access / Teacher Restricted)
+         -------------------------------------------------------------------- -->
+    <section id="tab-staff" class="tab-pane hidden space-y-6">
+      
+      <!-- Teacher Restricted Notice Banner -->
+      <div id="staffTeacherRestrictedBanner" class="hidden bg-amber-50 border-2 border-amber-300 rounded-2xl p-8 text-center space-y-3">
+        <div class="text-amber-800"><svg class="ui-icon" style="width:2.25rem;height:2.25rem" aria-hidden="true"><use href="#icon-lock"></use></svg></div>
+        <h3 class="text-lg font-extrabold text-amber-900 uppercase">Faculty &amp; Staff Directory Restricted</h3>
+        <p class="text-sm text-amber-800 max-w-lg mx-auto">
+          You are currently signed in with a <strong>Teacher Account</strong>. Under school administration policy, teachers can view the Student Directory and record/update student marks. Institutional faculty and staff administration is restricted to <strong>School Administrators</strong>.
+        </p>
+        <div class="pt-2 flex justify-center gap-3">
+          <button onclick="switchTab('marks')" class="px-5 py-2 bg-[#800020] text-white text-xs font-bold uppercase rounded-lg shadow">Open Student Marks</button>
+          <button onclick="switchTab('students')" class="px-5 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase rounded-lg shadow">View Students</button>
+        </div>
+      </div>
+
+      <div id="staffMainContainer" class="space-y-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-extrabold text-slate-900 uppercase" data-en="Faculty & Staff Directory" data-si="ආචාර්ය හා අනධ්‍යයන මණ්ඩල නාමාවලිය">
+              Faculty &amp; Staff Directory
+            </h2>
+            <p class="text-sm text-slate-600">
+              Institutional executive leadership, deputy principals, sectional heads, and senior masters.
+            </p>
+          </div>
+          <div class="flex items-center gap-3">
+            <span id="staffCountBadge" class="bg-amber-100 text-amber-800 text-xs font-extrabold px-3 py-1 rounded-full">
+              0 Staff
+            </span>
+            <button id="addStaffBtn" onclick="openAddStaffModal()" class="px-4 py-2 bg-[#800020] hover:bg-[#5c0d1b] text-white text-xs font-bold uppercase rounded-lg shadow transition-all flex items-center gap-1.5 cursor-pointer">
+              <svg class="ui-icon" aria-hidden="true"><use href="#icon-plus"></use></svg> <span data-en="Add Faculty Member" data-si="ගුරු සාමාජිකයෙකු එක් කරන්න">Add Faculty Member</span>
+            </button>
+          </div>
+        </div>
+
+      <!-- Filters -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-4 items-center">
+        <div class="flex-1 min-w-[220px]">
+          <input 
+            type="text" 
+            id="staffFilterSearch" 
+            placeholder="Search by faculty name, EPF, ID, or subject..." 
+            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#800020]"
+          >
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="text-xs font-bold text-slate-500 uppercase">Department:</label>
+          <select id="staffFilterDept" class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#800020]">
+            <option value="">All Departments</option>
+            <option value="Chief Executive & Head of Institution">Executive &amp; Principal Office</option>
+            <option value="Executive & Academic Administration">Academic Administration</option>
+            <option value="Executive & Sectional Administration">Sectional Administration</option>
+            <option value="Executive Administration">Student Affairs &amp; Co-Curricular</option>
+            <option value="Commerce & Management">Commerce &amp; Management</option>
+            <option value="Languages & Humanities">Languages &amp; Humanities</option>
+            <option value="Information Technology">Information Technology &amp; Labs</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Staff Table -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-[#fdf2f4] text-[#38050b] border-b-2 border-[#d4af37] uppercase text-xs">
+              <th class="p-3.5 font-extrabold">Staff ID</th>
+              <th class="p-3.5 font-extrabold">Faculty Name &amp; Designation</th>
+              <th class="p-3.5 font-extrabold">Department / Division</th>
+              <th class="p-3.5 font-extrabold">Subjects &amp; Assignments</th>
+              <th class="p-3.5 font-extrabold">EPF No</th>
+              <th class="p-3.5 font-extrabold">Status</th>
+              <th class="p-3.5 font-extrabold">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="staffTableBody" class="divide-y divide-slate-100">
+            <!-- Populated via JS -->
+          </tbody>
+        </table>
+      </div>
+      </div><!-- End #staffMainContainer -->
+
+    </section>
+
+    <!-- --------------------------------------------------------------------
+         TAB 4: INSTITUTIONAL PROFILE, HISTORY & ANTHEM (From JMV-Web)
+         -------------------------------------------------------------------- -->
+    <section id="tab-overview" class="tab-pane hidden space-y-10">
+      
+      <!-- Vision & Mission Split Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="bg-white p-8 rounded-2xl shadow-md border-t-4 border-[#800020]">
+          <span class="text-xs font-bold uppercase tracking-widest text-[#800020]">Our Guiding Light</span>
+          <h3 class="text-2xl font-extrabold text-slate-900 uppercase mt-1 mb-4">Vision (දැක්ම)</h3>
+          <blockquote class="text-slate-700 leading-relaxed text-base italic border-l-4 border-[#d4af37] pl-4">
+            “අභියෝග ජයගත හැකි ගුණ නැණ සපිරි ශිෂ්‍යයෙක් සමාජයට දායාද කිරීම ජයකොඩි මාතාවගේ දැක්මයි.”
+          </blockquote>
+          <p class="text-xs text-slate-500 mt-4">
+            To mould a generation of disciplined, intellectually empowered, and virtuous citizens who proudly uphold Sri Lankan cultural heritage.
+          </p>
+        </div>
+
+        <div class="bg-white p-8 rounded-2xl shadow-md border-t-4 border-[#d4af37]">
+          <span class="text-xs font-bold uppercase tracking-widest text-[#92701c]">Our Commitment</span>
+          <h3 class="text-2xl font-extrabold text-slate-900 uppercase mt-1 mb-4">Mission (මෙහෙවර)</h3>
+          <blockquote class="text-slate-700 leading-relaxed text-base italic border-l-4 border-[#800020] pl-4">
+            “අධ්‍යාපනයේ මූලික අරමුණ ඉටුකර ගැනීම සඳහා මූලිකත්වය ලබා දෙමින් ජාතික නිපුණතාවලට අනුකූලව ගුණාත්මක අධ්‍යාපන සංවර්ධනය සඳහා කැපවීම ජයකොඩි මාතාවගේ මෙහෙවරයි.”
+          </blockquote>
+          <p class="text-xs text-slate-500 mt-4">
+            Dedicated to qualitative educational empowerment aligning with national competencies and moral development.
+          </p>
+        </div>
+      </div>
+
+      <!-- Institutional History & House Distribution -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        
+        <!-- School History -->
+        <div class="bg-white p-8 rounded-2xl shadow-md border border-slate-200 space-y-4">
+          <h3 class="text-xl font-extrabold text-[#800020] uppercase flex items-center gap-2">
+            <svg class="ui-icon" aria-hidden="true"><use href="#icon-building"></use></svg> About Jayakody Maha Vidyalaya
+          </h3>
+          <p class="text-slate-600 text-sm leading-relaxed">
+            Founded on <strong>October 14, 1956</strong> under the sacred blessings of Most Venerable Welivitiye Soratha Nayaka Thero and the generous philanthropy of Mrs. Siridattha Jayakody and Mr. Kamalawarna Jayakody, the school was incorporated into the prestigious <strong>Navodya School Development Project</strong> in 1966.
+          </p>
+
+          <div class="space-y-2 pt-2 border-t border-slate-100 text-xs">
+            <div class="flex justify-between py-1 border-b border-slate-50">
+              <span class="font-bold text-slate-500">Census Number:</span>
+              <span class="font-bold text-[#800020]">11084</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-50">
+              <span class="font-bold text-slate-500">Established:</span>
+              <span class="font-bold text-slate-800">October 14, 1956 (70+ Years of Legacy)</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-50">
+              <span class="font-bold text-slate-500">Official Colors:</span>
+              <span class="font-bold text-slate-800">
+                <span class="inline-block w-3 h-3 rounded-full bg-[#6b0f1a] align-middle mr-1"></span> Royal Maroon &amp; 
+                <span class="inline-block w-3 h-3 rounded-full bg-[#d4af37] align-middle ml-1 mr-1"></span> Imperial Gold
+              </span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-50">
+              <span class="font-bold text-slate-500">Zone / Division:</span>
+              <span class="font-bold text-slate-800">Kelaniya Educational Zone • Mahara Division</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-50">
+              <span class="font-bold text-slate-500">Principal:</span>
+              <span class="font-bold text-slate-800">Mr. P. Senevirathne Banda (Bachelor of Arts)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- House System -->
+        <div class="bg-white p-8 rounded-2xl shadow-md border border-slate-200 space-y-4">
+          <h3 class="text-xl font-extrabold text-[#800020] uppercase flex items-center gap-2">
+            <svg class="ui-icon" aria-hidden="true"><use href="#icon-trophy"></use></svg> Traditional School Houses (විදුහල් නිවාස)
+          </h3>
+          <p class="text-slate-600 text-xs leading-relaxed">
+            The three traditional competitive houses of Jayakody Maha Vidyalaya inspire sportsmanship, creative talent, and brotherhood:
+          </p>
+
+          <div id="houseDistributionBars" class="pt-2">
+            <!-- Loaded via JS -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- School Anthem from JMV-Web -->
+      <div class="bg-[#38050b] text-white rounded-2xl p-8 sm:p-12 shadow-xl border-t-4 border-[#d4af37] text-center">
+        <span class="text-xs font-extrabold uppercase tracking-widest text-[#fde047]">Official School Anthem</span>
+        <h3 class="text-2xl sm:text-3xl font-extrabold text-white uppercase mt-1 mb-6">
+          විදුහල් ගීතය (School Anthem)
+        </h3>
+        <div class="max-w-xl mx-auto bg-[#5c0d1b]/80 border border-[#d4af37]/30 rounded-xl p-6 sm:p-8 space-y-4 text-base font-medium text-rose-50 leading-relaxed shadow-inner">
+          <div class="text-[#fde047] font-bold">
+            <p>ගුණ නැණ වඩවී ජය දද නගවී</p>
+            <p>ජයකොඩි මහ විදුහල් සෙවනේ</p>
+            <p>ජයකොඩි මහ විදුහල් සෙවනේ</p>
+          </div>
+          <div>
+            <p>එකමුතු අත්වැල් බැඳ පෙළ සැදී</p>
+            <p>කිතු මුතු වැල් ගෙල වට පළඳා</p>
+            <p>එක කුස ඔත් දරුදැරියන් විලසින්</p>
+            <p>ජීවිතයේ ජය දද නගමු //</p>
+          </div>
+          <div>
+            <p>මහ සිප් සයුරේ පරතෙර දැකගෙන</p>
+            <p>ඥානාලෝකය ලොව පතුරා</p>
+            <p>රටට වැඩක් ඇති විරු දරුවන් වී</p>
+            <p>මිනිසත් භාවේ ඵල ලබමු //</p>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ======================================================================
+       6. MODAL DIALOGS (Enroll Student & Add Faculty)
+       ====================================================================== -->
+  <!-- Student Modal -->
+  <div id="studentModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border-2 border-[#d4af37] overflow-hidden">
+      <div class="bg-gradient-to-r from-[#38050b] to-[#5c0d1b] text-white px-6 py-4 flex items-center justify-between border-b-2 border-[#d4af37]">
+        <h3 id="studentModalTitle" class="text-base font-bold uppercase tracking-wide">Enroll New Student</h3>
+        <button onclick="closeModals()" class="text-white hover:text-[#fde047] text-2xl leading-none">&times;</button>
+      </div>
+      <form id="studentForm" class="flex-1 overflow-y-auto p-6 space-y-4">
+        <input type="hidden" id="studentFormMode" value="create">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Admission Number *</label>
+            <input type="text" id="studentAdmissionInput" required placeholder="e.g. 2024/0912" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block font-bold text-slate-700 mb-1">Name with Initials *</label>
+            <input type="text" id="studentInitialsInput" required placeholder="e.g. K.N. Jayawardena" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block font-bold text-slate-700 mb-1">Full Name *</label>
+            <input type="text" id="studentFullNameInput" required placeholder="e.g. Kavindu Nimnada Jayawardena" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Gender</label>
+            <select id="studentGenderInput" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Date of Birth</label>
+            <input type="date" id="studentDobInput" value="2007-05-10" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Grade / Class *</label>
+            <input type="text" id="studentGradeInput" required placeholder="e.g. 13-Com, 11-A, 6-A" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Academic Stream</label>
+            <select id="studentStreamInput" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+              <option value="Commerce Stream">Commerce Stream (A/L)</option>
+              <option value="Arts & Humanities">Arts &amp; Humanities (A/L)</option>
+              <option value="Senior Secondary (G.C.E. O/L)">Senior Secondary (G.C.E. O/L)</option>
+              <option value="Junior Secondary (Grades 6–9)">Junior Secondary (Grades 6–9)</option>
+              <option value="Primary Section (Grades 1–5)">Primary Section (Grades 1–5)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Medium</label>
+            <select id="studentMediumInput" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+              <option value="Sinhala">Sinhala</option>
+              <option value="English">English</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">House (Thisara, Mayura, Paravi)</label>
+            <select id="studentHouseInput" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+              <option value="Thisara">Thisara House (තිසර)</option>
+              <option value="Mayura">Mayura House (මයුර)</option>
+              <option value="Paravi">Paravi House (පරවි)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Guardian Name</label>
+            <input type="text" id="studentGuardianInput" placeholder="e.g. Sunil Jayawardena" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Guardian Phone Number</label>
+            <input type="text" id="studentContactInput" placeholder="e.g. 077 123 4567" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block font-bold text-slate-700 mb-1">Residential Address</label>
+            <input type="text" id="studentAddressInput" placeholder="e.g. No. 45, Welipillawa, Ganemulla" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Status</label>
+            <select id="studentStatusInput" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+              <option value="Active">Active</option>
+              <option value="Leave">On Leave</option>
+              <option value="Graduated">Graduated</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Photo URL (Optional)</label>
+            <input type="url" id="studentPhotoInput" placeholder="https://..." class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block font-bold text-slate-700 mb-1">Clubs &amp; Extracurriculars</label>
+            <input type="text" id="studentExtraInput" placeholder="e.g. Buddhist Society, Scrabble Club, Cricket" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+        </div>
+        <div class="pt-4 border-t border-slate-100 flex justify-end gap-2">
+          <button type="button" onclick="closeModals()" class="px-4 py-2 border border-slate-300 rounded text-slate-600 font-bold text-xs uppercase">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-[#800020] hover:bg-[#5c0d1b] text-white font-bold text-xs uppercase rounded shadow">Save Student</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Staff Modal -->
+  <div id="staffModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border-2 border-[#d4af37] overflow-hidden">
+      <div class="bg-gradient-to-r from-[#38050b] to-[#5c0d1b] text-white px-6 py-4 flex items-center justify-between border-b-2 border-[#d4af37]">
+        <h3 id="staffModalTitle" class="text-base font-bold uppercase tracking-wide">Add Faculty Member</h3>
+        <button onclick="closeModals()" class="text-white hover:text-[#fde047] text-2xl leading-none">&times;</button>
+      </div>
+      <form id="staffForm" class="flex-1 overflow-y-auto p-6 space-y-4">
+        <input type="hidden" id="staffFormMode" value="create">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Staff Member ID *</label>
+            <input type="text" id="staffIdInput" required placeholder="e.g. JMV-STF-009" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">EPF / Service No *</label>
+            <input type="text" id="staffEpfInput" required placeholder="e.g. EPF-95123" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block font-bold text-slate-700 mb-1">Name with Initials *</label>
+            <input type="text" id="staffInitialsInput" required placeholder="e.g. C.K. Jayasinghe" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block font-bold text-slate-700 mb-1">Full Name *</label>
+            <input type="text" id="staffFullNameInput" required placeholder="e.g. Chandrika Kanthi Jayasinghe" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Role / Designation *</label>
+            <input type="text" id="staffRoleInput" required placeholder="e.g. Sectional Head, Senior Teacher" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Department</label>
+            <select id="staffDeptInput" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+              <option value="Executive & Academic Administration">Executive &amp; Academic Administration</option>
+              <option value="Executive & Sectional Administration">Executive &amp; Sectional Administration</option>
+              <option value="Commerce & Management">Commerce &amp; Management</option>
+              <option value="Languages & Humanities">Languages &amp; Humanities</option>
+              <option value="Information Technology">Information Technology</option>
+              <option value="Chief Executive & Head of Institution">Executive &amp; Principal Office</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Subjects Taught</label>
+            <input type="text" id="staffSubjectsInput" placeholder="e.g. Business Studies, Accounting" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Assigned Classes</label>
+            <input type="text" id="staffClassesInput" placeholder="e.g. 12-Com, 13-Com" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Phone Number</label>
+            <input type="text" id="staffContactInput" placeholder="e.g. 071 234 5678" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Email Address</label>
+            <input type="email" id="staffEmailInput" placeholder="e.g. teacher@jayakodymv.edu.lk" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block font-bold text-slate-700 mb-1">Qualifications</label>
+            <input type="text" id="staffQualInput" placeholder="e.g. B.Com (Hons), PGDE (NIE)" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+        </div>
+        <div class="pt-4 border-t border-slate-100 flex justify-end gap-2">
+          <button type="button" onclick="closeModals()" class="px-4 py-2 border border-slate-300 rounded text-slate-600 font-bold text-xs uppercase">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-[#800020] hover:bg-[#5c0d1b] text-white font-bold text-xs uppercase rounded shadow">Save Faculty Member</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Login Modal (Role-based Authentication: Teacher & Admin) -->
+  <div id="loginModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border-2 border-[#d4af37] overflow-hidden">
+      <!-- Modal Header -->
+      <div class="bg-gradient-to-r from-[#38050b] via-[#5c0d1b] to-[#38050b] text-white px-6 py-4 flex items-center justify-between border-b-2 border-[#d4af37]">
+        <div class="flex items-center gap-3">
+          <img src="/static/img/JMV_Logo.png" class="w-9 h-9 object-contain" alt="JMV Crest">
+          <div>
+            <h3 class="text-sm font-extrabold uppercase tracking-wide">Portal Sign In</h3>
+            <p class="text-[11px] text-[#fde047]">WP / KE / Jayakody Maha Vidyalaya</p>
+          </div>
+        </div>
+        <button onclick="closeModals()" class="text-white hover:text-[#fde047] text-2xl leading-none cursor-pointer">&times;</button>
+      </div>
+
+      <!-- Quick Demo Credentials Box -->
+      <div class="p-6 space-y-4">
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
+          <span class="block text-[10px] font-extrabold uppercase text-slate-500 tracking-wider">Quick Select Demo Account:</span>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="fillLoginForm('admin', '')" class="p-2 bg-white hover:bg-amber-50 border border-amber-300 rounded-lg text-left transition-all cursor-pointer">
+              <span class="block font-bold text-slate-900 text-[11px] inline-flex items-center gap-1"><svg class="ui-icon" aria-hidden="true"><use href="#icon-shield"></use></svg> Administrator</span>
+              <span class="block text-[10px] text-slate-500">Full Access (All data)</span>
+            </button>
+            <button type="button" onclick="fillLoginForm('teacher', '')" class="p-2 bg-white hover:bg-blue-50 border border-blue-300 rounded-lg text-left transition-all cursor-pointer">
+              <span class="block font-bold text-slate-900 text-[11px] inline-flex items-center gap-1"><svg class="ui-icon" aria-hidden="true"><use href="#icon-graduation"></use></svg> Teacher</span>
+              <span class="block text-[10px] text-slate-500">Students &amp; Marks only</span>
+            </button>
+          </div>
+        </div>
+
+        <form id="loginForm" class="space-y-3.5">
+          <div id="loginErrorMsg" class="hidden p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold"></div>
+
+          <div>
+            <label class="block font-bold text-slate-700 text-xs mb-1">Username / ID *</label>
+            <input 
+              type="text" 
+              id="loginUsernameInput" 
+              required 
+              placeholder="e.g. admin or teacher" 
+              class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-[#800020] focus:outline-none"
+            >
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 text-xs mb-1">Password *</label>
+            <div class="relative">
+              <input 
+                type="password" 
+                id="loginPasswordInput" 
+                required 
+                placeholder="Enter password..." 
+                class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-[#800020] focus:outline-none pr-10"
+              >
+              <button type="button" onclick="togglePasswordVisibility('loginPasswordInput')" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-sm cursor-pointer">
+                <svg class="ui-icon" aria-hidden="true"><use href="#icon-eye"></use></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="pt-2 flex justify-end gap-2">
+            <button type="button" onclick="closeModals()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 font-bold text-xs uppercase cursor-pointer">Cancel</button>
+            <button type="submit" id="loginSubmitBtn" class="px-5 py-2 bg-[#800020] hover:bg-[#5c0d1b] text-white font-extrabold text-xs uppercase rounded-lg shadow transition-all cursor-pointer">
+              Sign In
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Student Marks Entry / Edit Modal (For Teachers & Admins) -->
+  <div id="marksModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl border-2 border-[#d4af37] overflow-hidden">
+      <!-- Modal Header -->
+      <div class="bg-gradient-to-r from-[#38050b] via-[#5c0d1b] to-[#38050b] text-white px-6 py-4 flex items-center justify-between border-b-2 border-[#d4af37]">
+        <div>
+          <h3 id="marksModalTitle" class="text-sm font-extrabold uppercase tracking-wide">Enter Student Examination Marks</h3>
+          <p class="text-[11px] text-[#fde047]">Official Academic Record Entry</p>
+        </div>
+        <button onclick="closeModals()" class="text-white hover:text-[#fde047] text-2xl leading-none cursor-pointer">&times;</button>
+      </div>
+
+      <form id="marksForm" class="flex-1 overflow-y-auto p-6 space-y-4 text-xs">
+        <input type="hidden" id="marksFormMarkId" value="">
+
+        <!-- Student Selector / Display -->
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+          <label class="block font-bold text-slate-700">Select Student *</label>
+          <select id="marksFormStudentSelect" required class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-[#800020] focus:outline-none bg-white">
+            <!-- Populated via JS -->
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Term *</label>
+            <select id="marksFormTerm" required class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-[#800020] focus:outline-none bg-white">
+              <option value="Term 1" selected>Term 1 (පළමු වාරය)</option>
+              <option value="Term 2">Term 2 (දෙවන වාරය)</option>
+              <option value="Term 3">Term 3 (තෙවන වාරය)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Year *</label>
+            <select id="marksFormYear" required class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-[#800020] focus:outline-none bg-white">
+              <option value="2026" selected>2026</option>
+              <option value="2025">2025</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Subject Name *</label>
+          <input 
+            type="text" 
+            id="marksFormSubject" 
+            required 
+            list="subjectSuggestionsList"
+            placeholder="e.g. Mathematics, Science, ICT, Accounting, Sinhala" 
+            class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-[#800020] focus:outline-none"
+          >
+          <datalist id="subjectSuggestionsList">
+            <option value="Accounting">
+            <option value="Business Studies">
+            <option value="Economics">
+            <option value="Information & Communication Technology">
+            <option value="Mathematics">
+            <option value="Science">
+            <option value="Sinhala Language & Literature">
+            <option value="English Language">
+            <option value="History">
+            <option value="Buddhism">
+            <option value="Political Science">
+            <option value="Buddhist Civilization">
+            <option value="Art">
+            <option value="Commerce">
+          </datalist>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 items-center">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Marks (0 - 100) *</label>
+            <input 
+              type="number" 
+              id="marksFormScore" 
+              required 
+              min="0" 
+              max="100" 
+              placeholder="e.g. 85" 
+              oninput="updateGradePreview(this.value)"
+              class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-[#800020] focus:outline-none font-mono font-bold"
+            >
+          </div>
+          <div>
+            <label class="block font-bold text-slate-500 mb-1">Assessed Grade</label>
+            <div id="marksFormGradeBadge" class="p-2 border border-slate-200 rounded-lg text-center font-extrabold text-sm bg-slate-100 text-slate-500">
+              -
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Teacher Remarks / Notes</label>
+          <textarea 
+            id="marksFormRemarks" 
+            rows="2" 
+            placeholder="e.g. Excellent problem solving skills; consistent progress." 
+            class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-[#800020] focus:outline-none"
+          ></textarea>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex justify-end gap-2">
+          <button type="button" onclick="closeModals()" class="px-4 py-2 border border-slate-300 rounded text-slate-600 font-bold text-xs uppercase cursor-pointer">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-[#800020] hover:bg-[#5c0d1b] text-white font-bold text-xs uppercase rounded-lg shadow cursor-pointer">
+            Save Marks
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2"></div>
+
+  <!-- ======================================================================
+       7. 4-COLUMN MAROON & GOLD FOOTER (From JMV-Web)
+       ====================================================================== -->
+  <footer class="dashboard-footer bg-[#38050b] text-rose-100 border-t-4 border-[#d4af37] mt-16">
+    <div id="footerDetails" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8">
+      
+      <!-- Col 1: JMV Emblem & Mission -->
+      <div class="lg:col-span-4 space-y-3">
+        <div class="flex items-center gap-3">
+          <img src="/static/img/JMV_Logo.png" alt="Jayakody MV Crest" class="w-12 h-12 object-contain">
+          <div>
+            <div class="font-extrabold text-white text-base uppercase">Jayakody Maha Vidyalaya</div>
+            <div class="text-xs text-[#fde047] font-semibold">බප / කැල / ජයකොඩි ම.වි - ගණේමුල්ල</div>
+          </div>
+        </div>
+        <p class="text-xs text-rose-100/80 leading-relaxed">
+          To mould a generation of disciplined, intellectually empowered, and virtuous citizens who proudly uphold Sri Lankan cultural heritage.
+        </p>
+        <div class="text-[11px] text-[#fde047] font-semibold pt-1">
+          Official Motto: <strong>“උගත මනා ශිල්පයමයි මතු රැකෙනා”</strong>
+        </div>
+      </div>
+
+      <!-- Col 2: Quick Links -->
+      <div class="lg:col-span-3">
+        <h4 class="text-xs font-extrabold uppercase tracking-wider text-[#fde047] mb-3 pb-1 border-b border-[#5c0d1b]">Quick Portals</h4>
+        <ul class="space-y-2 text-xs">
+          <li><button onclick="switchTab('lookup')" class="inline-flex items-center gap-2 hover:text-[#fde047] transition-colors"><svg class="ui-icon" aria-hidden="true"><use href="#icon-search"></use></svg> Instant ID Lookup</button></li>
+          <li><button onclick="switchTab('students')" class="inline-flex items-center gap-2 hover:text-[#fde047] transition-colors"><svg class="ui-icon" aria-hidden="true"><use href="#icon-graduation"></use></svg> Students Directory</button></li>
+          <li><button onclick="switchTab('staff')" class="inline-flex items-center gap-2 hover:text-[#fde047] transition-colors"><svg class="ui-icon" aria-hidden="true"><use href="#icon-users"></use></svg> Faculty &amp; Staff</button></li>
+        </ul>
+      </div>
+
+      <!-- Col 3: Contact Us -->
+      <div class="lg:col-span-3">
+        <h4 class="text-xs font-extrabold uppercase tracking-wider text-[#fde047] mb-3 pb-1 border-b border-[#5c0d1b]">Contact Us</h4>
+        <ul class="space-y-2 text-xs text-rose-100/90">
+          <li class="inline-flex items-center gap-2"><svg class="ui-icon" aria-hidden="true"><use href="#icon-pin"></use></svg> Kandaliyaddapaluwa, Welipillawa, Ganemulla</li>
+          <li class="inline-flex items-center gap-2"><svg class="ui-icon" aria-hidden="true"><use href="#icon-phone"></use></svg> <a href="tel:+94112974704" class="hover:text-[#fde047]">+94 11 2 974 704</a></li>
+          <li class="inline-flex items-center gap-2"><svg class="ui-icon" aria-hidden="true"><use href="#icon-mail"></use></svg> <a href="mailto:info@jayakodymv.edu.lk" class="hover:text-[#fde047]">info@jayakodymv.edu.lk</a></li>
+          <li class="inline-flex items-center gap-2"><svg class="ui-icon" aria-hidden="true"><use href="#icon-globe"></use></svg> <a href="https://www.jayakodymv.edu.lk" target="_blank" class="hover:text-[#fde047]">www.jayakodymv.edu.lk</a></li>
+        </ul>
+      </div>
+
+      <!-- Col 4: Zone & Census -->
+      <div class="lg:col-span-2">
+        <h4 class="text-xs font-extrabold uppercase tracking-wider text-[#fde047] mb-3 pb-1 border-b border-[#5c0d1b]">Zone &amp; Division</h4>
+        <p class="text-xs text-rose-100/80 leading-relaxed">
+          Kelaniya Educational Zone • Mahara Division • Census: 11084
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Bottom Bar -->
+    <div class="border-t border-[#5c0d1b] py-4">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-rose-200/75 gap-2">
+        <p>&copy; 2026 Jayakody Maha Vidyalaya. All Rights Reserved.</p>
+        <p class="text-[#fde047]">Developed by Encrypz Labs</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- App Script with cache-busting parameter -->
+  <script src="/static/js/app.js?v=2.3"></script>
+</body>
+</html>
