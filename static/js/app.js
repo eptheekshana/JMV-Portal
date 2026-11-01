@@ -1262,6 +1262,8 @@ function openAddStaffModal() {
   document.getElementById('staffIdInput').readOnly = false;
   const nextNum = String(1 + (AppState.staffList.length || 0)).padStart(3, '0');
   document.getElementById('staffIdInput').value = `JMV-STF-${nextNum}`;
+  if (document.getElementById('staffGenderInput')) document.getElementById('staffGenderInput').value = 'Male';
+  if (document.getElementById('staffStatusInput')) document.getElementById('staffStatusInput').value = 'Active';
   modal.classList.remove('hidden');
 }
 
@@ -1343,23 +1345,27 @@ function initModals() {
       const mode = document.getElementById('staffFormMode').value;
       const staffId = document.getElementById('staffIdInput').value.trim();
 
+      const initials = document.getElementById('staffInitialsInput').value.trim();
+      const customPhoto = document.getElementById('staffPhotoInput') ? document.getElementById('staffPhotoInput').value.trim() : '';
+
       const payload = {
         id: staffId,
         epf_no: document.getElementById('staffEpfInput').value.trim() || null,
-        name_with_initials: document.getElementById('staffInitialsInput').value.trim(),
+        name_with_initials: initials,
         full_name: document.getElementById('staffFullNameInput').value.trim(),
-        gender: 'Male',
+        gender: document.getElementById('staffGenderInput') ? document.getElementById('staffGenderInput').value : 'Male',
+        nic: document.getElementById('staffNicInput') ? document.getElementById('staffNicInput').value.trim() : '',
         role: document.getElementById('staffRoleInput').value.trim(),
         department: document.getElementById('staffDeptInput').value,
+        appointed_date: document.getElementById('staffAppointedDateInput') ? (document.getElementById('staffAppointedDateInput').value || null) : null,
+        status: document.getElementById('staffStatusInput') ? document.getElementById('staffStatusInput').value : 'Active',
         subjects_taught: document.getElementById('staffSubjectsInput').value.trim(),
         assigned_classes: document.getElementById('staffClassesInput').value.trim(),
         qualifications: document.getElementById('staffQualInput').value.trim(),
         contact_no: document.getElementById('staffContactInput').value.trim(),
         email: document.getElementById('staffEmailInput').value.trim(),
-        nic: '198000000000',
-        status: 'Active',
-        notes: '',
-        photo_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(document.getElementById('staffInitialsInput').value.trim())}&background=5c0d1b&color=fff`
+        notes: document.getElementById('staffNotesInput') ? document.getElementById('staffNotesInput').value.trim() : '',
+        photo_url: customPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(initials || staffId)}&background=5c0d1b&color=fff`
       };
 
       try {
@@ -1546,15 +1552,21 @@ async function openEditModal(id, type) {
     document.getElementById('staffIdInput').value = st.id;
     document.getElementById('staffIdInput').readOnly = true;
     document.getElementById('staffEpfInput').value = st.epf_no || '';
-    document.getElementById('staffInitialsInput').value = st.name_with_initials;
-    document.getElementById('staffFullNameInput').value = st.full_name;
-    document.getElementById('staffRoleInput').value = st.role;
-    document.getElementById('staffDeptInput').value = st.department;
+    document.getElementById('staffInitialsInput').value = st.name_with_initials || '';
+    document.getElementById('staffFullNameInput').value = st.full_name || '';
+    if (document.getElementById('staffGenderInput')) document.getElementById('staffGenderInput').value = st.gender || 'Male';
+    if (document.getElementById('staffNicInput')) document.getElementById('staffNicInput').value = st.nic || '';
+    document.getElementById('staffRoleInput').value = st.role || '';
+    document.getElementById('staffDeptInput').value = st.department || 'Commerce & Management';
+    if (document.getElementById('staffAppointedDateInput')) document.getElementById('staffAppointedDateInput').value = st.appointed_date || '';
+    if (document.getElementById('staffStatusInput')) document.getElementById('staffStatusInput').value = st.status || 'Active';
     document.getElementById('staffSubjectsInput').value = st.subjects_taught || '';
     document.getElementById('staffClassesInput').value = st.assigned_classes || '';
     document.getElementById('staffQualInput').value = st.qualifications || '';
-    document.getElementById('staffContactInput').value = st.contact_no;
-    document.getElementById('staffEmailInput').value = st.email;
+    document.getElementById('staffContactInput').value = st.contact_no || '';
+    document.getElementById('staffEmailInput').value = st.email || '';
+    if (document.getElementById('staffPhotoInput')) document.getElementById('staffPhotoInput').value = st.photo_url || '';
+    if (document.getElementById('staffNotesInput')) document.getElementById('staffNotesInput').value = st.notes || '';
 
     document.getElementById('staffModal').classList.remove('hidden');
   }

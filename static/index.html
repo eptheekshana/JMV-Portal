@@ -1011,6 +1011,7 @@
       <form id="staffForm" class="flex-1 overflow-y-auto p-6 space-y-4">
         <input type="hidden" id="staffFormMode" value="create">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <!-- Official IDs -->
           <div>
             <label class="block font-bold text-slate-700 mb-1">Staff Member ID *</label>
             <input type="text" id="staffIdInput" required placeholder="e.g. JMV-STF-009" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
@@ -1019,29 +1020,74 @@
             <label class="block font-bold text-slate-700 mb-1">EPF / Service No (Optional)</label>
             <input type="text" id="staffEpfInput" placeholder="e.g. EPF-95123 (Optional)" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
           </div>
-          <div class="sm:col-span-2">
+
+          <!-- Name with Initials & NIC -->
+          <div>
             <label class="block font-bold text-slate-700 mb-1">Name with Initials *</label>
             <input type="text" id="staffInitialsInput" required placeholder="e.g. C.K. Jayasinghe" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
           </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">National Identity Card (NIC)</label>
+            <input type="text" id="staffNicInput" placeholder="e.g. 198012345678 or 801234567V" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+
+          <!-- Full Name -->
           <div class="sm:col-span-2">
             <label class="block font-bold text-slate-700 mb-1">Full Name *</label>
             <input type="text" id="staffFullNameInput" required placeholder="e.g. Chandrika Kanthi Jayasinghe" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
           </div>
+
+          <!-- Gender & Status -->
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Role / Designation *</label>
-            <input type="text" id="staffRoleInput" required placeholder="e.g. Sectional Head, Senior Teacher" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Department</label>
-            <select id="staffDeptInput" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-              <option value="Executive & Academic Administration">Executive &amp; Academic Administration</option>
-              <option value="Executive & Sectional Administration">Executive &amp; Sectional Administration</option>
-              <option value="Commerce & Management">Commerce &amp; Management</option>
-              <option value="Languages & Humanities">Languages &amp; Humanities</option>
-              <option value="Information Technology">Information Technology</option>
-              <option value="Chief Executive & Head of Institution">Executive &amp; Principal Office</option>
+            <label class="block font-bold text-slate-700 mb-1">Gender *</label>
+            <select id="staffGenderInput" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
             </select>
           </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Employment Status</label>
+            <select id="staffStatusInput" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+              <option value="Active">Active</option>
+              <option value="On Leave">On Leave</option>
+              <option value="Transferred">Transferred</option>
+              <option value="Retired">Retired</option>
+            </select>
+          </div>
+
+          <!-- Role & Department -->
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Role / Designation *</label>
+            <input type="text" id="staffRoleInput" required placeholder="e.g. Principal, Sectional Head, Senior Teacher" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Department / Division</label>
+            <select id="staffDeptInput" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+              <option value="Executive & Academic Administration">Executive &amp; Academic Administration</option>
+              <option value="Commerce & Management">Commerce &amp; Management</option>
+              <option value="Science & Mathematics">Science &amp; Mathematics</option>
+              <option value="Languages & Humanities">Languages &amp; Humanities</option>
+              <option value="Information Technology">Information Technology</option>
+              <option value="Aesthetic & Cultural Studies">Aesthetic &amp; Cultural Studies</option>
+              <option value="Primary Section">Primary Section (Grades 1–5)</option>
+              <option value="Physical Education & Sports">Physical Education &amp; Sports</option>
+              <option value="Non-Academic & Operational Staff">Non-Academic &amp; Operational Staff</option>
+              <option value="Other">Other / Specialized Duties</option>
+            </select>
+          </div>
+
+          <!-- Date of Appointment & Qualifications -->
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Date of Appointment</label>
+            <input type="date" id="staffAppointedDateInput" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Qualifications</label>
+            <input type="text" id="staffQualInput" placeholder="e.g. B.Com (Hons), PGDE (NIE)" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+
+          <!-- Subjects Taught & Assigned Classes -->
           <div>
             <label class="block font-bold text-slate-700 mb-1">Subjects Taught</label>
             <input type="text" id="staffSubjectsInput" placeholder="e.g. Business Studies, Accounting" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
@@ -1050,6 +1096,8 @@
             <label class="block font-bold text-slate-700 mb-1">Assigned Classes</label>
             <input type="text" id="staffClassesInput" placeholder="e.g. 12-Com, 13-Com" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
           </div>
+
+          <!-- Contact Number & Email -->
           <div>
             <label class="block font-bold text-slate-700 mb-1">Phone Number</label>
             <input type="text" id="staffContactInput" placeholder="e.g. 071 234 5678" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
@@ -1058,9 +1106,15 @@
             <label class="block font-bold text-slate-700 mb-1">Email Address</label>
             <input type="email" id="staffEmailInput" placeholder="e.g. teacher@jayakodymv.edu.lk" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
           </div>
+
+          <!-- Photo URL & Administrative Notes -->
           <div class="sm:col-span-2">
-            <label class="block font-bold text-slate-700 mb-1">Qualifications</label>
-            <input type="text" id="staffQualInput" placeholder="e.g. B.Com (Hons), PGDE (NIE)" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+            <label class="block font-bold text-slate-700 mb-1">Photo URL (Optional)</label>
+            <input type="url" id="staffPhotoInput" placeholder="https://... (Leave blank for official avatar)" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block font-bold text-slate-700 mb-1">Administrative Notes / Remarks</label>
+            <textarea id="staffNotesInput" rows="2" placeholder="Special duties, extracurricular master-in-charge, remarks..." class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none"></textarea>
           </div>
         </div>
         <div class="pt-4 border-t border-slate-100 flex justify-end gap-2">
@@ -1306,6 +1360,6 @@
   </footer>
 
   <!-- App Script with cache-busting parameter -->
-  <script src="/static/js/app.js?v=2.5"></script>
+  <script src="/static/js/app.js?v=2.6"></script>
 </body>
 </html>
