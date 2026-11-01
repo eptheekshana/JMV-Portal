@@ -11,33 +11,13 @@ MARK_COLUMNS = ("id", "student_id", "subject", "term", "year", "marks", "grade",
 SAMPLE_USERS = [
     (
         "USR-ADM-001",
+        "eptheekshana",
+        # PBKDF2 hash of ThEEkShana@0618
+        "c712c754aadf926e02cbbdaa7c31ebe0$a0580c6a5bb5b96e475a82b3434434c48824a62a0a46140dd5995ee755de0c3e",
         "admin",
-        # PBKDF2 salt: a1b2c3d4e5f60718293a4b5c6d7e8f90, password: admin123
-        "a1b2c3d4e5f60718293a4b5c6d7e8f90$44138abc921d1c95bb573a09516cd4c82e8271fc3d9604b7c5f7f1bf26b6292d",
-        "admin",
-        "Mr. P. Senevirathne Banda (Principal)",
-        "principal@jayakodymv.edu.lk",
-        "JMV-STF-001"
-    ),
-    (
-        "USR-TCH-001",
-        "teacher",
-        # PBKDF2 salt: f0e1d2c3b4a5968778695a4b3c2d1e0f, password: teacher123
-        "f0e1d2c3b4a5968778695a4b3c2d1e0f$9aa258c542f1975ed332f2d280e2a544bb6f9837fe321de6118c696133683ab2",
-        "teacher",
-        "Mr. P.N. Gunawardena (Head of ICT)",
-        "ict@jayakodymv.edu.lk",
-        "JMV-STF-007"
-    ),
-    (
-        "USR-TCH-002",
-        "teacher_commerce",
-        # PBKDF2 salt: f0e1d2c3b4a5968778695a4b3c2d1e0f, password: teacher123
-        "f0e1d2c3b4a5968778695a4b3c2d1e0f$9aa258c542f1975ed332f2d280e2a544bb6f9837fe321de6118c696133683ab2",
-        "teacher",
-        "Mrs. D.M.S. Dissanayake (Head of Commerce)",
-        "commerce@jayakodymv.edu.lk",
-        "JMV-STF-006"
+        "E P Theekshana (Administrator)",
+        "eptheekshana@gmail.com",
+        ""
     )
 ]
 

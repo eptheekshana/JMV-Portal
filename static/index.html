@@ -1083,22 +1083,7 @@
         <button onclick="closeModals()" class="text-white hover:text-[#fde047] text-2xl leading-none cursor-pointer">&times;</button>
       </div>
 
-      <!-- Quick Demo Credentials Box -->
       <div class="p-6 space-y-4">
-        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
-          <span class="block text-[10px] font-extrabold uppercase text-slate-500 tracking-wider">Quick Select Demo Account:</span>
-          <div class="grid grid-cols-2 gap-2">
-            <button type="button" onclick="fillLoginForm('admin', 'admin123')" class="p-2 bg-white hover:bg-amber-50 border border-amber-300 rounded-lg text-left transition-all cursor-pointer">
-              <span class="block font-bold text-slate-900 text-[11px] inline-flex items-center gap-1"><svg class="ui-icon" aria-hidden="true"><use href="#icon-shield"></use></svg> Administrator</span>
-              <span class="block text-[10px] text-slate-500">Full Access (All data)</span>
-            </button>
-            <button type="button" onclick="fillLoginForm('teacher', 'teacher123')" class="p-2 bg-white hover:bg-blue-50 border border-blue-300 rounded-lg text-left transition-all cursor-pointer">
-              <span class="block font-bold text-slate-900 text-[11px] inline-flex items-center gap-1"><svg class="ui-icon" aria-hidden="true"><use href="#icon-graduation"></use></svg> Teacher</span>
-              <span class="block text-[10px] text-slate-500">Students &amp; Marks only</span>
-            </button>
-          </div>
-        </div>
-
         <form id="loginForm" class="space-y-3.5">
           <div id="loginErrorMsg" class="hidden p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold"></div>
 
@@ -1108,7 +1093,7 @@
               type="text" 
               id="loginUsernameInput" 
               required 
-              placeholder="e.g. admin or teacher" 
+              placeholder="Enter username..." 
               class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-[#800020] focus:outline-none"
             >
           </div>
