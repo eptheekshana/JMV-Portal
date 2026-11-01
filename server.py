@@ -159,38 +159,12 @@ async def account_required_middleware(request, handler):
                     "error": "Authentication required. Please log in.",
                     "code": "AUTH_REQUIRED"
                 }, status=401)
-            if request.path.startswith("/api/users"):
-                if user.get("role") != "developer":
-                    return json_response({
-                        "error": "Only developers can access account management.",
-                        "code": "DEVELOPER_ACCESS_REQUIRED"
-                    }, status=403)
-            elif user.get("role") not in {"admin", "teacher"}:
+            if user.get("role") not in {"admin", "teacher"}:
                 return json_response({
                     "error": "Access denied. Only teachers and administrators can view portal data.",
                     "code": "DATA_ACCESS_RESTRICTED"
                 }, status=403)
     return await handler(request)
-
-async def handle_get_users(request):
-    user, err = require_role(request, ["developer"])
-    if err:
-        return err
-    users = db.get_all_users()
-    return json_response(users)
-
-async def handle_create_user(request):
-    user, err = require_role(request, ["developer"])
-    if err:
-        return err
-    try:
-        data = await request.json()
-        if not data.get("username") or not data.get("password") or data.get("role") not in {"admin", "teacher"}:
-            return json_response({"error": "Username, password, and role (admin or teacher) are required"}, status=400)
-        created = db.create_user(data)
-        return json_response(created, status=201)
-    except Exception as e:
-        return json_response({"error": str(e)}, status=500)
 
 # --- Student Marks Endpoints (Role: Teachers & Admins) ---
 async def handle_get_all_marks(request):
@@ -455,8 +429,6 @@ def init_app():
     app.router.add_post("/api/auth/login", handle_login)
     app.router.add_post("/api/auth/logout", handle_logout)
     app.router.add_get("/api/auth/me", handle_me)
-    app.router.add_get("/api/users", handle_get_users)
-    app.router.add_post("/api/users", handle_create_user)
 
     # Student Marks Routes (Teachers & Admins)
     app.router.add_get("/api/marks", handle_get_all_marks)

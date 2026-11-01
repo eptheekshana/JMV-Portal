@@ -104,20 +104,6 @@ portal fields missing from the existing `students` table, copies
 and uniqueness indexes. Existing records are preserved; take a database backup
 before the first production deployment.
 
-### Create the first developer account
-
-The Developer Console is available only to users with the `developer` role.
-Create the first developer account from a machine that has the production
-database environment variables configured:
-
-```bash
-python3 create_developer.py
-```
-
-Sign in with that account, open **Developer Console**, and create the required
-administrator and teacher accounts. Developers do not receive school-data
-access.
-
 ---
 
 ## 🧪 Sample IDs for Quick Testing
