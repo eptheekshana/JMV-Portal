@@ -52,12 +52,19 @@ ACTIVE_ENGINE = "unknown"  # "mariadb" or "sqlite"
 ENGINE_STATUS_MSG = ""
 
 def _get_mariadb_config():
+    raw_pw = os.environ.get("DB_PASSWORD", "_b3]ye@2t*pgBwry")
+    if raw_pw:
+        # Sanitize Unicode asterisks (e.g. \u2217, \ufe61, \uff0a) introduced by copy-pasting from rich text
+        raw_pw = (raw_pw.replace('\u2217', '*')
+                        .replace('\ufe61', '*')
+                        .replace('\uff0a', '*')
+                        .strip())
     return {
-        "host": os.environ.get("DB_HOST", "sg-mariadb01.offloadsql.com"),
+        "host": os.environ.get("DB_HOST", "sg-mariadb01.offloadsql.com").strip(),
         "port": int(os.environ.get("DB_PORT", "3306")),
-        "user": os.environ.get("DB_USER", "sql23659_providerid10315"),
-        "password": os.environ.get("DB_PASSWORD", "4KDSQ[0PHLnjc5E6"),
-        "database": os.environ.get("DB_NAME", "sql23659_providerid10315"),
+        "user": os.environ.get("DB_USER", "sql23659_providerid10315").strip(),
+        "password": raw_pw,
+        "database": os.environ.get("DB_NAME", "sql23659_providerid10315").strip(),
         "charset": "utf8mb4",
         "cursorclass": pymysql.cursors.DictCursor if pymysql else None,
         "connect_timeout": 5,
