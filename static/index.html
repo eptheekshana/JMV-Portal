@@ -378,7 +378,7 @@
             Find a record
           </h2>
           <p class="text-sm text-slate-600 leading-relaxed" data-en="Search by student or staff ID, admission number, EPF number, or name."
-             data-si="සිසු හැඳුනුම්පත් අංකය (උදා: JMV-STU-1001), ඇතුළත් වීමේ අංකය, හෝ ගුරු හැඳුනුම්පත් අංකය (උදා: JMV-STF-001) ඇතුළත් කර සම්පූර්ණ තොරතුරු හා ඩිජිටල් හැඳුනුම්පත ලබාගන්න.">
+             data-si="සිසු හැඳුනුම්පත් අංකය (උදා: JMV-STU-1001), ඇතුළත් වීමේ අංකය, හෝ ගුරු හැඳුනුම්පත් අංකය (උදා: JMV-STF-001) ඇතුළත් කර සම්පූර්ණ තොරතුරු ලබාගන්න.">
             Search by student or staff ID, admission number, EPF number, or name.
           </p>
         </div>
@@ -423,23 +423,13 @@
             </span>
           </div>
 
-          <!-- Mode Toggle: ID Card vs Detailed Dossier -->
-          <div class="flex bg-slate-200 rounded-full p-1">
-            <button id="viewModeBadgeBtn" onclick="toggleViewMode('badge')" class="px-4 py-1.5 text-xs font-extrabold uppercase rounded-full bg-white text-[#800020] shadow-sm transition-all flex items-center gap-1.5">
-              <svg class="ui-icon" aria-hidden="true"><use href="#icon-id"></use></svg> <span data-en="Digital ID Card" data-si="ඩිජිටල් හැඳුනුම්පත">Digital ID Card</span>
-            </button>
-            <button id="viewModeDossierBtn" onclick="toggleViewMode('dossier')" class="px-4 py-1.5 text-xs font-extrabold uppercase rounded-full text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1.5">
-              <svg class="ui-icon" aria-hidden="true"><use href="#icon-clipboard"></use></svg> <span data-en="Comprehensive Dossier" data-si="සම්පූර්ණ වාර්තාව">Comprehensive Dossier</span>
-            </button>
-          </div>
-
           <!-- Action Buttons -->
           <div class="flex items-center space-x-2">
             <button id="copyIdBtn" class="px-3.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded shadow-sm">
               <svg class="ui-icon" aria-hidden="true"><use href="#icon-clipboard"></use></svg> <span data-en="Copy Admission No" data-si="ඇතුළත් අංකය පිටපත් කරන්න">Copy Admission No</span>
             </button>
             <button id="printResultBtn" class="px-4 py-1.5 bg-[#d4af37] hover:bg-[#fde047] text-[#38050b] text-xs font-extrabold uppercase rounded shadow transition-all">
-              <svg class="ui-icon" aria-hidden="true"><use href="#icon-printer"></use></svg> <span data-en="Print ID Card" data-si="මුද්‍රණය">Print ID Card</span>
+              <svg class="ui-icon" aria-hidden="true"><use href="#icon-printer"></use></svg> <span data-en="Print Profile" data-si="වාර්තාව මුද්‍රණය">Print Profile</span>
             </button>
             <button id="editResultBtn" class="px-4 py-1.5 bg-[#800020] hover:bg-[#5c0d1b] text-white text-xs font-bold uppercase rounded shadow transition-all">
               <svg class="ui-icon" aria-hidden="true"><use href="#icon-edit"></use></svg> <span data-en="Edit Record" data-si="සංස්කරණය">Edit</span>
@@ -476,12 +466,7 @@
             </button>
           </div>
 
-          <!-- State 3: Badge View (Digital ID Card) -->
-          <div id="idCardBadgeView" class="flex justify-center py-6">
-            <!-- Populated via JS -->
-          </div>
-
-          <!-- State 4: Detailed Dossier View -->
+          <!-- Comprehensive Profile Dossier View -->
           <div id="idCardDossierView" class="hidden">
             <!-- Populated via JS -->
           </div>
@@ -1360,6 +1345,6 @@
   </footer>
 
   <!-- App Script with cache-busting parameter -->
-  <script src="/static/js/app.js?v=2.6"></script>
+  <script src="/static/js/app.js?v=2.7"></script>
 </body>
 </html>
