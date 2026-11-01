@@ -52,7 +52,7 @@ def protect_data_routes():
         return None
     if DB_ERROR and request.path != "/api/health":
         return jsonify(error=DB_ERROR, code="DATABASE_UNAVAILABLE"), 503
-    public = {"/api/health", "/api/auth/login", "/api/auth/logout", "/api/auth/me"}
+    public = {"/api/health", "/api/auth/login", "/api/auth/logout", "/api/auth/me", "/api/stats"}
     if request.path in public:
         return None
     user = current_user()
@@ -110,9 +110,22 @@ def me():
 
 
 @app.get("/api/stats")
-@requires_roles("admin", "teacher")
-def stats(_user):
-    return jsonify(db.get_system_stats())
+def stats():
+    try:
+        return jsonify(db.get_system_stats())
+    except Exception as err:
+        return jsonify(
+            total_students=0,
+            total_staff=0,
+            non_academic_staff=0,
+            school_total_students="1,000+",
+            school_total_staff="50+",
+            grades=[],
+            departments=[],
+            houses=[],
+            engine=getattr(db, "ACTIVE_ENGINE", "mariadb"),
+            error=str(err)
+        )
 
 
 @app.get("/api/lookup")

@@ -532,7 +532,7 @@ def execute_query(sql, params=(), fetchone=False, fetchall=False, commit=False):
 def check_connection():
     ok, msg = test_mariadb()
     host = os.environ.get("DB_HOST", "")
-    db_name = os.environ.get("DB_NAME", "")
+    db_name = os.environ.get("DB_NAME", "defaultdb")
     if ok:
         return True, f"Connected to MariaDB: {host} (Database: {db_name})"
     else:
@@ -543,7 +543,7 @@ def get_engine_status():
         "engine": ACTIVE_ENGINE,
         "message": ENGINE_STATUS_MSG,
         "mariadb_host": os.environ.get("DB_HOST", ""),
-        "mariadb_db": os.environ.get("DB_NAME", "")
+        "mariadb_db": os.environ.get("DB_NAME", "defaultdb")
     }
 
 def get_all_students(search=None, grade=None, house=None):
@@ -657,40 +657,117 @@ def quick_suggestions(prefix, limit=6):
     return results[:limit]
 
 def get_system_stats():
-    stus = execute_query("SELECT COUNT(*) as n FROM students", fetchone=True)
-    stfs = execute_query("SELECT COUNT(*) as n FROM staff", fetchone=True)
-    non_academic = execute_query(
-        """
-        SELECT COUNT(*) as n FROM staff
-        WHERE LOWER(role) LIKE '%clerk%'
-           OR LOWER(role) LIKE '%attendant%'
-           OR LOWER(role) LIKE '%driver%'
-           OR LOWER(role) LIKE '%security%'
-           OR LOWER(role) LIKE '%librarian%'
-           OR LOWER(role) LIKE '%laboratory assistant%'
-           OR LOWER(role) LIKE '%lab assistant%'
-           OR LOWER(role) LIKE '%non-academic%'
-        """,
-        fetchone=True
-    )
-    n_students = stus["n"] if stus else 0
-    n_staff = stfs["n"] if stfs else 0
-    n_non_academic = non_academic["n"] if non_academic else 0
-    grades = execute_query("SELECT grade, COUNT(*) as count FROM students GROUP BY grade ORDER BY grade", fetchall=True) or []
-    depts = execute_query("SELECT department, COUNT(*) as count FROM staff GROUP BY department ORDER BY department", fetchall=True) or []
-    houses = execute_query("SELECT house, COUNT(*) as count FROM students GROUP BY house ORDER BY house", fetchall=True) or []
+    engine = ACTIVE_ENGINE
+    if engine == "unknown":
+        engine = determine_engine()
 
-    return {
-        "total_students": n_students,
-        "total_staff": n_staff,
-        "non_academic_staff": n_non_academic,
-        "school_total_students": "1,000+",
-        "school_total_staff": "50+",
-        "grades": grades,
-        "departments": depts,
-        "houses": houses,
-        "engine": ACTIVE_ENGINE
-    }
+    if engine == "mariadb":
+        try:
+            cfg = _get_mariadb_config()
+            conn = pymysql.connect(**cfg)
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT COUNT(*) as n FROM students")
+                    stus = cur.fetchone()
+                    cur.execute("SELECT COUNT(*) as n FROM staff")
+                    stfs = cur.fetchone()
+                    cur.execute("""
+                        SELECT COUNT(*) as n FROM staff
+                        WHERE LOWER(role) LIKE '%clerk%'
+                           OR LOWER(role) LIKE '%attendant%'
+                           OR LOWER(role) LIKE '%driver%'
+                           OR LOWER(role) LIKE '%security%'
+                           OR LOWER(role) LIKE '%librarian%'
+                           OR LOWER(role) LIKE '%laboratory assistant%'
+                           OR LOWER(role) LIKE '%lab assistant%'
+                           OR LOWER(role) LIKE '%non-academic%'
+                    """)
+                    non_academic = cur.fetchone()
+                    cur.execute("SELECT grade, COUNT(*) as count FROM students GROUP BY grade ORDER BY grade")
+                    grades = cur.fetchall() or []
+                    cur.execute("SELECT department, COUNT(*) as count FROM staff GROUP BY department ORDER BY department")
+                    depts = cur.fetchall() or []
+                    cur.execute("SELECT house, COUNT(*) as count FROM students GROUP BY house ORDER BY house")
+                    houses = cur.fetchall() or []
+            finally:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+
+            def _val(row, key):
+                if not row:
+                    return 0
+                if isinstance(row, dict):
+                    return row.get(key, 0)
+                return row[0] if len(row) > 0 else 0
+
+            return {
+                "total_students": _val(stus, "n"),
+                "total_staff": _val(stfs, "n"),
+                "non_academic_staff": _val(non_academic, "n"),
+                "school_total_students": "1,000+",
+                "school_total_staff": "50+",
+                "grades": [_clean_dict(g) if isinstance(g, dict) else {"grade": g[0], "count": g[1]} for g in grades],
+                "departments": [_clean_dict(d) if isinstance(d, dict) else {"department": d[0], "count": d[1]} for d in depts],
+                "houses": [_clean_dict(h) if isinstance(h, dict) else {"house": h[0], "count": h[1]} for h in houses],
+                "engine": "mariadb"
+            }
+        except Exception:
+            pass
+
+    # SQLite fallback execution
+    try:
+        conn = sqlite3.connect(SQLITE_PATH)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) as n FROM students")
+        stus = cur.fetchone()
+        cur.execute("SELECT COUNT(*) as n FROM staff")
+        stfs = cur.fetchone()
+        cur.execute("""
+            SELECT COUNT(*) as n FROM staff
+            WHERE LOWER(role) LIKE '%clerk%'
+               OR LOWER(role) LIKE '%attendant%'
+               OR LOWER(role) LIKE '%driver%'
+               OR LOWER(role) LIKE '%security%'
+               OR LOWER(role) LIKE '%librarian%'
+               OR LOWER(role) LIKE '%laboratory assistant%'
+               OR LOWER(role) LIKE '%lab assistant%'
+               OR LOWER(role) LIKE '%non-academic%'
+        """)
+        non_academic = cur.fetchone()
+        cur.execute("SELECT grade, COUNT(*) as count FROM students GROUP BY grade ORDER BY grade")
+        grades = [dict(r) for r in cur.fetchall()]
+        cur.execute("SELECT department, COUNT(*) as count FROM staff GROUP BY department ORDER BY department")
+        depts = [dict(r) for r in cur.fetchall()]
+        cur.execute("SELECT house, COUNT(*) as count FROM students GROUP BY house ORDER BY house")
+        houses = [dict(r) for r in cur.fetchall()]
+        conn.close()
+
+        return {
+            "total_students": stus["n"] if stus else 0,
+            "total_staff": stfs["n"] if stfs else 0,
+            "non_academic_staff": non_academic["n"] if non_academic else 0,
+            "school_total_students": "1,000+",
+            "school_total_staff": "50+",
+            "grades": grades,
+            "departments": depts,
+            "houses": houses,
+            "engine": "sqlite"
+        }
+    except Exception:
+        return {
+            "total_students": 0,
+            "total_staff": 0,
+            "non_academic_staff": 0,
+            "school_total_students": "1,000+",
+            "school_total_staff": "50+",
+            "grades": [],
+            "departments": [],
+            "houses": [],
+            "engine": ACTIVE_ENGINE
+        }
 
 # ---------------------------------------------------------------------------
 # Create / Update / Delete
