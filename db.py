@@ -52,24 +52,25 @@ ACTIVE_ENGINE = "unknown"  # "mariadb" or "sqlite"
 ENGINE_STATUS_MSG = ""
 
 def _get_mariadb_config():
-    raw_pw = os.environ.get("DB_PASSWORD", "_b3]ye@2t*pgBwry")
+    raw_pw = os.environ.get("DB_PASSWORD", "AVNS_oUmLptLL3OmEKN2U4Si")
     if raw_pw:
         # Sanitize Unicode asterisks (e.g. \u2217, \ufe61, \uff0a) introduced by copy-pasting from rich text
         raw_pw = (raw_pw.replace('\u2217', '*')
                         .replace('\ufe61', '*')
                         .replace('\uff0a', '*')
                         .strip())
-    return {
-        "host": os.environ.get("DB_HOST", "sg-mariadb01.offloadsql.com").strip(),
-        "port": int(os.environ.get("DB_PORT", "3306")),
-        "user": os.environ.get("DB_USER", "sql23659_providerid10315").strip(),
+    cfg = {
+        "host": os.environ.get("DB_HOST", "jmvportal-sa-final-project.e.aivencloud.com").strip(),
+        "port": int(os.environ.get("DB_PORT", "27928")),
+        "user": os.environ.get("DB_USER", "avnadmin").strip(),
         "password": raw_pw,
-        "database": os.environ.get("DB_NAME", "sql23659_providerid10315").strip(),
+        "database": os.environ.get("DB_NAME", "defaultdb").strip(),
         "charset": "utf8mb4",
         "cursorclass": pymysql.cursors.DictCursor if pymysql else None,
-        "connect_timeout": 5,
+        "connect_timeout": 10,
         "autocommit": False,
     }
+    return cfg
 
 def test_mariadb():
     if not pymysql:
@@ -245,7 +246,11 @@ def init_mariadb_schema(conn):
 def _migrate_existing_mariadb_schema(cur):
     """Add the portal's compatibility fields to an existing MariaDB schema."""
     cur.execute("SHOW COLUMNS FROM students")
-    student_columns = {row["Field"] for row in cur.fetchall()}
+    raw_student_cols = cur.fetchall()
+    student_columns = {
+        (row["Field"] if isinstance(row, dict) else row[0])
+        for row in raw_student_cols
+    }
     additions = {
         "id": "VARCHAR(32) NULL",
         "name_with_initials": "VARCHAR(150) NOT NULL DEFAULT ''",
@@ -274,30 +279,50 @@ def _migrate_existing_mariadb_schema(cur):
         SET name_with_initials = LEFT(full_name, 150)
         WHERE name_with_initials IS NULL OR name_with_initials = ''
     """)
-    cur.execute("""
-        UPDATE students
-        SET grade = COALESCE(NULLIF(academic_level, ''), NULLIF(`class`, ''), '')
-        WHERE grade IS NULL OR grade = ''
-    """)
-    cur.execute("""
-        UPDATE students
-        SET guardian_contact = COALESCE(guardian_mobile, '')
-        WHERE guardian_contact IS NULL OR guardian_contact = ''
-    """)
+    if "academic_level" in student_columns or "class" in student_columns:
+        grade_sources = []
+        if "academic_level" in student_columns:
+            grade_sources.append("NULLIF(academic_level, '')")
+        if "class" in student_columns:
+            grade_sources.append("NULLIF(`class`, '')")
+        grade_expr = f"COALESCE({', '.join(grade_sources)}, '')"
+        cur.execute(f"""
+            UPDATE students
+            SET grade = {grade_expr}
+            WHERE grade IS NULL OR grade = ''
+        """)
+    if "guardian_mobile" in student_columns:
+        cur.execute("""
+            UPDATE students
+            SET guardian_contact = COALESCE(guardian_mobile, '')
+            WHERE guardian_contact IS NULL OR guardian_contact = ''
+        """)
     cur.execute("SHOW INDEX FROM students")
-    student_indexes = {row["Key_name"] for row in cur.fetchall()}
+    raw_student_idx = cur.fetchall()
+    student_indexes = {
+        (row["Key_name"] if isinstance(row, dict) else row[2])
+        for row in raw_student_idx
+    }
     if "uq_students_id" not in student_indexes:
         cur.execute("ALTER TABLE students ADD UNIQUE KEY uq_students_id (id)")
 
     cur.execute("SHOW COLUMNS FROM school_timetable")
-    timetable_columns = {row["Field"] for row in cur.fetchall()}
+    raw_timetable_cols = cur.fetchall()
+    timetable_columns = {
+        (row["Field"] if isinstance(row, dict) else row[0])
+        for row in raw_timetable_cols
+    }
     if "updated_at" not in timetable_columns:
         cur.execute(
             "ALTER TABLE school_timetable ADD COLUMN updated_at TIMESTAMP "
             "DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
         )
     cur.execute("SHOW INDEX FROM school_timetable")
-    timetable_indexes = {row["Key_name"] for row in cur.fetchall()}
+    raw_timetable_idx = cur.fetchall()
+    timetable_indexes = {
+        (row["Key_name"] if isinstance(row, dict) else row[2])
+        for row in raw_timetable_idx
+    }
     if "uq_class_slot" not in timetable_indexes:
         cur.execute(
             "ALTER TABLE school_timetable ADD UNIQUE KEY "
