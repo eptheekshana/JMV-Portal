@@ -244,6 +244,7 @@ function switchTab(tabId) {
   if (tabId === 'students') loadStudents();
   if (tabId === 'marks') loadAllMarksLedger();
   if (tabId === 'timetable') loadTimetable();
+  if (tabId === 'overview') loadStats();
   if (tabId === 'staff') {
     if (AppState.currentUser && AppState.currentUser.role === 'teacher') {
       const banner = document.getElementById('staffTeacherRestrictedBanner');
@@ -369,9 +370,6 @@ async function loadTimetable() {
       document.getElementById('timetableEntryId').value = '';
       document.getElementById('timetableCancelBtn').classList.add('hidden');
     }
-  }
-  if (tabId === 'overview') loadStats();
-}
 
 /* --------------------------------------------------------------------------
    Instant Universal ID Search & Live Typeahead
