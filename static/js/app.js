@@ -36,13 +36,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   initDirectoryFilters();
   initModals();
   initTimetable();
+  initDeveloperConsole();
   initQuickPills();
   initAuth();
 
   // Load initial data
   checkDbHealth();
   const authenticated = await checkAuth();
-  if (authenticated) {
+  if (authenticated && ['admin', 'teacher'].includes(AppState.currentUser.role)) {
     loadStats();
     loadStudents();
     loadStaff();
@@ -215,6 +216,7 @@ function switchTab(tabId) {
   if (tabId === 'students') loadStudents();
   if (tabId === 'marks') loadAllMarksLedger();
   if (tabId === 'timetable') loadTimetable();
+  if (tabId === 'developer') loadDeveloperUsers();
   if (tabId === 'staff') {
     if (AppState.currentUser && AppState.currentUser.role === 'teacher') {
       const banner = document.getElementById('staffTeacherRestrictedBanner');
@@ -232,6 +234,48 @@ function switchTab(tabId) {
       if (refresh) refresh.addEventListener('click', loadTimetable);
       const cancel = document.getElementById('timetableCancelBtn');
       if (cancel) cancel.addEventListener('click', resetTimetableForm);
+    }
+
+    function initDeveloperConsole() {
+      const form = document.getElementById('developerUserForm');
+      if (form) form.addEventListener('submit', createDeveloperUser);
+    }
+
+    async function loadDeveloperUsers() {
+      if (!AppState.currentUser || AppState.currentUser.role !== 'developer') return;
+      const response = await fetch('/api/users', {headers: getAuthHeaders()});
+      const data = await response.json();
+      if (!response.ok) return showToast(data.error || 'Unable to load accounts.', 'error');
+      const body = document.getElementById('developerUsersBody');
+      if (body) body.innerHTML = data.map(user => `
+        <tr>
+          <td class="p-3 font-semibold">${escapeHtml(user.username)}</td>
+          <td class="p-3">${escapeHtml(user.role)}</td>
+          <td class="p-3">${escapeHtml(user.full_name)}</td>
+          <td class="p-3">${escapeHtml(user.email || '-')}</td>
+          <td class="p-3">${escapeHtml(user.staff_id || '-')}</td>
+        </tr>`).join('');
+    }
+
+    async function createDeveloperUser(event) {
+      event.preventDefault();
+      const payload = {
+        username: document.getElementById('developerUsername').value.trim(),
+        password: document.getElementById('developerPassword').value,
+        role: document.getElementById('developerRole').value,
+        full_name: document.getElementById('developerFullName').value.trim(),
+        email: document.getElementById('developerEmail').value.trim()
+      };
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      if (!response.ok) return showToast(data.error || 'Unable to create account.', 'error');
+      showToast('Portal account created.', 'success');
+      document.getElementById('developerUserForm').reset();
+      loadDeveloperUsers();
     }
 
     async function loadTimetable() {
@@ -1371,12 +1415,17 @@ function initModals() {
           AppState.currentUser = data.user;
           closeModals();
           updateRoleBasedUI();
+          if (data.user.role === 'developer') {
+            switchTab('developer');
+          }
           showToast(`Signed in as ${data.user.full_name} (${data.user.role.toUpperCase()})`, 'success');
 
           // Refresh current views with updated permissions
-          loadStudents();
-          if (data.user.role === 'admin') {
-            loadStaff();
+          if (['admin', 'teacher'].includes(data.user.role)) {
+            loadStudents();
+            if (data.user.role === 'admin') {
+              loadStaff();
+            }
           }
           if (AppState.activeTab === 'marks') {
             loadAllMarksLedger();
@@ -1582,7 +1631,7 @@ async function checkAuth() {
     AppState.currentUser = null;
   }
   updateRoleBasedUI();
-  return Boolean(AppState.currentUser && ['admin', 'teacher'].includes(AppState.currentUser.role));
+  return Boolean(AppState.currentUser);
 }
 
 function updateRoleBasedUI() {
@@ -1595,11 +1644,23 @@ function updateRoleBasedUI() {
   const staffTeacherRestrictedBanner = document.getElementById('staffTeacherRestrictedBanner');
   const staffMainContainer = document.getElementById('staffMainContainer');
   const portalAuthGate = document.getElementById('portalAuthGate');
+  const developerTab = document.getElementById('navDeveloperTab');
+  const developerPane = document.getElementById('tab-developer');
 
   const u = AppState.currentUser;
 
   if (u) {
-    if (u.role !== 'admin' && u.role !== 'teacher') {
+    const isDeveloper = u.role === 'developer';
+    if (developerTab) developerTab.classList.toggle('hidden', !isDeveloper);
+    if (isDeveloper) {
+      if (portalAuthGate) {
+        portalAuthGate.classList.add('hidden');
+        portalAuthGate.classList.remove('flex');
+      }
+      if (developerPane) developerPane.classList.remove('hidden');
+      loadDeveloperUsers();
+    }
+    if (!isDeveloper && u.role !== 'admin' && u.role !== 'teacher') {
       if (portalAuthGate) {
         portalAuthGate.innerHTML = `
           <div class="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-2xl border-t-4 border-amber-500">
@@ -1626,6 +1687,9 @@ function updateRoleBasedUI() {
       if (u.role === 'admin') {
         userRoleBadge.textContent = 'ADMIN';
         userRoleBadge.className = 'bg-[#d4af37] text-[#38050b] text-[10px] font-extrabold uppercase px-2 py-0.5 rounded';
+      } else if (u.role === 'developer') {
+        userRoleBadge.textContent = 'DEVELOPER';
+        userRoleBadge.className = 'bg-slate-700 text-white text-[10px] font-extrabold uppercase px-2 py-0.5 rounded';
       } else {
         userRoleBadge.textContent = 'TEACHER';
         userRoleBadge.className = 'bg-blue-600 text-white text-[10px] font-extrabold uppercase px-2 py-0.5 rounded';

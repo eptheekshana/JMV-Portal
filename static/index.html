@@ -336,6 +336,9 @@
           <svg class="ui-icon" aria-hidden="true"><use href="#icon-calendar"></use></svg> <span>School Timetable</span>
           <span class="text-[10px] ml-1 bg-amber-100 text-amber-800 font-bold px-1.5 py-0.2 rounded border border-amber-300">ADMIN</span>
         </button>
+        <button id="navDeveloperTab" class="nav-tab-btn hidden px-4 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wide transition-all rounded-lg border-2 border-transparent text-slate-600 hover:text-[#800020] hover:bg-[#fdf2f4]" data-tab="developer">
+          <svg class="ui-icon" aria-hidden="true"><use href="#icon-shield"></use></svg> Developer Console
+        </button>
       </div>
 
     </div>
@@ -487,6 +490,32 @@
 
       </div>
 
+    </section>
+
+    <section id="tab-developer" class="tab-pane hidden space-y-6">
+      <div>
+        <h2 class="text-2xl font-extrabold text-slate-900 uppercase">Developer Console</h2>
+        <p class="text-sm text-slate-600">Create and manage administrator and teacher portal accounts.</p>
+      </div>
+      <form id="developerUserForm" class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+        <input id="developerUsername" required placeholder="Username" class="border border-slate-300 rounded-lg px-3 py-2 text-sm">
+        <input id="developerPassword" required type="password" placeholder="Temporary password" class="border border-slate-300 rounded-lg px-3 py-2 text-sm">
+        <select id="developerRole" required class="border border-slate-300 rounded-lg px-3 py-2 text-sm">
+          <option value="teacher">Teacher</option>
+          <option value="admin">Administrator</option>
+        </select>
+        <input id="developerFullName" required placeholder="Full name" class="border border-slate-300 rounded-lg px-3 py-2 text-sm">
+        <input id="developerEmail" type="email" placeholder="Email" class="border border-slate-300 rounded-lg px-3 py-2 text-sm">
+        <button type="submit" class="px-3 py-2 bg-[#800020] hover:bg-[#5c0d1b] text-white text-xs font-bold uppercase rounded-lg">Create Account</button>
+      </form>
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-[#fdf2f4] text-[#38050b] uppercase text-xs border-b-2 border-[#d4af37]">
+            <tr><th class="p-3">Username</th><th class="p-3">Role</th><th class="p-3">Name</th><th class="p-3">Email</th><th class="p-3">Staff ID</th></tr>
+          </thead>
+          <tbody id="developerUsersBody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
     </section>
 
     <!-- --------------------------------------------------------------------
