@@ -150,7 +150,8 @@ async def account_required_middleware(request, handler):
             "/api/health",
             "/api/auth/login",
             "/api/auth/logout",
-            "/api/auth/me"
+            "/api/auth/me",
+            "/api/stats"
         }
         if request.path not in public_paths:
             user = get_current_user(request)

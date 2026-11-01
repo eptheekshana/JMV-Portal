@@ -41,9 +41,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Load initial data
   checkDbHealth();
+  loadStats();
   const authenticated = await checkAuth();
   if (authenticated && ['admin', 'teacher'].includes(AppState.currentUser.role)) {
-    loadStats();
     loadStudents();
     loadStaff();
   }
@@ -1172,7 +1172,11 @@ function initDirectoryFilters() {
    -------------------------------------------------------------------------- */
 async function loadStats() {
   try {
-    const res = await fetch('/api/stats');
+    const res = await fetch('/api/stats', { headers: getAuthHeaders() });
+    if (!res.ok) {
+      console.warn("Stats API returned status:", res.status);
+      return;
+    }
     const stats = await res.json();
     AppState.stats = stats;
 
@@ -1185,29 +1189,33 @@ async function loadStats() {
 
     // Render house breakdown bars for Thisara, Mayura, Paravi
     const houseBars = document.getElementById('houseDistributionBars');
-    if (houseBars && stats.houses) {
-      const houseTheme = {
-        'Thisara': { color: '#d4af37', bg: '#fef3c7', sinhala: 'තිසර' },
-        'Mayura': { color: '#2563eb', bg: '#dbeafe', sinhala: 'මයුර' },
-        'Paravi': { color: '#800020', bg: '#fee2e2', sinhala: 'පරවි' }
-      };
+    if (houseBars) {
+      if (stats.houses && stats.houses.length > 0) {
+        const houseTheme = {
+          'Thisara': { color: '#d4af37', bg: '#fef3c7', sinhala: 'තිසර' },
+          'Mayura': { color: '#2563eb', bg: '#dbeafe', sinhala: 'මයුර' },
+          'Paravi': { color: '#800020', bg: '#fee2e2', sinhala: 'පරවි' }
+        };
 
-      const total = stats.total_students || 1;
-      houseBars.innerHTML = stats.houses.map(h => {
-        const theme = houseTheme[h.house] || { color: '#6b0f1a', bg: '#f1f5f9', sinhala: h.house };
-        const pct = Math.round((h.count / total) * 100);
-        return `
-          <div class="mb-4">
-            <div class="flex justify-between text-xs font-bold mb-1">
-              <span class="text-slate-800">${h.house} House (${theme.sinhala} නිවාසය)</span>
-              <span class="text-slate-500">${h.count} students (${pct}%)</span>
+        const total = stats.total_students || 1;
+        houseBars.innerHTML = stats.houses.map(h => {
+          const theme = houseTheme[h.house] || { color: '#6b0f1a', bg: '#f1f5f9', sinhala: h.house };
+          const pct = Math.round((h.count / total) * 100);
+          return `
+            <div class="mb-4">
+              <div class="flex justify-between text-xs font-bold mb-1">
+                <span class="text-slate-800">${h.house} House (${theme.sinhala} නිවාසය)</span>
+                <span class="text-slate-500">${h.count} students (${pct}%)</span>
+              </div>
+              <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                <div style="width:${pct}%; background-color:${theme.color};" class="h-full rounded-full transition-all duration-500"></div>
+              </div>
             </div>
-            <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
-              <div style="width:${pct}%; background-color:${theme.color};" class="h-full rounded-full transition-all duration-500"></div>
-            </div>
-          </div>
-        `;
-      }).join('');
+          `;
+        }).join('');
+      } else {
+        houseBars.innerHTML = '<p class="text-xs text-slate-400 italic py-2">No students enrolled yet. Once students are added, house distributions will appear here.</p>';
+      }
     }
   } catch (err) {
     console.error("Failed to load statistics:", err);
@@ -1405,6 +1413,7 @@ function initModals() {
           showToast(`Signed in as ${data.user.full_name} (${data.user.role.toUpperCase()})`, 'success');
 
           // Refresh current views with updated permissions
+          loadStats();
           if (['admin', 'teacher'].includes(data.user.role)) {
             loadStudents();
             if (data.user.role === 'admin') {
