@@ -41,7 +41,11 @@ from seed_data import (
     USER_COLUMNS, MARK_COLUMNS, SAMPLE_USERS, SAMPLE_MARKS
 )
 
-SQLITE_PATH = os.path.join(BASE_DIR, "school.db")
+SQLITE_PATH = (
+    "/tmp/school.db"
+    if os.environ.get("VERCEL")
+    else os.path.join(BASE_DIR, "school.db")
+)
 STUDENT_FIELDS = list(STUDENT_COLUMNS)
 STAFF_FIELDS = list(STAFF_COLUMNS)
 USER_FIELDS = list(USER_COLUMNS)
@@ -481,8 +485,9 @@ def init_db():
             init_mariadb_schema(conn)
             conn.close()
             return
-        except Exception:
-            # Fallback to SQLite
+        except Exception as e:
+            if os.environ.get("VERCEL"):
+                raise RuntimeError(f"MariaDB schema initialization error: {e}")
             pass
     
     conn = sqlite3.connect(SQLITE_PATH)
