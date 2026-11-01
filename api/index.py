@@ -8,14 +8,18 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import db
 
 app = Flask(__name__)
-db.init_db()
-if os.environ.get("VERCEL"):
-    connected, connection_message = db.check_connection()
-    if not connected:
-        raise RuntimeError(
-            "Vercel requires a reachable MariaDB/MySQL database. "
-            f"Database connection failed: {connection_message}"
-        )
+DB_ERROR = None
+try:
+    db.init_db()
+    if os.environ.get("VERCEL"):
+        connected, connection_message = db.check_connection()
+        if not connected:
+            DB_ERROR = (
+                "Vercel requires a reachable MariaDB/MySQL database. "
+                f"Database connection failed: {connection_message}"
+            )
+except Exception as error:
+    DB_ERROR = f"Database initialization failed: {error}"
 
 
 def current_user():
@@ -46,6 +50,8 @@ def requires_roles(*roles):
 def protect_data_routes():
     if not request.path.startswith("/api/"):
         return None
+    if DB_ERROR and request.path != "/api/health":
+        return jsonify(error=DB_ERROR, code="DATABASE_UNAVAILABLE"), 503
     public = {"/api/health", "/api/auth/login", "/api/auth/logout", "/api/auth/me"}
     if request.path in public:
         return None
@@ -67,7 +73,8 @@ def protect_data_routes():
 def health():
     ok, message = db.check_connection()
     status = db.get_engine_status()
-    return jsonify(status="ok", active_engine=status.get("engine", "sqlite"),
+    return jsonify(status="ok" if not DB_ERROR else "error",
+                   active_engine=status.get("engine", "sqlite"),
                    mariadb_connected=ok, message=message, details=status)
 
 

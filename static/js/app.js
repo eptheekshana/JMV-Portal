@@ -63,10 +63,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function checkDbHealth(reloadOnSuccess = false) {
   const banner = document.getElementById('dbStatusBanner');
   const msg = document.getElementById('dbStatusMessage');
+  const stripEngine = document.getElementById('stripDbEngine');
+  const stripStatus = document.getElementById('stripDbStatus');
   try {
     const res = await fetch('/api/health');
     const data = await res.json();
     if (data.mariadb_connected) {
+      if (stripEngine) {
+        stripEngine.textContent = 'ONLINE';
+        stripEngine.style.color = '#86efac'; // soft emerald green
+      }
+      if (stripStatus) {
+        stripStatus.textContent = 'Remote MariaDB Connected';
+      }
       if (banner) banner.classList.add('hidden');
       if (reloadOnSuccess) {
         showToast('Connected to MariaDB successfully!', 'success');
@@ -75,12 +84,32 @@ async function checkDbHealth(reloadOnSuccess = false) {
         loadStaff();
       }
     } else if (data.active_engine === 'sqlite') {
-      if (banner) banner.classList.add('hidden');
+      if (stripEngine) {
+        stripEngine.textContent = 'LOCAL';
+        stripEngine.style.color = '#fde047'; // bright gold
+      }
+      if (stripStatus) {
+        stripStatus.textContent = 'SQLite Fallback (MariaDB unreachable)';
+      }
+      if (banner) {
+        if (msg) msg.textContent = (data.message || 'Remote MariaDB unavailable.') + ' Currently using local SQLite fallback database.';
+        banner.classList.remove('hidden');
+      }
     } else {
+      if (stripEngine) {
+        stripEngine.textContent = 'ERROR';
+        stripEngine.style.color = '#f87171'; // red
+      }
+      if (stripStatus) stripStatus.textContent = 'Database unavailable';
       if (msg) msg.textContent = data.message || 'Database connection unavailable.';
       if (banner) banner.classList.remove('hidden');
     }
   } catch (err) {
+    if (stripEngine) {
+      stripEngine.textContent = 'OFFLINE';
+      stripEngine.style.color = '#f87171';
+    }
+    if (stripStatus) stripStatus.textContent = 'Portal server offline';
     if (msg) msg.textContent = 'Portal server connection error.';
     if (banner) banner.classList.remove('hidden');
   }
@@ -1432,13 +1461,13 @@ function initModals() {
           }
         } else {
           if (errBox) {
-            errBox.textContent = data.error || 'Invalid username or password.';
+            errBox.textContent = data.error || `Request failed (${res.status}).`;
             errBox.classList.remove('hidden');
           }
         }
       } catch (err) {
         if (errBox) {
-          errBox.textContent = 'Server connection error.';
+          errBox.textContent = 'Unable to reach the portal server. Open /api/health on this deployment to check its database status.';
           errBox.classList.remove('hidden');
         }
       }
