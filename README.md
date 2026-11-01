@@ -1,8 +1,8 @@
 # 🏫 Jayakody Maha Vidyalaya (JMV) Portal
-### School Database Management & Digital ID Verification Portal
+### School Database Management & Records Portal
 **බප / කැල / ජයකොඩි ම.වි - ගණේමුල්ල (WP / KE / Jayakody Maha Vidyalaya • Ganemulla)**
 
-A dedicated school database management and digital ID verification portal created for **WP/KE/Jayakody Maha Vidyalaya**, directly referencing and following the official **JMV-Web** theme, color specifications, and institutional records.
+A dedicated school database management and institutional records portal created for **WP/KE/Jayakody Maha Vidyalaya**, directly referencing and following the official **JMV-Web** theme, color specifications, and institutional records.
 
 ---
 
@@ -44,9 +44,9 @@ A dedicated school database management and digital ID verification portal create
    - **Typeahead live suggestions**: Displays matching profiles with real photos, ID tags, and grade/role.
    - **Quick test pills**: 1-click test buttons on the homepage for sample student and faculty profiles.
 
-2. **🪪 Dual Profile Presentation**:
-   - **Digital ID Card**: Official vertical badge with school crest (`JMV_Logo.png`), barcode, photo, house tag, and single-click **Print ID Card** (`🖨️ Print ID Card`).
-   - **Comprehensive Dossier**: Full academic profile, personal records, guardian contact, residential address, co-curricular societies, and qualifications.
+2. **📋 Comprehensive Profile Dossier Presentation**:
+   - Full academic profile, personal records, guardian contact, residential address, co-curricular societies, and qualifications.
+   - Single-click **Print Profile** (`🖨️ Print Profile`) formatting the official record for institutional filing.
 
 3. **🌐 Bilingual Support (English `EN` / Sinhala `සිං`)**:
    - Instant language switcher in the top utility bar matching the JMV-Web design.
@@ -135,7 +135,7 @@ JMV-Portal/
     ├── css/
     │   └── style.css      # JMV-Web Royal Maroon & Imperial Gold theme
     ├── js/
-    │   └── app.js         # Bilingual search, ID card rendering, and CRUD logic
+    │   └── app.js         # Bilingual search, profile dossier rendering, and CRUD logic
     └── img/
         ├── JMV_Logo.png   # Official school crest
         ├── jmv_icon.png   # School icon

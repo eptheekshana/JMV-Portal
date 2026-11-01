@@ -17,7 +17,7 @@ const AppState = {
   currentUser: null,         // { id, username, role, full_name, email, staff_id } or null
   currentEntity: null,       // Currently viewed student or staff member
   currentEntityType: null,   // 'student' | 'staff'
-  currentViewMode: 'badge',  // 'badge' | 'dossier'
+  currentViewMode: 'dossier',  // 'dossier'
   studentsList: [],
   staffList: [],
   timetableList: [],
@@ -496,7 +496,6 @@ async function executeLookup(queryId) {
   const resultContainer = document.getElementById('lookupResultSection');
   const loadingEl = document.getElementById('idCardLoading');
   const notFoundEl = document.getElementById('idCardNotFound');
-  const badgeView = document.getElementById('idCardBadgeView');
   const dossierView = document.getElementById('idCardDossierView');
 
   if (!resultContainer) return;
@@ -506,7 +505,6 @@ async function executeLookup(queryId) {
 
   // Show loading state, hide other views
   if (notFoundEl) notFoundEl.classList.add('hidden');
-  if (badgeView) badgeView.classList.add('hidden');
   if (dossierView) dossierView.classList.add('hidden');
   if (loadingEl) {
     const targetText = document.getElementById('loadingTargetText');
@@ -548,126 +546,12 @@ function renderResult(item, type) {
       : 'bg-[#d4af37] text-[#38050b] text-xs font-extrabold uppercase px-3 py-1 rounded';
   }
 
-  // Render Badge View (Digital ID Card)
-  renderBadgeCard(item, type);
-
   // Render Dossier View (Comprehensive Record)
   renderDossier(item, type);
 
-  // Toggle to current mode view
-  toggleViewMode(AppState.currentViewMode);
-}
-
-function renderBadgeCard(item, type) {
-  const badgeArea = document.getElementById('idCardBadgeView');
-  if (!badgeArea) return;
-
-  const isStudent = type === 'student';
-  const recordKey = isStudent ? item.admission_no : item.id;
-  const avatarUrl = item.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name_with_initials)}&background=5c0d1b&color=fff&size=200`;
-
-  // House color schemes: Thisara (Gold), Mayura (Blue), Paravi (Maroon)
-  const houseTheme = {
-    'Thisara': 'bg-amber-100 text-amber-900 border-amber-300',
-    'Mayura': 'bg-blue-100 text-blue-900 border-blue-300',
-    'Paravi': 'bg-rose-100 text-[#800020] border-rose-300'
-  }[item.house] || 'bg-slate-100 text-slate-800 border-slate-300';
-
-  const fieldsHtml = isStudent ? `
-    <div class="grid grid-cols-2 gap-2 text-left text-xs pt-3 border-t border-slate-200">
-      <div>
-        <span class="block text-[10px] uppercase font-bold text-slate-400">Admission No</span>
-        <span class="font-extrabold text-slate-800">${escapeHtml(item.admission_no)}</span>
-      </div>
-      <div>
-        <span class="block text-[10px] uppercase font-bold text-slate-400">Grade / Class</span>
-        <span class="font-extrabold text-slate-800">${escapeHtml(item.grade)} (${escapeHtml(item.stream)})</span>
-      </div>
-      <div>
-        <span class="block text-[10px] uppercase font-bold text-slate-400">Medium</span>
-        <span class="font-extrabold text-slate-800">${escapeHtml(item.medium)} Medium</span>
-      </div>
-      <div>
-        <span class="block text-[10px] uppercase font-bold text-slate-400">School House</span>
-        <span class="font-extrabold px-2 py-0.5 rounded border text-[11px] inline-block ${houseTheme}">
-          ${escapeHtml(item.house)} House
-        </span>
-      </div>
-      <div class="col-span-2 pt-1 border-t border-slate-100">
-        <span class="block text-[10px] uppercase font-bold text-slate-400">Guardian / Emergency</span>
-        <span class="font-bold text-slate-700">${escapeHtml(item.guardian_name)} • ${escapeHtml(item.guardian_contact)}</span>
-      </div>
-    </div>
-  ` : `
-    <div class="grid grid-cols-2 gap-2 text-left text-xs pt-3 border-t border-slate-200">
-      <div>
-        <span class="block text-[10px] uppercase font-bold text-slate-400">EPF / Service No</span>
-        <span class="font-extrabold text-slate-800 font-mono">${escapeHtml(item.epf_no || '—')}</span>
-      </div>
-      <div>
-        <span class="block text-[10px] uppercase font-bold text-slate-400">Designation</span>
-        <span class="font-extrabold text-slate-800">${escapeHtml(item.role)}</span>
-      </div>
-      <div class="col-span-2">
-        <span class="block text-[10px] uppercase font-bold text-slate-400">Department / Division</span>
-        <span class="font-extrabold text-slate-800">${escapeHtml(item.department)}</span>
-      </div>
-      <div class="col-span-2">
-        <span class="block text-[10px] uppercase font-bold text-slate-400">Subjects / Classes</span>
-        <span class="font-bold text-slate-700">${escapeHtml(item.subjects_taught || 'General Administration')}</span>
-      </div>
-      <div class="col-span-2 pt-1 border-t border-slate-100">
-        <span class="block text-[10px] uppercase font-bold text-slate-400">Official Contact</span>
-        <span class="font-bold text-slate-700">${escapeHtml(item.contact_no)} • ${escapeHtml(item.email)}</span>
-      </div>
-    </div>
-  `;
-
-  badgeArea.innerHTML = `
-    <div id="printArea" class="w-full max-w-[400px] bg-white rounded-2xl shadow-2xl border-2 border-[#d4af37] overflow-hidden">
-      <!-- Lanyard Hole representation -->
-      <div class="w-12 h-2.5 bg-slate-200 rounded-full mx-auto mt-3"></div>
-
-      <!-- Card Top Header (Royal Maroon with JMV Logo from JMV-Web) -->
-      <div class="bg-gradient-to-r from-[#38050b] via-[#5c0d1b] to-[#38050b] text-white p-4 text-center border-b-4 border-[#d4af37] relative">
-        <img src="/static/img/JMV_Logo.png" class="w-14 h-14 mx-auto mb-2 object-contain drop-shadow" alt="JMV Crest">
-        <h3 class="text-sm font-extrabold tracking-wider uppercase">JAYAKODY MAHA VIDYALAYA</h3>
-        <p class="text-[11px] text-[#fde047] font-semibold">බප / කැල / ජයකොඩි ම.වි - ගණේමුල්ල</p>
-        <span class="inline-block mt-2 bg-[#d4af37] text-[#38050b] text-[10px] font-extrabold uppercase px-3 py-0.5 rounded tracking-widest">
-          OFFICIAL ${isStudent ? 'STUDENT' : 'FACULTY'} IDENTITY CARD
-        </span>
-      </div>
-
-      <!-- Card Body -->
-      <div class="p-6 text-center space-y-3 relative">
-        <!-- Photo with Gold/Maroon border -->
-        <div class="w-28 h-28 mx-auto rounded-2xl p-1 bg-gradient-to-br from-[#d4af37] to-[#800020] shadow-md">
-          <img src="${avatarUrl}" class="w-full h-full object-cover rounded-xl bg-slate-100" alt="${item.name_with_initials}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(item.name_with_initials)}&background=5c0d1b&color=fff'">
-        </div>
-
-        <div>
-          <div class="text-lg font-extrabold text-[#38050b]">${escapeHtml(item.name_with_initials)}</div>
-          <div class="text-xs text-slate-500">${escapeHtml(item.full_name)}</div>
-        </div>
-
-        <div class="inline-block bg-[#fdf2f4] border border-dashed border-[#800020] text-[#800020] font-mono font-extrabold px-4 py-1 rounded text-sm tracking-wider">
-          Admission No: ${escapeHtml(recordKey)}
-        </div>
-
-        <!-- Dynamic Grid Fields -->
-        ${fieldsHtml}
-      </div>
-
-      <!-- Card Footer Barcode -->
-      <div class="bg-slate-50 border-t border-slate-200 p-4 text-center space-y-1">
-        <div class="h-8 w-3/4 mx-auto opacity-80" style="background: repeating-linear-gradient(90deg, #000 0px, #000 2px, #fff 2px, #fff 4px, #000 4px, #000 7px, #fff 7px, #fff 9px);"></div>
-        <div class="font-mono text-[11px] text-slate-500 tracking-widest">* ${escapeHtml(recordKey)} *</div>
-        <p class="text-[9px] text-slate-400">
-          WP/KE/Jayakody Maha Vidyalaya • Census No: 11084 • Kandaliyaddapaluwa, Ganemulla
-        </p>
-      </div>
-    </div>
-  `;
+  // Ensure dossier view is visible
+  const dossierView = document.getElementById('idCardDossierView');
+  if (dossierView) dossierView.classList.remove('hidden');
 }
 
 function renderDossier(item, type) {
@@ -917,23 +801,9 @@ function initResultControls() {
 }
 
 function toggleViewMode(mode) {
-  AppState.currentViewMode = mode;
-  const badgeView = document.getElementById('idCardBadgeView');
+  AppState.currentViewMode = 'dossier';
   const dossierView = document.getElementById('idCardDossierView');
-  const badgeBtn = document.getElementById('viewModeBadgeBtn');
-  const dossierBtn = document.getElementById('viewModeDossierBtn');
-
-  if (mode === 'badge') {
-    if (badgeView) badgeView.classList.remove('hidden');
-    if (dossierView) dossierView.classList.add('hidden');
-    if (badgeBtn) badgeBtn.className = 'px-4 py-1.5 text-xs font-extrabold uppercase rounded-full bg-white text-[#800020] shadow-sm transition-all flex items-center gap-1.5';
-    if (dossierBtn) dossierBtn.className = 'px-4 py-1.5 text-xs font-extrabold uppercase rounded-full text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1.5';
-  } else {
-    if (badgeView) badgeView.classList.add('hidden');
-    if (dossierView) dossierView.classList.remove('hidden');
-    if (badgeBtn) badgeBtn.className = 'px-4 py-1.5 text-xs font-extrabold uppercase rounded-full text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1.5';
-    if (dossierBtn) dossierBtn.className = 'px-4 py-1.5 text-xs font-extrabold uppercase rounded-full bg-white text-[#800020] shadow-sm transition-all flex items-center gap-1.5';
-  }
+  if (dossierView) dossierView.classList.remove('hidden');
 }
 
 function copyIdToClipboard(text) {
@@ -1106,7 +976,7 @@ function renderStaffTable(staff) {
   tbody.innerHTML = staff.map(st => `
     <tr class="hover:bg-slate-50 transition-colors">
       <td class="p-3.5 font-mono font-bold text-[#800020]">
-        <button onclick="lookupFromTable('${st.id}')" class="bg-slate-100 hover:bg-[#800020] hover:text-white px-2 py-0.5 rounded transition-colors" title="View digital ID card">
+        <button onclick="lookupFromTable('${st.id}')" class="bg-slate-100 hover:bg-[#800020] hover:text-white px-2 py-0.5 rounded transition-colors" title="View profile">
           ${escapeHtml(st.id)}
         </button>
       </td>
@@ -1129,7 +999,7 @@ function renderStaffTable(staff) {
       </td>
       <td class="p-3.5">
         <div class="flex items-center gap-1.5">
-          <button class="p-1.5 bg-slate-100 hover:bg-[#800020] hover:text-white rounded transition-colors" title="View ID Card" onclick="lookupFromTable('${st.id}')">
+          <button class="p-1.5 bg-slate-100 hover:bg-[#800020] hover:text-white rounded transition-colors" title="View Profile" onclick="lookupFromTable('${st.id}')">
             ${icon('search')}
           </button>
           <button class="p-1.5 bg-slate-100 hover:bg-[#800020] hover:text-white rounded transition-colors" title="Edit Staff" onclick="openEditModal('${st.id}', 'staff')">
@@ -1800,7 +1670,7 @@ function renderMarksTable(marks) {
     <tr class="hover:bg-slate-50 transition-colors">
       <td class="p-3.5">
         <div class="flex items-center gap-2">
-          <button onclick="lookupFromTable('${m.student_id}')" class="font-mono font-bold text-[#800020] hover:underline cursor-pointer" title="View digital student card">
+          <button onclick="lookupFromTable('${m.student_id}')" class="font-mono font-bold text-[#800020] hover:underline cursor-pointer" title="View student profile">
             ${escapeHtml(m.student_id)}
           </button>
           <span class="text-slate-800 font-bold">${escapeHtml(m.student_name || m.name_with_initials || '')}</span>
