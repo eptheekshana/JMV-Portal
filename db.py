@@ -56,7 +56,7 @@ ACTIVE_ENGINE = "unknown"  # "mariadb" or "sqlite"
 ENGINE_STATUS_MSG = ""
 
 def _get_mariadb_config():
-    raw_pw = os.environ.get("DB_PASSWORD", "AVNS_oUmLptLL3OmEKN2U4Si")
+    raw_pw = os.environ.get("DB_PASSWORD", "O^G8FbbHw3RpuyN58")
     if raw_pw:
         # Sanitize Unicode asterisks (e.g. \u2217, \ufe61, \uff0a) introduced by copy-pasting from rich text
         raw_pw = (raw_pw.replace('\u2217', '*')
@@ -64,11 +64,11 @@ def _get_mariadb_config():
                         .replace('\uff0a', '*')
                         .strip())
     cfg = {
-        "host": os.environ.get("DB_HOST", "jmvportal-sa-final-project.e.aivencloud.com").strip(),
-        "port": int(os.environ.get("DB_PORT", "27928")),
-        "user": os.environ.get("DB_USER", "avnadmin").strip(),
+        "host": os.environ.get("DB_HOST", "sg-mariadb01.offloadsql.com").strip(),
+        "port": int(os.environ.get("DB_PORT", "3306")),
+        "user": os.environ.get("DB_USER", "sql23659_providerid10315").strip(),
         "password": raw_pw,
-        "database": os.environ.get("DB_NAME", "defaultdb").strip(),
+        "database": os.environ.get("DB_NAME", "sql23659_providerid10315").strip(),
         "charset": "utf8mb4",
         "cursorclass": pymysql.cursors.DictCursor if pymysql else None,
         "connect_timeout": 10,
@@ -134,7 +134,7 @@ def init_mariadb_schema(conn):
             edu_email VARCHAR(150) NULL UNIQUE,
             academic_level VARCHAR(50) NOT NULL DEFAULT '',
             health_issues TEXT NULL,
-            class VARCHAR(30) NOT NULL DEFAULT '',
+            `class` VARCHAR(30) NOT NULL DEFAULT '',
             guardian_nic VARCHAR(15) NOT NULL DEFAULT '',
             guardian_mobile VARCHAR(20) NOT NULL DEFAULT '',
             relation_to_student VARCHAR(50) NOT NULL DEFAULT '',
@@ -238,25 +238,25 @@ def init_mariadb_schema(conn):
 
         cur.execute("""
         CREATE TABLE IF NOT EXISTS teachers (
-            teacher_id VARCHAR(15) PRIMARY KEY,
-            name_with_initials VARCHAR(100) NOT NULL,
-            full_name VARCHAR(150) NOT NULL,
-            email VARCHAR(150) NULL UNIQUE,
-            primary_phone_no VARCHAR(20) NULL,
-            secondary_phone_no VARCHAR(20) NULL,
-            date_of_birth DATE NULL,
-            age TINYINT(3) UNSIGNED NULL,
-            address VARCHAR(255) NOT NULL DEFAULT '',
-            nic VARCHAR(15) NULL UNIQUE,
-            date_of_arrival DATE NULL,
-            education_level VARCHAR(100) NOT NULL DEFAULT '',
-            current_role VARCHAR(100) NOT NULL DEFAULT '',
-            assigned_subject VARCHAR(100) NULL,
-            current_subject VARCHAR(100) NULL,
-            other_subject VARCHAR(150) NULL,
-            notes TEXT NULL,
-            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            `teacher_id` VARCHAR(15) PRIMARY KEY,
+            `name_with_initials` VARCHAR(100) NOT NULL,
+            `full_name` VARCHAR(150) NOT NULL,
+            `email` VARCHAR(150) NULL UNIQUE,
+            `primary_phone_no` VARCHAR(20) NULL,
+            `secondary_phone_no` VARCHAR(20) NULL,
+            `date_of_birth` DATE NULL,
+            `age` TINYINT(3) UNSIGNED NULL,
+            `address` VARCHAR(255) NOT NULL DEFAULT '',
+            `nic` VARCHAR(15) NULL UNIQUE,
+            `date_of_arrival` DATE NULL,
+            `education_level` VARCHAR(100) NOT NULL DEFAULT '',
+            `current_role` VARCHAR(100) NOT NULL DEFAULT '',
+            `assigned_subject` VARCHAR(100) NULL,
+            `current_subject` VARCHAR(100) NULL,
+            `other_subject` VARCHAR(150) NULL,
+            `notes` TEXT NULL,
+            `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         """)
 
