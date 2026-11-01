@@ -127,7 +127,19 @@ def init_mariadb_schema(conn):
             extracurricular TEXT,
             photo_url VARCHAR(500),
             notes TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            nic VARCHAR(15) NULL UNIQUE,
+            primary_mobile VARCHAR(20) NOT NULL DEFAULT '',
+            secondary_mobile VARCHAR(20) NULL,
+            personal_email VARCHAR(150) NULL,
+            edu_email VARCHAR(150) NULL UNIQUE,
+            academic_level VARCHAR(50) NOT NULL DEFAULT '',
+            health_issues TEXT NULL,
+            class VARCHAR(30) NOT NULL DEFAULT '',
+            guardian_nic VARCHAR(15) NOT NULL DEFAULT '',
+            guardian_mobile VARCHAR(20) NOT NULL DEFAULT '',
+            relation_to_student VARCHAR(50) NOT NULL DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         """)
 
@@ -209,6 +221,45 @@ def init_mariadb_schema(conn):
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         """)
 
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS subjects (
+            subject_code VARCHAR(15) PRIMARY KEY,
+            subject_name VARCHAR(100) NOT NULL,
+            category ENUM('Core','Basket 1','Basket 2','Basket 3','Primary') NOT NULL DEFAULT 'Core',
+            grade_level VARCHAR(50) NOT NULL DEFAULT '',
+            medium ENUM('Sinhala','English','Tamil','All') NOT NULL DEFAULT 'Sinhala',
+            is_active TINYINT(1) NOT NULL DEFAULT 1,
+            description TEXT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            KEY idx_subject_name (subject_name)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        """)
+
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS teachers (
+            teacher_id VARCHAR(15) PRIMARY KEY,
+            name_with_initials VARCHAR(100) NOT NULL,
+            full_name VARCHAR(150) NOT NULL,
+            email VARCHAR(150) NULL UNIQUE,
+            primary_phone_no VARCHAR(20) NULL,
+            secondary_phone_no VARCHAR(20) NULL,
+            date_of_birth DATE NULL,
+            age TINYINT(3) UNSIGNED NULL,
+            address VARCHAR(255) NOT NULL DEFAULT '',
+            nic VARCHAR(15) NULL UNIQUE,
+            date_of_arrival DATE NULL,
+            education_level VARCHAR(100) NOT NULL DEFAULT '',
+            current_role VARCHAR(100) NOT NULL DEFAULT '',
+            assigned_subject VARCHAR(100) NULL,
+            current_subject VARCHAR(100) NULL,
+            other_subject VARCHAR(150) NULL,
+            notes TEXT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        """)
+
         _migrate_existing_mariadb_schema(cur)
 
         # Ensure default admin user exists if users table is empty
@@ -252,6 +303,18 @@ def _migrate_existing_mariadb_schema(cur):
         "extracurricular": "TEXT NULL",
         "photo_url": "VARCHAR(500) NULL",
         "notes": "TEXT NULL",
+        "nic": "VARCHAR(15) NULL UNIQUE",
+        "primary_mobile": "VARCHAR(20) NOT NULL DEFAULT ''",
+        "secondary_mobile": "VARCHAR(20) NULL",
+        "personal_email": "VARCHAR(150) NULL",
+        "edu_email": "VARCHAR(150) NULL UNIQUE",
+        "academic_level": "VARCHAR(50) NOT NULL DEFAULT ''",
+        "health_issues": "TEXT NULL",
+        "class": "VARCHAR(30) NOT NULL DEFAULT ''",
+        "guardian_nic": "VARCHAR(15) NOT NULL DEFAULT ''",
+        "guardian_mobile": "VARCHAR(20) NOT NULL DEFAULT ''",
+        "relation_to_student": "VARCHAR(50) NOT NULL DEFAULT ''",
+        "updated_at": "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
     }
     for column, definition in additions.items():
         if column not in student_columns:
@@ -349,7 +412,19 @@ def init_sqlite_schema(conn):
         extracurricular TEXT,
         photo_url TEXT,
         notes TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        nic TEXT UNIQUE,
+        primary_mobile TEXT NOT NULL DEFAULT '',
+        secondary_mobile TEXT,
+        personal_email TEXT,
+        edu_email TEXT UNIQUE,
+        academic_level TEXT NOT NULL DEFAULT '',
+        health_issues TEXT,
+        class TEXT NOT NULL DEFAULT '',
+        guardian_nic TEXT NOT NULL DEFAULT '',
+        guardian_mobile TEXT NOT NULL DEFAULT '',
+        relation_to_student TEXT NOT NULL DEFAULT '',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     """)
 
@@ -427,6 +502,44 @@ def init_sqlite_schema(conn):
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE (class_name, day_of_week, period_no),
         UNIQUE (teacher_id, day_of_week, period_no)
+    );
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS subjects (
+        subject_code TEXT PRIMARY KEY,
+        subject_name TEXT NOT NULL,
+        category TEXT NOT NULL DEFAULT 'Core',
+        grade_level TEXT NOT NULL DEFAULT '',
+        medium TEXT NOT NULL DEFAULT 'Sinhala',
+        is_active INTEGER NOT NULL DEFAULT 1,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS teachers (
+        teacher_id TEXT PRIMARY KEY,
+        name_with_initials TEXT NOT NULL,
+        full_name TEXT NOT NULL,
+        email TEXT UNIQUE,
+        primary_phone_no TEXT,
+        secondary_phone_no TEXT,
+        date_of_birth TEXT,
+        age INTEGER,
+        address TEXT NOT NULL DEFAULT '',
+        nic TEXT UNIQUE,
+        date_of_arrival TEXT,
+        education_level TEXT NOT NULL DEFAULT '',
+        current_role TEXT NOT NULL DEFAULT '',
+        assigned_subject TEXT,
+        current_subject TEXT,
+        other_subject TEXT,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     """)
 
