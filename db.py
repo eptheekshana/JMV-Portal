@@ -211,39 +211,23 @@ def init_mariadb_schema(conn):
 
         _migrate_existing_mariadb_schema(cur)
 
-        # Seed if empty
-        cur.execute("SELECT COUNT(*) as cnt FROM students")
-        if cur.fetchone()["cnt"] == 0:
-            cols = ", ".join(STUDENT_FIELDS)
-            placeholders = ", ".join(["%s"] * len(STUDENT_FIELDS))
-            cur.executemany(
-                f"INSERT INTO students ({cols}) VALUES ({placeholders})",
-                SAMPLE_STUDENTS
-            )
-
-        cur.execute("SELECT COUNT(*) as cnt FROM staff")
-        if cur.fetchone()["cnt"] == 0:
-            cols = ", ".join(STAFF_FIELDS)
-            placeholders = ", ".join(["%s"] * len(STAFF_FIELDS))
-            cur.executemany(
-                f"INSERT INTO staff ({cols}) VALUES ({placeholders})",
-                SAMPLE_STAFF
-            )
-
+        # Ensure default admin user exists if users table is empty
         cur.execute("SELECT COUNT(*) as cnt FROM users")
         if cur.fetchone()["cnt"] == 0:
             cols = ", ".join(USER_FIELDS)
             placeholders = ", ".join(["%s"] * len(USER_FIELDS))
-            cur.executemany(
+            cur.execute(
                 f"INSERT INTO users ({cols}) VALUES ({placeholders})",
-                SAMPLE_USERS
+                (
+                    "USR-ADM-001",
+                    "admin",
+                    "a1b2c3d4e5f60718293a4b5c6d7e8f90$44138abc921d1c95bb573a09516cd4c82e8271fc3d9604b7c5f7f1bf26b6292d",
+                    "admin",
+                    "Administrator",
+                    "admin@jayakodymv.edu.lk",
+                    ""
+                )
             )
-
-        cur.execute("SELECT COUNT(*) as cnt FROM student_marks")
-        if cur.fetchone()["cnt"] == 0:
-            cols = ", ".join(MARK_FIELDS)
-            placeholders = ", ".join(["%s"] * len(MARK_FIELDS))
-            cur.executemany(f"INSERT INTO student_marks ({cols}) VALUES ({placeholders})", SAMPLE_MARKS)
     conn.commit()
 
 
@@ -441,39 +425,23 @@ def init_sqlite_schema(conn):
     );
     """)
 
-    # Seed if empty
-    cur.execute("SELECT COUNT(*) FROM students")
-    if cur.fetchone()[0] == 0:
-        cols = ", ".join(STUDENT_FIELDS)
-        placeholders = ", ".join(["?"] * len(STUDENT_FIELDS))
-        cur.executemany(
-            f"INSERT INTO students ({cols}) VALUES ({placeholders})",
-            SAMPLE_STUDENTS
-        )
-
-    cur.execute("SELECT COUNT(*) FROM staff")
-    if cur.fetchone()[0] == 0:
-        cols = ", ".join(STAFF_FIELDS)
-        placeholders = ", ".join(["?"] * len(STAFF_FIELDS))
-        cur.executemany(
-            f"INSERT INTO staff ({cols}) VALUES ({placeholders})",
-            SAMPLE_STAFF
-        )
-
+    # Ensure default admin user exists if users table is empty
     cur.execute("SELECT COUNT(*) FROM users")
     if cur.fetchone()[0] == 0:
         cols = ", ".join(USER_FIELDS)
         placeholders = ", ".join(["?"] * len(USER_FIELDS))
-        cur.executemany(
+        cur.execute(
             f"INSERT INTO users ({cols}) VALUES ({placeholders})",
-            SAMPLE_USERS
+            (
+                "USR-ADM-001",
+                "admin",
+                "a1b2c3d4e5f60718293a4b5c6d7e8f90$44138abc921d1c95bb573a09516cd4c82e8271fc3d9604b7c5f7f1bf26b6292d",
+                "admin",
+                "Administrator",
+                "admin@jayakodymv.edu.lk",
+                ""
+            )
         )
-
-    cur.execute("SELECT COUNT(*) FROM student_marks")
-    if cur.fetchone()[0] == 0:
-        cols = ", ".join(MARK_FIELDS)
-        placeholders = ", ".join(["?"] * len(MARK_FIELDS))
-        cur.executemany(f"INSERT INTO student_marks ({cols}) VALUES ({placeholders})", SAMPLE_MARKS)
     conn.commit()
 
 def init_db():
