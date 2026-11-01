@@ -97,6 +97,20 @@ production persistence. Configure a reachable MariaDB/MySQL database and allow
 connections from Vercel before deploying. Do not commit `.env` or database
 credentials to the repository.
 
+### Create the first developer account
+
+The Developer Console is available only to users with the `developer` role.
+Create the first developer account from a machine that has the production
+database environment variables configured:
+
+```bash
+python3 create_developer.py
+```
+
+Sign in with that account, open **Developer Console**, and create the required
+administrator and teacher accounts. Developers do not receive school-data
+access.
+
 ---
 
 ## 🧪 Sample IDs for Quick Testing

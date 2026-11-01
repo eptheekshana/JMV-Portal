@@ -159,7 +159,13 @@ async def account_required_middleware(request, handler):
                     "error": "Authentication required. Please log in.",
                     "code": "AUTH_REQUIRED"
                 }, status=401)
-            if user.get("role") not in {"admin", "teacher"}:
+            if request.path.startswith("/api/users"):
+                if user.get("role") != "developer":
+                    return json_response({
+                        "error": "Only developers can access account management.",
+                        "code": "DEVELOPER_ACCESS_REQUIRED"
+                    }, status=403)
+            elif user.get("role") not in {"admin", "teacher"}:
                 return json_response({
                     "error": "Access denied. Only teachers and administrators can view portal data.",
                     "code": "DATA_ACCESS_RESTRICTED"
@@ -167,20 +173,20 @@ async def account_required_middleware(request, handler):
     return await handler(request)
 
 async def handle_get_users(request):
-    user, err = require_role(request, ["admin"])
+    user, err = require_role(request, ["developer"])
     if err:
         return err
     users = db.get_all_users()
     return json_response(users)
 
 async def handle_create_user(request):
-    user, err = require_role(request, ["admin"])
+    user, err = require_role(request, ["developer"])
     if err:
         return err
     try:
         data = await request.json()
-        if not data.get("username") or not data.get("password"):
-            return json_response({"error": "Username and password are required"}, status=400)
+        if not data.get("username") or not data.get("password") or data.get("role") not in {"admin", "teacher"}:
+            return json_response({"error": "Username, password, and role (admin or teacher) are required"}, status=400)
         created = db.create_user(data)
         return json_response(created, status=201)
     except Exception as e:
