@@ -602,7 +602,7 @@ function renderBadgeCard(item, type) {
     <div class="grid grid-cols-2 gap-2 text-left text-xs pt-3 border-t border-slate-200">
       <div>
         <span class="block text-[10px] uppercase font-bold text-slate-400">EPF / Service No</span>
-        <span class="font-extrabold text-slate-800 font-mono">${escapeHtml(item.epf_no)}</span>
+        <span class="font-extrabold text-slate-800 font-mono">${escapeHtml(item.epf_no || '—')}</span>
       </div>
       <div>
         <span class="block text-[10px] uppercase font-bold text-slate-400">Designation</span>
@@ -793,7 +793,7 @@ function renderDossier(item, type) {
         </div>
         <div>
           <span class="block uppercase font-bold text-slate-400">EPF / Service No</span>
-          <span class="font-bold text-slate-800 font-mono">${escapeHtml(item.epf_no)}</span>
+          <span class="font-bold text-slate-800 font-mono">${escapeHtml(item.epf_no || '—')}</span>
         </div>
         <div>
           <span class="block uppercase font-bold text-slate-400">Designation / Role</span>
@@ -1121,7 +1121,7 @@ function renderStaffTable(staff) {
       </td>
       <td class="p-3.5 text-xs text-slate-700">${escapeHtml(st.department)}</td>
       <td class="p-3.5 text-xs text-slate-600">${escapeHtml(st.subjects_taught || 'General Administration')}</td>
-      <td class="p-3.5 font-mono text-xs text-slate-600">${escapeHtml(st.epf_no)}</td>
+      <td class="p-3.5 font-mono text-xs text-slate-600">${escapeHtml(st.epf_no || '—')}</td>
       <td class="p-3.5">
         <span class="text-xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
           ${escapeHtml(st.status)}
@@ -1345,7 +1345,7 @@ function initModals() {
 
       const payload = {
         id: staffId,
-        epf_no: document.getElementById('staffEpfInput').value.trim(),
+        epf_no: document.getElementById('staffEpfInput').value.trim() || null,
         name_with_initials: document.getElementById('staffInitialsInput').value.trim(),
         full_name: document.getElementById('staffFullNameInput').value.trim(),
         gender: 'Male',
@@ -1545,7 +1545,7 @@ async function openEditModal(id, type) {
     document.getElementById('staffFormMode').value = 'edit';
     document.getElementById('staffIdInput').value = st.id;
     document.getElementById('staffIdInput').readOnly = true;
-    document.getElementById('staffEpfInput').value = st.epf_no;
+    document.getElementById('staffEpfInput').value = st.epf_no || '';
     document.getElementById('staffInitialsInput').value = st.name_with_initials;
     document.getElementById('staffFullNameInput').value = st.full_name;
     document.getElementById('staffRoleInput').value = st.role;

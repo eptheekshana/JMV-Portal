@@ -193,8 +193,8 @@ def staff(_user):
 @requires_roles("admin")
 def create_staff(_user):
     data = request.get_json(silent=True) or {}
-    if not data.get("id") or not data.get("epf_no") or not data.get("full_name"):
-        return jsonify(error="Missing required fields (id, epf_no, full_name)"), 400
+    if not data.get("id") or not data.get("full_name"):
+        return jsonify(error="Missing required fields (id, full_name)"), 400
     if db.get_staff_by_id(data["id"]):
         return jsonify(error="Staff ID already exists"), 409
     return jsonify(db.create_staff(data)), 201
