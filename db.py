@@ -220,11 +220,11 @@ def init_mariadb_schema(conn):
                 f"INSERT INTO users ({cols}) VALUES ({placeholders})",
                 (
                     "USR-ADM-001",
+                    "eptheekshana",
+                    "c712c754aadf926e02cbbdaa7c31ebe0$a0580c6a5bb5b96e475a82b3434434c48824a62a0a46140dd5995ee755de0c3e",
                     "admin",
-                    "a1b2c3d4e5f60718293a4b5c6d7e8f90$44138abc921d1c95bb573a09516cd4c82e8271fc3d9604b7c5f7f1bf26b6292d",
-                    "admin",
-                    "Administrator",
-                    "admin@jayakodymv.edu.lk",
+                    "E P Theekshana (Administrator)",
+                    "eptheekshana@gmail.com",
                     ""
                 )
             )
@@ -434,11 +434,11 @@ def init_sqlite_schema(conn):
             f"INSERT INTO users ({cols}) VALUES ({placeholders})",
             (
                 "USR-ADM-001",
+                "eptheekshana",
+                "c712c754aadf926e02cbbdaa7c31ebe0$a0580c6a5bb5b96e475a82b3434434c48824a62a0a46140dd5995ee755de0c3e",
                 "admin",
-                "a1b2c3d4e5f60718293a4b5c6d7e8f90$44138abc921d1c95bb573a09516cd4c82e8271fc3d9604b7c5f7f1bf26b6292d",
-                "admin",
-                "Administrator",
-                "admin@jayakodymv.edu.lk",
+                "E P Theekshana (Administrator)",
+                "eptheekshana@gmail.com",
                 ""
             )
         )
