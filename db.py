@@ -898,11 +898,31 @@ def get_system_stats():
 # ---------------------------------------------------------------------------
 # Create / Update / Delete
 # ---------------------------------------------------------------------------
+def calculate_house_from_admission(admission_no):
+    """
+    Auto-determine student house based on admission number mod 3:
+    mod 0 = Mayura
+    mod 1 = Thisara
+    mod 2 = Paravi
+    """
+    digits = ''.join(c for c in str(admission_no or "") if c.isdigit())
+    if digits:
+        mod = int(digits) % 3
+        if mod == 0:
+            return "Mayura"
+        elif mod == 1:
+            return "Thisara"
+        elif mod == 2:
+            return "Paravi"
+    return "Thisara"
+
 def create_student(data):
     cols = ", ".join([f"`{f}`" for f in STUDENT_FIELDS])
     placeholders = ", ".join(["%s"] * len(STUDENT_FIELDS))
     sanitized = dict(data)
     sanitized["id"] = sanitized.get("admission_no", "")
+    if not sanitized.get("house"):
+        sanitized["house"] = calculate_house_from_admission(sanitized.get("admission_no"))
     for df in ["dob", "enrollment_date"]:
         val = sanitized.get(df)
         sanitized[df] = str(val).strip() if val and str(val).strip() else None
@@ -913,6 +933,8 @@ def create_student(data):
 def update_student(student_id, data):
     current = get_student_by_id(student_id) or {}
     merged = {**current, **{k: v for k, v in data.items() if v is not None}}
+    if "admission_no" in merged and not merged.get("house"):
+        merged["house"] = calculate_house_from_admission(merged.get("admission_no"))
     for df in ["dob", "enrollment_date"]:
         if df in merged:
             val = merged.get(df)
