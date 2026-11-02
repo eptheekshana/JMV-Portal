@@ -554,6 +554,185 @@ function renderResult(item, type) {
   if (dossierView) dossierView.classList.remove('hidden');
 }
 
+/* --------------------------------------------------------------------------
+   Student Education Level & Subject Selection Handlers
+   -------------------------------------------------------------------------- */
+function findMatchingSubject(subjectsStr, candidates) {
+  if (!subjectsStr) return '';
+  for (const c of candidates) {
+    if (subjectsStr.toLowerCase().includes(c.toLowerCase())) return c;
+  }
+  return '';
+}
+
+function handleEducationLevelChange() {
+  const level = document.getElementById('studentAcademicLevelInput')?.value || '';
+  const olContainer = document.getElementById('olSubjectsContainer');
+  const alContainer = document.getElementById('alSubjectsContainer');
+  const noticeEl = document.getElementById('generalCurriculumNotice');
+  const noticeText = document.getElementById('generalCurriculumText');
+  const streamInput = document.getElementById('studentStreamInput');
+
+  if (olContainer) olContainer.classList.add('hidden');
+  if (alContainer) alContainer.classList.add('hidden');
+  if (noticeEl) noticeEl.classList.add('hidden');
+
+  if (level === 'Ordinary Level') {
+    if (olContainer) olContainer.classList.remove('hidden');
+    if (streamInput) streamInput.value = 'Senior Secondary (G.C.E. O/L)';
+  } else if (level === 'Advanced Level') {
+    if (alContainer) alContainer.classList.remove('hidden');
+    handleAlStreamChange();
+  } else if (level) {
+    if (noticeEl) {
+      noticeEl.classList.remove('hidden');
+      const msgs = {
+        'Primary': 'Primary Section Curriculum (Grades 1–5): Core languages, Mathematics, Environment Related Activities, Religion & Aesthetic Studies.',
+        'Grade 6 - 9': 'Junior Secondary Curriculum (Grades 6–9): Common national core curriculum covering 9 prescribed subjects.',
+        '13 Years Guaranteed Education Program': '13-YGEP Curriculum: Applied vocational subjects & specialized skills training modules (වසර 13ක අඛණ්ඩ අධ්‍යාපන වැඩසටහන).'
+      };
+      if (noticeText) noticeText.textContent = msgs[level] || 'Standard curriculum applied for this level.';
+    }
+    if (streamInput) streamInput.value = level;
+  }
+}
+
+function handleAlStreamChange() {
+  const stream = document.getElementById('alStreamInput')?.value || '';
+  const commerceSection = document.getElementById('alCommerceSection');
+  const artSection = document.getElementById('alArtSection');
+  const streamInput = document.getElementById('studentStreamInput');
+
+  if (commerceSection) commerceSection.classList.add('hidden');
+  if (artSection) artSection.classList.add('hidden');
+
+  if (stream === 'Commerce') {
+    if (commerceSection) commerceSection.classList.remove('hidden');
+    if (streamInput) streamInput.value = 'Commerce Stream (A/L)';
+  } else if (stream === 'Art') {
+    if (artSection) artSection.classList.remove('hidden');
+    if (streamInput) streamInput.value = 'Art Stream (A/L)';
+  }
+  updateAlSubjectCounters();
+}
+
+function updateAlSubjectCounters() {
+  // Commerce Counter
+  const comChecked = Array.from(document.querySelectorAll('input[name="alCommerceSubject"]:checked'));
+  const comCounter = document.getElementById('alCommerceCounter');
+  if (comCounter) {
+    comCounter.textContent = `${comChecked.length} of 3 Selected`;
+    if (comChecked.length === 3) {
+      comCounter.className = 'text-[11px] font-extrabold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300';
+      document.querySelectorAll('input[name="alCommerceSubject"]:not(:checked)').forEach(cb => cb.disabled = true);
+    } else {
+      comCounter.className = 'text-[11px] font-extrabold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300';
+      document.querySelectorAll('input[name="alCommerceSubject"]').forEach(cb => cb.disabled = false);
+    }
+  }
+
+  // Art Counter
+  const artChecked = Array.from(document.querySelectorAll('input[name="alArtSubject"]:checked'));
+  const artCounter = document.getElementById('alArtCounter');
+  if (artCounter) {
+    artCounter.textContent = `${artChecked.length} of 3 Selected`;
+    if (artChecked.length === 3) {
+      artCounter.className = 'text-[11px] font-extrabold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300';
+      document.querySelectorAll('input[name="alArtSubject"]:not(:checked)').forEach(cb => cb.disabled = true);
+    } else {
+      artCounter.className = 'text-[11px] font-extrabold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300';
+      document.querySelectorAll('input[name="alArtSubject"]').forEach(cb => cb.disabled = false);
+    }
+  }
+}
+
+function renderDossierSubjects(item) {
+  const level = item.academic_level || (item.stream?.includes('O/L') ? 'Ordinary Level' : (item.stream?.includes('A/L') ? 'Advanced Level' : ''));
+  
+  if (level === 'Ordinary Level' || item.ol_bucket_1 || item.ol_bucket_2 || item.ol_bucket_3) {
+    return `
+      <div class="space-y-2">
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] font-bold text-slate-500 uppercase">Educational Stage:</span>
+          <span class="font-extrabold text-[#800020] text-xs">G.C.E. Ordinary Level (O/L)</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1">
+          <div class="p-2.5 bg-white border border-amber-300 rounded-lg shadow-sm">
+            <span class="block text-[10px] font-bold text-amber-800 uppercase mb-0.5">1st Bucket Subject</span>
+            <span class="font-extrabold text-slate-800">${escapeHtml(item.ol_bucket_1 || 'Not recorded')}</span>
+          </div>
+          <div class="p-2.5 bg-white border border-amber-300 rounded-lg shadow-sm">
+            <span class="block text-[10px] font-bold text-amber-800 uppercase mb-0.5">2nd Bucket Subject</span>
+            <span class="font-extrabold text-slate-800">${escapeHtml(item.ol_bucket_2 || 'Not recorded')}</span>
+          </div>
+          <div class="p-2.5 bg-white border border-amber-300 rounded-lg shadow-sm">
+            <span class="block text-[10px] font-bold text-amber-800 uppercase mb-0.5">3rd Bucket Subject</span>
+            <span class="font-extrabold text-slate-800">${escapeHtml(item.ol_bucket_3 || 'Not recorded')}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (level === 'Advanced Level' || item.stream?.includes('Commerce') || item.stream?.includes('Art')) {
+    const isCommerce = item.stream?.includes('Commerce');
+    const isArt = item.stream?.includes('Art');
+    const streamName = isCommerce ? 'Commerce Stream (වාණිජ අංශය)' : (isArt ? 'Art Stream (කලා අංශය)' : (item.stream || 'A/L Stream'));
+    const subjList = item.subjects ? item.subjects.split(',').map(s => s.trim()).filter(s => s && !s.toLowerCase().includes('english') && !s.toLowerCase().includes('mandatory')) : [];
+
+    return `
+      <div class="space-y-2">
+        <div class="flex flex-wrap items-center gap-2 justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] font-bold text-slate-500 uppercase">Educational Stage:</span>
+            <span class="font-extrabold text-blue-900 text-xs">G.C.E. Advanced Level (A/L) • ${escapeHtml(streamName)}</span>
+          </div>
+          <span class="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-2 py-0.5 rounded border border-emerald-300">
+            ✓ General English (Compulsory)
+          </span>
+        </div>
+        <div class="flex flex-wrap gap-2 pt-1 text-xs">
+          <span class="px-3 py-1 bg-emerald-50 text-emerald-900 border border-emerald-300 rounded font-bold">
+            English (Compulsory)
+          </span>
+          ${subjList.length > 0 ? subjList.map(s => `
+            <span class="px-3 py-1 bg-white text-slate-800 border border-slate-300 rounded font-bold shadow-sm">
+              ${escapeHtml(s)}
+            </span>
+          `).join('') : `
+            <span class="text-slate-400 italic">Subjects recorded: ${escapeHtml(item.subjects || 'General Curriculum')}</span>
+          `}
+        </div>
+      </div>
+    `;
+  } else if (level === 'Primary') {
+    return `
+      <div class="text-xs text-slate-700 space-y-1">
+        <span class="font-extrabold text-[#800020] block">Primary Section Curriculum (Grades 1–5)</span>
+        <p class="text-slate-500">Enrolled in prescribed foundational curriculum: Languages, Mathematics, Environment Related Activities, Religion &amp; Creative Arts.</p>
+      </div>
+    `;
+  } else if (level === 'Grade 6 - 9') {
+    return `
+      <div class="text-xs text-slate-700 space-y-1">
+        <span class="font-extrabold text-[#800020] block">Junior Secondary Curriculum (Grades 6–9)</span>
+        <p class="text-slate-500">Enrolled in common 9-subject national curriculum: Sinhala, English, Mathematics, Science, History, Religion, Geography, Health &amp; Aesthetics.</p>
+      </div>
+    `;
+  } else if (level === '13 Years Guaranteed Education Program') {
+    return `
+      <div class="text-xs text-slate-700 space-y-1">
+        <span class="font-extrabold text-[#800020] block">13 Years Guaranteed Education Program (13-YGEP)</span>
+        <p class="text-slate-500">Enrolled in specialized vocational foundation &amp; career skills modules (වසර 13ක අඛණ්ඩ අධ්‍යාපන වැඩසටහන).</p>
+      </div>
+    `;
+  } else {
+    return `
+      <div class="text-xs text-slate-500 italic">
+        ${escapeHtml(item.subjects || item.stream || 'Standard Institutional Curriculum')}
+      </div>
+    `;
+  }
+}
+
 function renderDossier(item, type) {
   const dossierArea = document.getElementById('idCardDossierView');
   if (!dossierArea) return;
@@ -578,6 +757,10 @@ function renderDossier(item, type) {
           <span class="font-bold text-slate-800">${escapeHtml(item.grade)}</span>
         </div>
         <div>
+          <span class="block uppercase font-bold text-slate-400">Education Level</span>
+          <span class="font-extrabold text-[#800020]">${escapeHtml(item.academic_level || (item.stream?.includes('O/L') ? 'Ordinary Level' : (item.stream?.includes('A/L') ? 'Advanced Level' : 'General')))}</span>
+        </div>
+        <div>
           <span class="block uppercase font-bold text-slate-400">Academic Stream</span>
           <span class="font-bold text-slate-800">${escapeHtml(item.stream)}</span>
         </div>
@@ -598,6 +781,14 @@ function renderDossier(item, type) {
           <span class="font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded text-[11px]">${escapeHtml(item.status)}</span>
         </div>
       </div>
+    </div>
+
+    <!-- Enrolled Subjects & Elective Specialization -->
+    <div class="bg-amber-50/60 p-5 rounded-xl border border-amber-200 space-y-3">
+      <h4 class="font-extrabold text-[#800020] text-sm uppercase border-b border-amber-200 pb-2 flex items-center gap-2">
+        ${icon('clipboard')} Enrolled Curriculum &amp; Elective Specialization
+      </h4>
+      ${renderDossierSubjects(item)}
     </div>
 
     <!-- Personal & Guardian Details -->
@@ -1121,8 +1312,16 @@ function openAddStudentModal() {
   if (!modal || !form) return;
   document.getElementById('studentModalTitle').textContent = "Enroll New Student";
   form.reset();
+  if (document.getElementById('studentAcademicLevelInput')) document.getElementById('studentAcademicLevelInput').value = '';
+  if (document.getElementById('olBucket1Input')) document.getElementById('olBucket1Input').value = '';
+  if (document.getElementById('olBucket2Input')) document.getElementById('olBucket2Input').value = '';
+  if (document.getElementById('olBucket3Input')) document.getElementById('olBucket3Input').value = '';
+  if (document.getElementById('alStreamInput')) document.getElementById('alStreamInput').value = '';
+  document.querySelectorAll('input[name="alCommerceSubject"]').forEach(cb => { cb.checked = false; cb.disabled = false; });
+  document.querySelectorAll('input[name="alArtSubject"]').forEach(cb => { cb.checked = false; cb.disabled = false; });
   if (document.getElementById('studentHealthInput')) document.getElementById('studentHealthInput').value = '';
   if (document.getElementById('studentNotesInput')) document.getElementById('studentNotesInput').value = '';
+  handleEducationLevelChange();
   document.getElementById('studentFormMode').value = 'create';
   document.getElementById('studentAdmissionInput').readOnly = false;
   modal.classList.remove('hidden');
@@ -1178,14 +1377,83 @@ function initModals() {
         ? admissionNo
         : (AppState.currentEntity?.admission_no || admissionNo);
 
+      const level = document.getElementById('studentAcademicLevelInput')?.value;
+      if (!level) {
+        showToast("Please select an Education Level for the student.", "error");
+        document.getElementById('studentAcademicLevelInput')?.focus();
+        return;
+      }
+
+      let stream = document.getElementById('studentStreamInput')?.value || level;
+      let subjects = '';
+      let ol_bucket_1 = '';
+      let ol_bucket_2 = '';
+      let ol_bucket_3 = '';
+
+      if (level === 'Ordinary Level') {
+        ol_bucket_1 = document.getElementById('olBucket1Input')?.value || '';
+        ol_bucket_2 = document.getElementById('olBucket2Input')?.value || '';
+        ol_bucket_3 = document.getElementById('olBucket3Input')?.value || '';
+
+        if (!ol_bucket_1) {
+          showToast("Please select a 1st Bucket subject for Ordinary Level.", "error");
+          document.getElementById('olBucket1Input')?.focus();
+          return;
+        }
+        if (!ol_bucket_2) {
+          showToast("Please select a 2nd Bucket subject for Ordinary Level.", "error");
+          document.getElementById('olBucket2Input')?.focus();
+          return;
+        }
+        if (!ol_bucket_3) {
+          showToast("Please select a 3rd Bucket subject for Ordinary Level.", "error");
+          document.getElementById('olBucket3Input')?.focus();
+          return;
+        }
+        subjects = `${ol_bucket_1}, ${ol_bucket_2}, ${ol_bucket_3}`;
+        stream = 'Senior Secondary (G.C.E. O/L)';
+      } else if (level === 'Advanced Level') {
+        const alStream = document.getElementById('alStreamInput')?.value;
+        if (!alStream) {
+          showToast("Please select an A/L Subject Stream (Commerce or Art).", "error");
+          document.getElementById('alStreamInput')?.focus();
+          return;
+        }
+
+        if (alStream === 'Commerce') {
+          const chosen = Array.from(document.querySelectorAll('input[name="alCommerceSubject"]:checked')).map(cb => cb.value);
+          if (chosen.length !== 3) {
+            showToast(`Please select exactly 3 Commerce subjects (currently ${chosen.length} selected).`, "error");
+            return;
+          }
+          subjects = `English (Mandatory), ${chosen.join(', ')}`;
+          stream = 'Commerce Stream (A/L)';
+        } else if (alStream === 'Art') {
+          const chosen = Array.from(document.querySelectorAll('input[name="alArtSubject"]:checked')).map(cb => cb.value);
+          if (chosen.length !== 3) {
+            showToast(`Please select exactly 3 Art subjects (currently ${chosen.length} selected).`, "error");
+            return;
+          }
+          subjects = `English (Mandatory), ${chosen.join(', ')}`;
+          stream = 'Art Stream (A/L)';
+        }
+      } else {
+        stream = level;
+      }
+
       const payload = {
         admission_no: admissionNo,
         name_with_initials: document.getElementById('studentInitialsInput').value.trim(),
         full_name: document.getElementById('studentFullNameInput').value.trim(),
         gender: document.getElementById('studentGenderInput').value,
         dob: document.getElementById('studentDobInput').value,
-        grade: document.getElementById('studentGradeInput').value,
-        stream: document.getElementById('studentStreamInput').value,
+        academic_level: level,
+        grade: document.getElementById('studentGradeInput').value.trim(),
+        stream: stream,
+        subjects: subjects,
+        ol_bucket_1: ol_bucket_1,
+        ol_bucket_2: ol_bucket_2,
+        ol_bucket_3: ol_bucket_3,
         medium: document.getElementById('studentMediumInput').value,
         house: document.getElementById('studentHouseInput').value,
         guardian_name: document.getElementById('studentGuardianInput').value.trim(),
@@ -1412,7 +1680,57 @@ async function openEditModal(id, type) {
     document.getElementById('studentGenderInput').value = s.gender;
     document.getElementById('studentDobInput').value = s.dob;
     document.getElementById('studentGradeInput').value = s.grade;
-    document.getElementById('studentStreamInput').value = s.stream;
+    document.getElementById('studentStreamInput').value = s.stream || '';
+
+    // Infer or restore Education Level
+    let edLevel = s.academic_level || '';
+    if (!edLevel) {
+      if ((s.stream && s.stream.includes('O/L')) || (s.grade && (s.grade.startsWith('10') || s.grade.startsWith('11')))) {
+        edLevel = 'Ordinary Level';
+      } else if ((s.stream && s.stream.includes('A/L')) || (s.grade && (s.grade.startsWith('12') || s.grade.startsWith('13')))) {
+        edLevel = 'Advanced Level';
+      } else if (s.grade && (s.grade.startsWith('6') || s.grade.startsWith('7') || s.grade.startsWith('8') || s.grade.startsWith('9'))) {
+        edLevel = 'Grade 6 - 9';
+      } else if (s.grade && (s.grade.startsWith('1') || s.grade.startsWith('2') || s.grade.startsWith('3') || s.grade.startsWith('4') || s.grade.startsWith('5'))) {
+        edLevel = 'Primary';
+      } else if (s.stream && s.stream.includes('13')) {
+        edLevel = '13 Years Guaranteed Education Program';
+      }
+    }
+    if (document.getElementById('studentAcademicLevelInput')) {
+      document.getElementById('studentAcademicLevelInput').value = edLevel;
+    }
+    handleEducationLevelChange();
+
+    if (edLevel === 'Ordinary Level') {
+      if (document.getElementById('olBucket1Input')) {
+        document.getElementById('olBucket1Input').value = s.ol_bucket_1 || findMatchingSubject(s.subjects, ['Citizenship Education', 'Geography', 'Business Studies & Accounting']);
+      }
+      if (document.getElementById('olBucket2Input')) {
+        document.getElementById('olBucket2Input').value = s.ol_bucket_2 || findMatchingSubject(s.subjects, ['Music', 'Art', 'Dancing', 'Drama']);
+      }
+      if (document.getElementById('olBucket3Input')) {
+        document.getElementById('olBucket3Input').value = s.ol_bucket_3 || findMatchingSubject(s.subjects, ['Information & Communication Technology', 'Health', 'Home Science', 'Media', 'Food and Agri Culture']);
+      }
+    } else if (edLevel === 'Advanced Level') {
+      const isCom = (s.stream && s.stream.includes('Commerce')) || (s.subjects && (s.subjects.includes('Accounting') || s.subjects.includes('Business Studies')));
+      const isArt = (s.stream && s.stream.includes('Art')) || (s.subjects && (s.subjects.includes('Sinhala') || s.subjects.includes('Drama') || s.subjects.includes('Dancing') || s.subjects.includes('Music') || s.subjects.includes('Buddhist Civilization') || s.subjects.includes('Political Science')));
+      const alStream = isCom ? 'Commerce' : (isArt ? 'Art' : 'Commerce');
+      if (document.getElementById('alStreamInput')) {
+        document.getElementById('alStreamInput').value = alStream;
+      }
+      handleAlStreamChange();
+
+      const subjs = s.subjects ? s.subjects.split(',').map(x => x.trim()) : [];
+      document.querySelectorAll('input[name="alCommerceSubject"]').forEach(cb => {
+        cb.checked = subjs.includes(cb.value);
+      });
+      document.querySelectorAll('input[name="alArtSubject"]').forEach(cb => {
+        cb.checked = subjs.includes(cb.value);
+      });
+      updateAlSubjectCounters();
+    }
+
     document.getElementById('studentMediumInput').value = s.medium;
     document.getElementById('studentHouseInput').value = s.house;
     document.getElementById('studentGuardianInput').value = s.guardian_name;

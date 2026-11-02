@@ -921,18 +921,201 @@
             <input type="date" id="studentDobInput" value="2007-05-10" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
           </div>
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Grade / Class *</label>
-            <input type="text" id="studentGradeInput" required placeholder="e.g. 13-Com, 11-A, 6-A" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+            <label class="block font-bold text-slate-700 mb-1">Education Level *</label>
+            <select id="studentAcademicLevelInput" required onchange="handleEducationLevelChange()" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none bg-white font-semibold text-slate-800">
+              <option value="">-- Select Education Level --</option>
+              <option value="Primary">Primary (Grades 1–5)</option>
+              <option value="Grade 6 - 9">Grade 6 - 9</option>
+              <option value="Ordinary Level">Ordinary Level (Grades 10–11 / O/L)</option>
+              <option value="Advanced Level">Advanced Level (Grades 12–13 / A/L)</option>
+              <option value="13 Years Guaranteed Education Program">13 Years Guaranteed Education Program (13-YGEP)</option>
+            </select>
           </div>
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Academic Stream</label>
-            <select id="studentStreamInput" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-              <option value="Commerce Stream">Commerce Stream (A/L)</option>
-              <option value="Arts & Humanities">Arts &amp; Humanities (A/L)</option>
-              <option value="Senior Secondary (G.C.E. O/L)">Senior Secondary (G.C.E. O/L)</option>
-              <option value="Junior Secondary (Grades 6–9)">Junior Secondary (Grades 6–9)</option>
-              <option value="Primary Section (Grades 1–5)">Primary Section (Grades 1–5)</option>
-            </select>
+            <label class="block font-bold text-slate-700 mb-1">Grade / Class *</label>
+            <input type="text" id="studentGradeInput" required placeholder="e.g. 11-A, 12-Com, 6-B, 1-A" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
+            <input type="hidden" id="studentStreamInput" value="">
+          </div>
+
+          <!-- O/L Bucket Subjects Panel (Shown when Education Level == Ordinary Level) -->
+          <div id="olSubjectsContainer" class="sm:col-span-2 hidden bg-amber-50/80 border-2 border-amber-300 rounded-xl p-4 space-y-3">
+            <div class="flex items-center justify-between border-b border-amber-200 pb-2">
+              <h4 class="font-extrabold text-[#800020] text-xs uppercase flex items-center gap-1.5">
+                <svg class="ui-icon" aria-hidden="true"><use href="#icon-clipboard"></use></svg>
+                Ordinary Level (O/L) Bucket Subject Selection *
+              </h4>
+              <span class="text-[10px] bg-[#800020] text-white font-extrabold px-2 py-0.5 rounded">3 Elective Buckets</span>
+            </div>
+            <p class="text-[11px] text-slate-600 font-medium">
+              Select one subject from each mandatory bucket according to the National Ordinary Level curriculum:
+            </p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <!-- Bucket 1 -->
+              <div>
+                <label class="block font-bold text-slate-800 mb-1">
+                  1st Bucket <span class="text-rose-600 font-extrabold">*</span>
+                </label>
+                <select id="olBucket1Input" class="w-full border border-slate-300 rounded p-2 text-xs focus:border-[#800020] focus:outline-none bg-white font-medium">
+                  <option value="">-- Choose 1st Bucket --</option>
+                  <option value="Citizenship Education">Citizenship Education</option>
+                  <option value="Geography">Geography</option>
+                  <option value="Business Studies &amp; Accounting">Business Studies &amp; Accounting</option>
+                </select>
+              </div>
+
+              <!-- Bucket 2 -->
+              <div>
+                <label class="block font-bold text-slate-800 mb-1">
+                  2nd Bucket <span class="text-rose-600 font-extrabold">*</span>
+                </label>
+                <select id="olBucket2Input" class="w-full border border-slate-300 rounded p-2 text-xs focus:border-[#800020] focus:outline-none bg-white font-medium">
+                  <option value="">-- Choose 2nd Bucket --</option>
+                  <option value="Music">Music</option>
+                  <option value="Art">Art</option>
+                  <option value="Dancing">Dancing</option>
+                  <option value="Drama">Drama</option>
+                </select>
+              </div>
+
+              <!-- Bucket 3 -->
+              <div>
+                <label class="block font-bold text-slate-800 mb-1">
+                  3rd Bucket <span class="text-rose-600 font-extrabold">*</span>
+                </label>
+                <select id="olBucket3Input" class="w-full border border-slate-300 rounded p-2 text-xs focus:border-[#800020] focus:outline-none bg-white font-medium">
+                  <option value="">-- Choose 3rd Bucket --</option>
+                  <option value="Information &amp; Communication Technology">Information &amp; Communication Technology</option>
+                  <option value="Health">Health</option>
+                  <option value="Home Science">Home Science</option>
+                  <option value="Media">Media</option>
+                  <option value="Food and Agri Culture">Food and Agri Culture</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- A/L Stream & Subject Panel (Shown when Education Level == Advanced Level) -->
+          <div id="alSubjectsContainer" class="sm:col-span-2 hidden bg-blue-50/80 border-2 border-blue-300 rounded-xl p-4 space-y-4">
+            <div class="flex items-center justify-between border-b border-blue-200 pb-2">
+              <h4 class="font-extrabold text-[#800020] text-xs uppercase flex items-center gap-1.5">
+                <svg class="ui-icon" aria-hidden="true"><use href="#icon-graduation"></use></svg>
+                Advanced Level (A/L) Stream &amp; Subject Selection *
+              </h4>
+              <span class="text-[10px] bg-blue-700 text-white font-extrabold px-2 py-0.5 rounded">G.C.E. A/L</span>
+            </div>
+
+            <!-- Mandatory English Notice -->
+            <div class="flex items-center gap-2 p-2.5 bg-emerald-50 border border-emerald-300 rounded-lg text-emerald-900 text-xs">
+              <span class="text-emerald-700 font-extrabold text-sm">✓</span>
+              <div>
+                <strong>Compulsory Core Subject:</strong> <span class="font-extrabold text-emerald-800">English</span> is default and mandatory for every A/L student.
+              </div>
+            </div>
+
+            <!-- Stream Selector -->
+            <div>
+              <label class="block font-bold text-slate-800 mb-1">Subject Stream <span class="text-rose-600">*</span></label>
+              <select id="alStreamInput" onchange="handleAlStreamChange()" class="w-full sm:w-1/2 border border-slate-300 rounded p-2 text-xs focus:border-[#800020] focus:outline-none bg-white font-bold text-slate-800">
+                <option value="">-- Choose Subject Stream --</option>
+                <option value="Commerce">Commerce Stream (වාණිජ අංශය)</option>
+                <option value="Art">Art Stream (කලා අංශය)</option>
+              </select>
+            </div>
+
+            <!-- Commerce Stream Subjects (Select 3 of 4) -->
+            <div id="alCommerceSection" class="hidden bg-white border border-slate-200 rounded-lg p-3 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-xs text-slate-800">Select Exactly 03 Commerce Subjects:</span>
+                <span id="alCommerceCounter" class="text-[11px] font-extrabold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
+                  0 of 3 Selected
+                </span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
+                  <input type="checkbox" name="alCommerceSubject" value="Accounting" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                  <span class="font-semibold text-slate-800">Accounting</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
+                  <input type="checkbox" name="alCommerceSubject" value="Economics" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                  <span class="font-semibold text-slate-800">Economics</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
+                  <input type="checkbox" name="alCommerceSubject" value="Business Studies" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                  <span class="font-semibold text-slate-800">Business Studies</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
+                  <input type="checkbox" name="alCommerceSubject" value="Information &amp; Communication Technology" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                  <span class="font-semibold text-slate-800">Information &amp; Communication Technology</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Art Stream Subjects (Select 3 of 12) -->
+            <div id="alArtSection" class="hidden bg-white border border-slate-200 rounded-lg p-3 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-xs text-slate-800">Select Exactly 03 Art Subjects:</span>
+                <span id="alArtCounter" class="text-[11px] font-extrabold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
+                  0 of 3 Selected
+                </span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-xs pt-1">
+                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
+                  <input type="checkbox" name="alArtSubject" value="Sinhala" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                  <span class="font-semibold text-slate-800">Sinhala</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
+                  <input type="checkbox" name="alArtSubject" value="Geography" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                  <span class="font-semibold text-slate-800">Geography</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
+                  <input type="checkbox" name="alArtSubject" value="Drama" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                  <span class="font-semibold text-slate-800">Drama</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
+                  <input type="checkbox" name="alArtSubject" value="Dancing" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                  <span class="font-semibold text-slate-800">Dancing</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
+                  <input type="checkbox" name="alArtSubject" value="Music" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                  <span class="font-semibold text-slate-800">Music</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
+                  <input type="checkbox" name="alArtSubject" value="Art" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                  <span class="font-semibold text-slate-800">Art</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
+                  <input type="checkbox" name="alArtSubject" value="Information &amp; Communication Technology" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                  <span class="font-semibold text-slate-800">Information &amp; Communication Technology</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
+                  <input type="checkbox" name="alArtSubject" value="History" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                  <span class="font-semibold text-slate-800">History</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
+                  <input type="checkbox" name="alArtSubject" value="Buddhist Civilization" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                  <span class="font-semibold text-slate-800">Buddhist Civilization</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
+                  <input type="checkbox" name="alArtSubject" value="Communication &amp; Mass Media" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                  <span class="font-semibold text-slate-800">Communication &amp; Mass Media</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
+                  <input type="checkbox" name="alArtSubject" value="Economics" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                  <span class="font-semibold text-slate-800">Economics</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
+                  <input type="checkbox" name="alArtSubject" value="Political Science" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                  <span class="font-semibold text-slate-800">Political Science</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Curriculum Notice for Primary, 6-9, 13-YGEP -->
+          <div id="generalCurriculumNotice" class="sm:col-span-2 hidden bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-600 flex items-center gap-2">
+            <span class="text-base text-[#800020] font-bold">ℹ</span>
+            <span id="generalCurriculumText">Standard National Curriculum applied for this educational stage.</span>
           </div>
           <div>
             <label class="block font-bold text-slate-700 mb-1">Medium</label>
@@ -1356,6 +1539,6 @@
   </footer>
 
   <!-- App Script with cache-busting parameter -->
-  <script src="/static/js/app.js?v=2.8"></script>
+  <script src="/static/js/app.js?v=2.9"></script>
 </body>
 </html>
