@@ -646,6 +646,73 @@ function updateAlSubjectCounters() {
   }
 }
 
+/* --------------------------------------------------------------------------
+   Student House Auto-Assignment (Admission No mod 3)
+   mod 0 = Mayura
+   mod 1 = Thisara
+   mod 2 = Paravi
+   -------------------------------------------------------------------------- */
+function getHouseFromAdmission(admissionNo) {
+  if (!admissionNo) return 'Thisara';
+  const digits = String(admissionNo).replace(/\D/g, '');
+  if (!digits) return 'Thisara';
+  try {
+    const mod = Number(BigInt(digits) % 3n);
+    if (mod === 0) return 'Mayura';
+    if (mod === 1) return 'Thisara';
+    if (mod === 2) return 'Paravi';
+  } catch (e) {
+    const num = parseInt(digits, 10);
+    if (!isNaN(num)) {
+      const mod = num % 3;
+      if (mod === 0) return 'Mayura';
+      if (mod === 1) return 'Thisara';
+      if (mod === 2) return 'Paravi';
+    }
+  }
+  return 'Thisara';
+}
+
+function autoAssignHouseFromAdmission() {
+  const admInput = document.getElementById('studentAdmissionInput');
+  const houseSelect = document.getElementById('studentHouseInput');
+  const badge = document.getElementById('houseAutoCalcBadge');
+  const hint = document.getElementById('houseCalcHint');
+  if (!admInput || !houseSelect) return;
+
+  const rawVal = admInput.value.trim();
+  const digits = rawVal.replace(/\D/g, '');
+
+  if (!digits) {
+    if (badge) {
+      badge.textContent = 'Admission % 3';
+      badge.className = 'text-[10px] text-amber-800 font-bold bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded';
+    }
+    if (hint) {
+      hint.innerHTML = 'Auto-calculated from Admission No mod 3: 0 = Mayura, 1 = Thisara, 2 = Paravi';
+    }
+    return;
+  }
+
+  const house = getHouseFromAdmission(rawVal);
+  const mod = Number(BigInt(digits) % 3n);
+  houseSelect.value = house;
+
+  const meta = {
+    'Mayura': { sinhala: 'මයුර', style: 'bg-blue-100 text-blue-900 border-blue-300' },
+    'Thisara': { sinhala: 'තිසර', style: 'bg-amber-100 text-amber-900 border-amber-300' },
+    'Paravi': { sinhala: 'පරවි', style: 'bg-rose-100 text-[#800020] border-rose-300' }
+  }[house] || { sinhala: house, style: 'bg-slate-100 text-slate-800 border-slate-300' };
+
+  if (badge) {
+    badge.textContent = `Mod ${mod} → ${house}`;
+    badge.className = `text-[10px] font-bold border px-1.5 py-0.5 rounded ${meta.style}`;
+  }
+  if (hint) {
+    hint.innerHTML = `Calculated: <span class="font-mono font-bold text-slate-700">${digits}</span> % 3 = <span class="font-extrabold text-[#800020]">${mod}</span> &rarr; Assigned to <span class="font-extrabold text-[#800020]">${house} House (${meta.sinhala} නිවාසය)</span>`;
+  }
+}
+
 function renderDossierSubjects(item) {
   const level = item.academic_level || (item.stream?.includes('O/L') ? 'Ordinary Level' : (item.stream?.includes('A/L') ? 'Advanced Level' : ''));
   
@@ -1324,6 +1391,7 @@ function openAddStudentModal() {
   handleEducationLevelChange();
   document.getElementById('studentFormMode').value = 'create';
   document.getElementById('studentAdmissionInput').readOnly = false;
+  autoAssignHouseFromAdmission();
   modal.classList.remove('hidden');
 }
 
@@ -1367,6 +1435,12 @@ function initModals() {
   const staffForm = document.getElementById('staffForm');
   const loginForm = document.getElementById('loginForm');
   const marksForm = document.getElementById('marksForm');
+
+  const admInput = document.getElementById('studentAdmissionInput');
+  if (admInput) {
+    admInput.addEventListener('input', autoAssignHouseFromAdmission);
+    admInput.addEventListener('change', autoAssignHouseFromAdmission);
+  }
 
   if (studentForm) {
     studentForm.addEventListener('submit', async (e) => {
@@ -1455,7 +1529,7 @@ function initModals() {
         ol_bucket_2: ol_bucket_2,
         ol_bucket_3: ol_bucket_3,
         medium: document.getElementById('studentMediumInput').value,
-        house: document.getElementById('studentHouseInput').value,
+        house: document.getElementById('studentHouseInput')?.value || getHouseFromAdmission(admissionNo),
         guardian_name: document.getElementById('studentGuardianInput').value.trim(),
         guardian_contact: document.getElementById('studentContactInput').value.trim(),
         address: document.getElementById('studentAddressInput').value.trim(),
@@ -1732,7 +1806,8 @@ async function openEditModal(id, type) {
     }
 
     document.getElementById('studentMediumInput').value = s.medium;
-    document.getElementById('studentHouseInput').value = s.house;
+    document.getElementById('studentHouseInput').value = s.house || getHouseFromAdmission(s.admission_no);
+    autoAssignHouseFromAdmission();
     document.getElementById('studentGuardianInput').value = s.guardian_name;
     document.getElementById('studentContactInput').value = s.guardian_contact;
     document.getElementById('studentAddressInput').value = s.address;
