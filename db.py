@@ -891,19 +891,27 @@ def get_system_stats():
 # Create / Update / Delete
 # ---------------------------------------------------------------------------
 def create_student(data):
-    cols = ", ".join(STUDENT_FIELDS)
+    cols = ", ".join([f"`{f}`" for f in STUDENT_FIELDS])
     placeholders = ", ".join(["%s"] * len(STUDENT_FIELDS))
-    data = {**data, "id": data.get("admission_no", "")}
-    vals = [data.get(f, "") for f in STUDENT_FIELDS]
+    sanitized = dict(data)
+    sanitized["id"] = sanitized.get("admission_no", "")
+    for df in ["dob", "enrollment_date"]:
+        val = sanitized.get(df)
+        sanitized[df] = str(val).strip() if val and str(val).strip() else None
+    vals = [sanitized.get(f) if sanitized.get(f) is not None else "" for f in STUDENT_FIELDS]
     execute_query(f"INSERT INTO students ({cols}) VALUES ({placeholders})", vals, commit=True)
-    return get_student_by_id(data.get("id"))
+    return get_student_by_id(sanitized.get("id"))
 
 def update_student(student_id, data):
     current = get_student_by_id(student_id) or {}
     merged = {**current, **{k: v for k, v in data.items() if v is not None}}
+    for df in ["dob", "enrollment_date"]:
+        if df in merged:
+            val = merged.get(df)
+            merged[df] = str(val).strip() if val and str(val).strip() else None
     fields = [f for f in STUDENT_FIELDS if f != "id"]
-    set_clause = ", ".join([f"{f}=%s" for f in fields])
-    vals = [merged.get(f, "") for f in fields] + [student_id]
+    set_clause = ", ".join([f"`{f}`=%s" for f in fields])
+    vals = [merged.get(f) if merged.get(f) is not None else "" for f in fields] + [student_id]
     execute_query(f"UPDATE students SET {set_clause} WHERE id=%s", vals, commit=True)
     return get_student_by_id(student_id)
 

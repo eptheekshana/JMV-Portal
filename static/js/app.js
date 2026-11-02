@@ -633,6 +633,19 @@ function renderDossier(item, type) {
       </div>
     </div>
 
+    <!-- Medical & Health Records -->
+    <div class="bg-rose-50/60 p-5 rounded-xl border border-rose-200 space-y-2">
+      <h4 class="font-extrabold text-[#800020] text-sm uppercase border-b border-rose-200 pb-2 flex items-center gap-2">
+        ${icon('alert')} Medical &amp; Health Records
+      </h4>
+      <div class="text-xs">
+        <span class="block uppercase font-bold text-slate-500 mb-1">Health Issues / Allergies / Medical Notes</span>
+        <div class="font-semibold text-slate-800 ${item.health_issues ? 'text-rose-900 font-bold' : ''}">
+          ${escapeHtml(item.health_issues || 'No chronic health issues or allergies reported.')}
+        </div>
+      </div>
+    </div>
+
     <!-- Extracurriculars -->
     <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-3">
       <h4 class="font-extrabold text-[#800020] text-sm uppercase border-b border-slate-200 pb-2 flex items-center gap-2">
@@ -1108,6 +1121,8 @@ function openAddStudentModal() {
   if (!modal || !form) return;
   document.getElementById('studentModalTitle').textContent = "Enroll New Student";
   form.reset();
+  if (document.getElementById('studentHealthInput')) document.getElementById('studentHealthInput').value = '';
+  if (document.getElementById('studentNotesInput')) document.getElementById('studentNotesInput').value = '';
   document.getElementById('studentFormMode').value = 'create';
   document.getElementById('studentAdmissionInput').readOnly = false;
   modal.classList.remove('hidden');
@@ -1178,7 +1193,8 @@ function initModals() {
         address: document.getElementById('studentAddressInput').value.trim(),
         status: document.getElementById('studentStatusInput').value,
         extracurricular: document.getElementById('studentExtraInput').value.trim(),
-        notes: '',
+        health_issues: document.getElementById('studentHealthInput') ? document.getElementById('studentHealthInput').value.trim() : '',
+        notes: document.getElementById('studentNotesInput') ? document.getElementById('studentNotesInput').value.trim() : '',
         photo_url: document.getElementById('studentPhotoInput').value.trim() || `https://ui-avatars.com/api/?name=${encodeURIComponent(document.getElementById('studentInitialsInput').value.trim())}&background=5c0d1b&color=fff`
       };
 
@@ -1405,6 +1421,8 @@ async function openEditModal(id, type) {
     document.getElementById('studentStatusInput').value = s.status;
     document.getElementById('studentExtraInput').value = s.extracurricular || '';
     document.getElementById('studentPhotoInput').value = s.photo_url || '';
+    if (document.getElementById('studentHealthInput')) document.getElementById('studentHealthInput').value = s.health_issues || '';
+    if (document.getElementById('studentNotesInput')) document.getElementById('studentNotesInput').value = s.notes || '';
 
     document.getElementById('studentModal').classList.remove('hidden');
   } else {
