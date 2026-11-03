@@ -1,11 +1,13 @@
 import os
 import sys
+import base64
 from functools import wraps
 
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, Response, jsonify, request, send_from_directory
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import db
+import excel_utils
 
 app = Flask(__name__)
 DB_ERROR = None
@@ -169,6 +171,77 @@ def student(user, student_id):
         return jsonify(success=True)
     record = db.update_student(student_id, request.get_json(silent=True) or {})
     return jsonify(record)
+
+
+@app.get("/api/templates/students.xlsx")
+def download_student_template():
+    xlsx_bytes = excel_utils.generate_student_template_xlsx()
+    return Response(
+        xlsx_bytes,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="JMV_Student_Bulk_Upload_Template.xlsx"'},
+    )
+
+
+@app.get("/api/templates/staff.xlsx")
+def download_staff_template():
+    xlsx_bytes = excel_utils.generate_staff_template_xlsx()
+    return Response(
+        xlsx_bytes,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="JMV_Teachers_Staff_Bulk_Upload_Template.xlsx"'},
+    )
+
+
+def _extract_flask_spreadsheet():
+    mode = request.args.get("mode", "upsert")
+    filename = "upload.xlsx"
+    file_bytes = b""
+    if "file" in request.files:
+        f = request.files["file"]
+        filename = f.filename or filename
+        file_bytes = f.read()
+        mode = request.form.get("mode", mode)
+    else:
+        data = request.get_json(silent=True) or {}
+        filename = data.get("filename", filename)
+        mode = data.get("mode", mode)
+        b64 = data.get("file_base64", "")
+        if "," in b64 and b64.startswith("data:"):
+            b64 = b64.split(",", 1)[1]
+        if b64:
+            file_bytes = base64.b64decode(b64)
+    return file_bytes, filename, mode
+
+
+@app.post("/api/students/bulk")
+@requires_roles("admin")
+def bulk_upload_students(_user):
+    try:
+        file_bytes, filename, mode = _extract_flask_spreadsheet()
+        rows_2d = excel_utils.parse_spreadsheet_bytes(file_bytes, filename)
+        mapped = excel_utils.map_rows_to_student_dicts(rows_2d)
+        summary = db.bulk_upsert_students(mapped, mode=mode)
+        return jsonify(success=True, **summary)
+    except ValueError as ve:
+        return jsonify(error=str(ve)), 400
+    except Exception as exc:
+        return jsonify(error=f"Failed to process Excel file: {exc}"), 500
+
+
+@app.post("/api/staff/bulk")
+@requires_roles("admin")
+def bulk_upload_staff(_user):
+    try:
+        file_bytes, filename, mode = _extract_flask_spreadsheet()
+        rows_2d = excel_utils.parse_spreadsheet_bytes(file_bytes, filename)
+        mapped = excel_utils.map_rows_to_staff_dicts(rows_2d)
+        summary = db.bulk_upsert_staff(mapped, mode=mode)
+        return jsonify(success=True, **summary)
+    except ValueError as ve:
+        return jsonify(error=str(ve)), 400
+    except Exception as exc:
+        return jsonify(error=f"Failed to process Excel file: {exc}"), 500
 
 
 @app.post("/api/students")
