@@ -979,8 +979,9 @@ function renderDossier(item, type) {
           <span class="font-bold text-slate-800">${escapeHtml(item.name_with_initials)}</span>
         </div>
         <div>
-          <span class="block uppercase font-bold text-slate-400">Gender &amp; DOB</span>
-          <span class="font-bold text-slate-800">${escapeHtml(item.gender)} • ${escapeHtml(item.dob)}</span>
+          <span class="block uppercase font-bold text-slate-400">Gender &amp; Date of Birth</span>
+          <span class="font-bold text-slate-800">${escapeHtml(item.gender || '—')} • ${escapeHtml(item.dob || '—')}</span>
+          ${calculateAge(item.dob) !== null ? `<span class="inline-block ml-1.5 px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-100 text-blue-900 border border-blue-200">${calculateAge(item.dob)} yrs old</span>` : ''}
         </div>
         <div>
           <span class="block uppercase font-bold text-slate-400">Guardian / Parent</span>
@@ -1315,14 +1316,15 @@ async function loadStudents() {
 function renderStudentsTable(students) {
   const tbody = document.getElementById('studentsTableBody');
   const countBadge = document.getElementById('studentsCountBadge');
-  if (countBadge) countBadge.textContent = `${students.length} Enrolled`;
+  const activeCount = (students || []).filter(s => (s.status || '').toLowerCase() === 'active').length;
+  if (countBadge) countBadge.textContent = `${activeCount} Active Enrolled`;
 
   if (!tbody) return;
 
   if (!students || students.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="6" class="text-center p-8 text-slate-400">
+        <td colspan="8" class="text-center p-8 text-slate-400">
           No students matching search criteria.
         </td>
       </tr>
@@ -1339,7 +1341,9 @@ function renderStudentsTable(students) {
   const u = AppState.currentUser;
   const isTeacher = u && u.role === 'teacher';
 
-  tbody.innerHTML = students.map(s => `
+  tbody.innerHTML = students.map(s => {
+    const age = calculateAge(s.dob);
+    return `
     <tr class="hover:bg-slate-50 transition-colors">
       <td class="p-3.5 font-mono font-bold text-[#800020]">
         <button onclick="lookupFromTable('${s.admission_no}')" class="bg-slate-100 hover:bg-[#800020] hover:text-white px-2 py-0.5 rounded transition-colors cursor-pointer" title="View student record">
@@ -1358,6 +1362,15 @@ function renderStudentsTable(students) {
       <td class="p-3.5">
         <span class="font-bold text-slate-800">${escapeHtml(s.grade)}</span>
         <span class="text-xs text-slate-500">(${escapeHtml(s.stream)})</span>
+      </td>
+      <td class="p-3.5 text-xs whitespace-nowrap">
+        ${s.dob ? `
+          <div class="font-bold text-slate-800">${escapeHtml(s.dob)}</div>
+          ${age !== null ? `<span class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-100 text-blue-900 border border-blue-300">${age} yrs old</span>` : ''}
+        ` : `<span class="text-slate-400 font-semibold">—</span>`}
+      </td>
+      <td class="p-3.5 text-xs text-slate-600 max-w-[200px] truncate" title="${escapeHtml(s.address || '')}">
+        ${escapeHtml(s.address || '—')}
       </td>
       <td class="p-3.5">
         <span class="text-xs font-bold px-2 py-0.5 rounded ${houseThemes[s.house] || 'bg-slate-100 text-slate-800'}">
@@ -1388,7 +1401,7 @@ function renderStudentsTable(students) {
         </div>
       </td>
     </tr>
-  `).join('');
+  `}).join('');
 }
 
 /* --------------------------------------------------------------------------
@@ -1455,6 +1468,19 @@ function updateStaffAgeDisplay(dobVal) {
   }
 }
 
+function updateStudentAgeDisplay(dobVal) {
+  const badge = document.getElementById('studentCalculatedAgeBadge');
+  if (!badge) return;
+  const age = calculateAge(dobVal);
+  if (age !== null) {
+    badge.textContent = `${age} years old`;
+    badge.classList.remove('hidden');
+  } else {
+    badge.textContent = '';
+    badge.classList.add('hidden');
+  }
+}
+
 function deriveDobFromSriLankanNic(nic) {
   if (!nic) return null;
   const clean = String(nic).trim().toUpperCase();
@@ -1478,7 +1504,8 @@ function deriveDobFromSriLankanNic(nic) {
 function renderStaffTable(staff) {
   const tbody = document.getElementById('staffTableBody');
   const countBadge = document.getElementById('staffCountBadge');
-  if (countBadge) countBadge.textContent = `${staff.length} Faculty Members`;
+  const activeStaffCount = (staff || []).filter(st => (st.status || '').toLowerCase() === 'active').length;
+  if (countBadge) countBadge.textContent = `${activeStaffCount} Active Staff`;
 
   if (!tbody) return;
 
@@ -1650,6 +1677,8 @@ function openAddStudentModal() {
   if (document.getElementById('studentHealthInput')) document.getElementById('studentHealthInput').value = '';
   if (document.getElementById('studentNotesInput')) document.getElementById('studentNotesInput').value = '';
   handleEducationLevelChange();
+  if (document.getElementById('studentDobInput')) document.getElementById('studentDobInput').value = '';
+  updateStudentAgeDisplay('');
   document.getElementById('studentFormMode').value = 'create';
   document.getElementById('studentAdmissionInput').readOnly = false;
   autoAssignHouseFromAdmission();
@@ -1759,6 +1788,12 @@ function initModals() {
   if (admInput) {
     admInput.addEventListener('input', autoAssignHouseFromAdmission);
     admInput.addEventListener('change', autoAssignHouseFromAdmission);
+  }
+
+  const studentDob = document.getElementById('studentDobInput');
+  if (studentDob) {
+    studentDob.addEventListener('input', (e) => updateStudentAgeDisplay(e.target.value));
+    studentDob.addEventListener('change', (e) => updateStudentAgeDisplay(e.target.value));
   }
 
   const staffDob = document.getElementById('staffDobInput');
@@ -2203,7 +2238,8 @@ async function openEditModal(id, type) {
     document.getElementById('studentInitialsInput').value = s.name_with_initials || '';
     document.getElementById('studentFullNameInput').value = s.full_name || '';
     document.getElementById('studentGenderInput').value = s.gender;
-    document.getElementById('studentDobInput').value = s.dob;
+    document.getElementById('studentDobInput').value = s.dob || '';
+    updateStudentAgeDisplay(s.dob || '');
     document.getElementById('studentGradeInput').value = s.grade;
     document.getElementById('studentStreamInput').value = s.stream || '';
 
