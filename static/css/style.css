@@ -97,6 +97,20 @@ body {
   stroke-linejoin: round;
 }
 
+.directory-action-bar {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 0.625rem !important;
+  white-space: nowrap !important;
+  overflow-x: auto;
+  max-width: 100%;
+}
+.directory-action-bar > * {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+
 .ui-icon-lg {
   width: 1.25rem;
   height: 1.25rem;
