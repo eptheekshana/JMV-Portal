@@ -160,6 +160,7 @@ def init_mariadb_schema(conn):
             full_name VARCHAR(255) NOT NULL DEFAULT '',
             name_with_initials VARCHAR(150) NOT NULL,
             gender VARCHAR(16) NOT NULL,
+            dob VARCHAR(32) NULL,
             role VARCHAR(150) NOT NULL,
             department VARCHAR(150) NOT NULL DEFAULT '',
             subjects_taught VARCHAR(255),
@@ -442,6 +443,8 @@ def _migrate_existing_mariadb_schema(cur):
             (row["Field"] if isinstance(row, dict) else row[0])
             for row in raw_staff_cols
         }
+        if "dob" not in staff_columns:
+            cur.execute("ALTER TABLE staff ADD COLUMN `dob` VARCHAR(32) NULL AFTER `gender`")
         if "address" not in staff_columns:
             cur.execute("ALTER TABLE staff ADD COLUMN `address` VARCHAR(255) NOT NULL DEFAULT '' AFTER `email`")
     except Exception:
@@ -526,6 +529,7 @@ def init_sqlite_schema(conn):
         full_name TEXT NOT NULL DEFAULT '',
         name_with_initials TEXT NOT NULL,
         gender TEXT NOT NULL,
+        dob TEXT NULL,
         role TEXT NOT NULL,
         department TEXT NOT NULL DEFAULT '',
         subjects_taught TEXT,
@@ -543,7 +547,52 @@ def init_sqlite_schema(conn):
     );
     """)
     cur.execute("PRAGMA table_info(staff)")
+    cols_info = {row[1]: row for row in cur.fetchall()}
+    if cols_info.get("epf_no", (0, 0, 0, 0))[3] == 1:
+        try:
+            cur.execute("ALTER TABLE staff RENAME TO _staff_old")
+            cur.execute("""
+            CREATE TABLE staff (
+                id TEXT PRIMARY KEY,
+                epf_no TEXT UNIQUE,
+                full_name TEXT NOT NULL DEFAULT '',
+                name_with_initials TEXT NOT NULL,
+                gender TEXT NOT NULL,
+                dob TEXT NULL,
+                role TEXT NOT NULL,
+                department TEXT NOT NULL DEFAULT '',
+                subjects_taught TEXT,
+                qualifications TEXT NOT NULL DEFAULT '',
+                appointed_date TEXT,
+                contact_no TEXT NOT NULL DEFAULT '',
+                email TEXT NOT NULL DEFAULT '',
+                address TEXT NOT NULL DEFAULT '',
+                nic TEXT NOT NULL DEFAULT '',
+                status TEXT NOT NULL DEFAULT 'Active',
+                assigned_classes TEXT,
+                photo_url TEXT,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(150) NOT NULL DEFAULT '',
+                updated_by VARCHAR(150) NOT NULL DEFAULT '',
+                last_updated_at VARCHAR(32) NOT NULL DEFAULT ''
+            );
+            """)
+            common = [c for c in cols_info.keys() if c != "epf_no" or True]
+            # Copy all matching columns
+            cur.execute("PRAGMA table_info(staff)")
+            new_col_names = {row[1] for row in cur.fetchall()}
+            shared = [c for c in cols_info.keys() if c in new_col_names]
+            cols_csv = ", ".join(shared)
+            cur.execute(f"INSERT INTO staff ({cols_csv}) SELECT {cols_csv} FROM _staff_old")
+            cur.execute("DROP TABLE _staff_old")
+            conn.commit()
+        except Exception:
+            pass
+    cur.execute("PRAGMA table_info(staff)")
     sqlite_staff_cols = {row[1] for row in cur.fetchall()}
+    if "dob" not in sqlite_staff_cols:
+        cur.execute("ALTER TABLE staff ADD COLUMN dob TEXT NULL")
     if "address" not in sqlite_staff_cols:
         cur.execute("ALTER TABLE staff ADD COLUMN address TEXT NOT NULL DEFAULT ''")
 
@@ -1167,8 +1216,10 @@ def create_staff(data, actor=None):
     sanitized["epf_no"] = str(epf).strip() if epf and str(epf).strip() else None
     app_date = sanitized.get("appointed_date")
     sanitized["appointed_date"] = str(app_date).strip() if app_date and str(app_date).strip() else None
+    dob = sanitized.get("dob")
+    sanitized["dob"] = str(dob).strip() if dob and str(dob).strip() else None
     vals = [
-        sanitized.get(f) if f in ("epf_no", "appointed_date") else (sanitized.get(f) if sanitized.get(f) is not None else "")
+        sanitized.get(f) if f in ("epf_no", "appointed_date", "dob") else (sanitized.get(f) if sanitized.get(f) is not None else "")
         for f in STAFF_FIELDS
     ]
     execute_query(f"INSERT INTO staff ({cols}) VALUES ({placeholders})", vals, commit=True)
@@ -1187,11 +1238,14 @@ def update_staff(staff_id, data, actor=None):
     if "appointed_date" in sanitized:
         app_date = sanitized.get("appointed_date")
         sanitized["appointed_date"] = str(app_date).strip() if app_date and str(app_date).strip() else None
-    merged = {**current, **{k: v for k, v in sanitized.items() if v is not None or k in ("epf_no", "appointed_date")}}
+    if "dob" in sanitized:
+        dob = sanitized.get("dob")
+        sanitized["dob"] = str(dob).strip() if dob and str(dob).strip() else None
+    merged = {**current, **{k: v for k, v in sanitized.items() if v is not None or k in ("epf_no", "appointed_date", "dob")}}
     fields = [f for f in STAFF_FIELDS if f != "id"]
     set_clause = ", ".join([f"`{f}`=%s" for f in fields])
     vals = [
-        merged.get(f) if f in ("epf_no", "appointed_date") else (merged.get(f) if merged.get(f) is not None else "")
+        merged.get(f) if f in ("epf_no", "appointed_date", "dob") else (merged.get(f) if merged.get(f) is not None else "")
         for f in fields
     ] + [staff_id]
     execute_query(f"UPDATE staff SET {set_clause} WHERE id=%s", vals, commit=True)
@@ -1330,12 +1384,27 @@ def reset_to_demo_data():
             r, commit=True
         )
 
-    cols_stf = ", ".join(STAFF_FIELDS)
+    cols_stf = ", ".join([f"`{f}`" for f in STAFF_FIELDS])
     placeholders_stf = ", ".join(["%s"] * len(STAFF_FIELDS))
+    sample_staff_keys = [
+        "id", "epf_no", "full_name", "name_with_initials", "gender", "role",
+        "department", "subjects_taught", "qualifications", "appointed_date",
+        "contact_no", "email", "nic", "status", "assigned_classes", "photo_url", "notes"
+    ]
     for r in SAMPLE_STAFF:
+        rec = dict(zip(sample_staff_keys, r))
+        nic = rec.get("nic", "")
+        if len(nic) == 12 and nic.startswith(("19", "20")):
+            rec["dob"] = f"{nic[:4]}-06-15"
+        elif len(nic) == 10 and nic[:2].isdigit():
+            rec["dob"] = f"19{nic[:2]}-06-15"
+        else:
+            rec["dob"] = "1980-05-15"
+        rec["address"] = "Jayakody Maha Vidyalaya Quarters, Ganemulla"
+        vals = [rec.get(f, "") for f in STAFF_FIELDS]
         execute_query(
             f"INSERT INTO staff ({cols_stf}) VALUES ({placeholders_stf})",
-            r, commit=True
+            vals, commit=True
         )
 
     cols_usr = ", ".join(USER_FIELDS)
