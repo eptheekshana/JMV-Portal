@@ -263,53 +263,125 @@ function initTimetable() {
   if (refresh) refresh.addEventListener('click', loadTimetable);
   const cancel = document.getElementById('timetableCancelBtn');
   if (cancel) cancel.addEventListener('click', resetTimetableForm);
+  const filterMode = document.getElementById('timetableFilterMode');
+  if (filterMode) {
+    filterMode.addEventListener('change', () => {
+      filterMode.dataset.userChanged = 'true';
+      if (AppState.timetableList) renderTimetableTable(AppState.timetableList);
+    });
+  }
 }
 
 async function loadTimetable() {
-      const admin = AppState.currentUser && AppState.currentUser.role === 'admin';
-      const restricted = document.getElementById('timetableRestrictedBanner');
-      const container = document.getElementById('timetableAdminContainer');
-      if (!admin) {
-        if (restricted) restricted.classList.remove('hidden');
-        if (container) container.classList.add('hidden');
-        return;
-      }
-      if (restricted) restricted.classList.add('hidden');
-      if (container) container.classList.remove('hidden');
-      try {
-        const [entriesRes, staffRes] = await Promise.all([
-          fetch('/api/timetable', { headers: getAuthHeaders() }),
-          fetch('/api/staff', { headers: getAuthHeaders() })
-        ]);
-        if (!entriesRes.ok || !staffRes.ok) throw new Error('Unable to load timetable data.');
-        const entries = await entriesRes.json();
-        AppState.timetableList = entries;
-        const staff = await staffRes.json();
-        const teacherSelect = document.getElementById('timetableTeacher');
-        if (teacherSelect) {
-          teacherSelect.innerHTML = '<option value="">Select teacher</option>' +
-            staff.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name_with_initials || t.full_name)}</option>`).join('');
-        }
-        const tbody = document.getElementById('timetableTableBody');
-        if (tbody) tbody.innerHTML = entries.length ? entries.map(entry => `
-          <tr>
-            <td class="p-3 font-semibold">${escapeHtml(entry.class_name)}</td>
-            <td class="p-3">${escapeHtml(entry.day_of_week)}</td>
-            <td class="p-3">Period ${entry.period_no}</td>
-            <td class="p-3">${escapeHtml(entry.subject)}</td>
-            <td class="p-3">${escapeHtml(entry.teacher_name)}</td>
-            <td class="p-3 text-right whitespace-nowrap">
-              <button onclick="editTimetableEntryById('${escapeHtml(entry.id)}')" class="text-[#800020] font-bold text-xs mr-3">${icon('edit')} Edit</button>
-              <button onclick="deleteTimetableEntry('${escapeHtml(entry.id)}')" class="text-red-700 font-bold text-xs">${icon('trash')} Delete</button>
-            </td>
-          </tr>`).join('') : '<tr><td colspan="6" class="p-8 text-center text-slate-500">No timetable entries have been created.</td></tr>';
-      } catch (error) {
-        showToast(error.message, 'error');
+  const u = AppState.currentUser;
+  const isAdmin = u && u.role === 'admin';
+  const isTeacher = u && u.role === 'teacher';
+  const restricted = document.getElementById('timetableRestrictedBanner');
+  const container = document.getElementById('timetableAdminContainer');
+  const form = document.getElementById('timetableForm');
+  const actionHeader = document.getElementById('timetableActionHeader');
+  const filterMode = document.getElementById('timetableFilterMode');
+
+  if (!isAdmin && !isTeacher) {
+    if (restricted) restricted.classList.remove('hidden');
+    if (container) container.classList.add('hidden');
+    return;
+  }
+  if (restricted) restricted.classList.add('hidden');
+  if (container) container.classList.remove('hidden');
+
+  if (form) {
+    if (isTeacher) {
+      form.classList.add('hidden');
+    } else {
+      form.classList.remove('hidden');
+    }
+  }
+
+  if (actionHeader) {
+    actionHeader.style.display = isTeacher ? 'none' : '';
+  }
+
+  if (filterMode && !filterMode.dataset.userChanged) {
+    filterMode.value = isTeacher ? 'my' : 'all';
+  }
+
+  try {
+    const promises = [fetch('/api/timetable', { credentials: 'include', headers: getAuthHeaders() })];
+    if (isAdmin) {
+      promises.push(fetch('/api/staff', { credentials: 'include', headers: getAuthHeaders() }));
+    }
+    const [entriesRes, staffRes] = await Promise.all(promises);
+    if (!entriesRes.ok) throw new Error('Unable to load timetable data.');
+    const entries = await entriesRes.json();
+    AppState.timetableList = entries;
+
+    if (isAdmin && staffRes && staffRes.ok) {
+      const staff = await staffRes.json();
+      const teacherSelect = document.getElementById('timetableTeacher');
+      if (teacherSelect) {
+        teacherSelect.innerHTML = '<option value="">Select teacher</option>' +
+          staff.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name_with_initials || t.full_name)}</option>`).join('');
       }
     }
 
+    renderTimetableTable(entries);
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
+function renderTimetableTable(entries) {
+  const u = AppState.currentUser;
+  const isTeacher = u && u.role === 'teacher';
+  const tbody = document.getElementById('timetableTableBody');
+  const filterMode = document.getElementById('timetableFilterMode');
+  const mode = filterMode ? filterMode.value : (isTeacher ? 'my' : 'all');
+
+  let list = entries || [];
+  if (mode === 'my' && u) {
+    const myName = (u.full_name || '').toLowerCase();
+    const myStaffId = (u.staff_id || '').toLowerCase();
+    const myUser = (u.username || '').toLowerCase();
+    list = list.filter(e => {
+      const tId = (e.teacher_id || '').toLowerCase();
+      const tName = (e.teacher_name || '').toLowerCase();
+      return (myStaffId && tId === myStaffId) ||
+             (tName && (tName.includes(myName) || myName.includes(tName))) ||
+             (tId && tId.includes(myUser));
+    });
+  }
+
+  if (!tbody) return;
+  if (!list.length) {
+    const emptyMsg = (mode === 'my' && isTeacher)
+      ? 'No timetable slots assigned to your teaching profile yet.'
+      : 'No timetable entries have been created.';
+    tbody.innerHTML = `<tr><td colspan="${isTeacher ? 5 : 6}" class="p-8 text-center text-slate-500">${emptyMsg}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(entry => `
+    <tr>
+      <td class="p-3 font-semibold">${escapeHtml(entry.class_name)}</td>
+      <td class="p-3">${escapeHtml(entry.day_of_week)}</td>
+      <td class="p-3">Period ${entry.period_no}</td>
+      <td class="p-3">${escapeHtml(entry.subject)}</td>
+      <td class="p-3">${escapeHtml(entry.teacher_name)}</td>
+      ${!isTeacher ? `
+      <td class="p-3 text-right whitespace-nowrap">
+        <button onclick="editTimetableEntryById('${escapeHtml(entry.id)}')" class="text-[#800020] font-bold text-xs mr-3">${icon('edit')} Edit</button>
+        <button onclick="deleteTimetableEntry('${escapeHtml(entry.id)}')" class="text-red-700 font-bold text-xs">${icon('trash')} Delete</button>
+      </td>` : ''}
+    </tr>`).join('');
+}
+
     async function saveTimetableEntry(event) {
       event.preventDefault();
+      if (!AppState.currentUser || AppState.currentUser.role !== 'admin') {
+        showToast("Only school administrators can create or modify timetable entries.", "error");
+        return;
+      }
       const id = document.getElementById('timetableEntryId').value;
       const payload = {
         id: id || undefined,
@@ -322,7 +394,7 @@ async function loadTimetable() {
       try {
         const response = await fetch(id ? `/api/timetable/${encodeURIComponent(id)}` : '/api/timetable', {
           method: id ? 'PUT' : 'POST',
-          headers: {'Content-Type': 'application/json'},
+          headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
         const data = await response.json();
@@ -336,6 +408,10 @@ async function loadTimetable() {
     }
 
     function editTimetableEntry(entry) {
+      if (!AppState.currentUser || AppState.currentUser.role !== 'admin') {
+        showToast("Only school administrators can edit timetable entries.", "error");
+        return;
+      }
       document.getElementById('timetableEntryId').value = entry.id;
       document.getElementById('timetableClass').value = entry.class_name;
       document.getElementById('timetableDay').value = entry.day_of_week;
@@ -352,9 +428,16 @@ async function loadTimetable() {
     }
 
     async function deleteTimetableEntry(id) {
+      if (!AppState.currentUser || AppState.currentUser.role !== 'admin') {
+        showToast("Only school administrators can delete timetable entries.", "error");
+        return;
+      }
       if (!confirm('Delete this timetable entry?')) return;
       try {
-        const response = await fetch(`/api/timetable/${encodeURIComponent(id)}`, {method: 'DELETE'});
+        const response = await fetch(`/api/timetable/${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Unable to delete timetable entry.');
         showToast('Timetable entry deleted.', 'success');
@@ -807,6 +890,25 @@ function renderDossier(item, type) {
   const recordKey = isStudent ? item.admission_no : item.id;
   const avatarUrl = item.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name_with_initials)}&background=5c0d1b&color=fff&size=200`;
 
+  const editBtn = document.getElementById('editResultBtn');
+  const u = AppState.currentUser;
+  const isTeacher = u && u.role === 'teacher';
+  if (editBtn) {
+    if (isTeacher) {
+      if (isStudent) {
+        editBtn.innerHTML = `${icon('chart')} <span>Record Marks</span>`;
+        editBtn.className = 'px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold uppercase rounded shadow transition-all flex items-center gap-1.5 cursor-pointer';
+        editBtn.style.display = 'inline-flex';
+      } else {
+        editBtn.style.display = 'none';
+      }
+    } else {
+      editBtn.innerHTML = `<svg class="ui-icon" aria-hidden="true"><use href="#icon-edit"></use></svg> <span data-en="Edit Record" data-si="සංස්කරණය">Edit</span>`;
+      editBtn.className = 'px-4 py-1.5 bg-[#800020] hover:bg-[#5c0d1b] text-white text-xs font-bold uppercase rounded shadow transition-all flex items-center gap-1.5 cursor-pointer';
+      editBtn.style.display = 'inline-flex';
+    }
+  }
+
   const detailsHtml = isStudent ? `
     <!-- Academic Details -->
     <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-3">
@@ -1148,12 +1250,20 @@ function initResultControls() {
 
   if (editBtn) {
     editBtn.addEventListener('click', () => {
-      if (AppState.currentEntity && AppState.currentEntityType) {
-        const key = AppState.currentEntityType === 'student'
-          ? AppState.currentEntity.admission_no
-          : AppState.currentEntity.id;
-        openEditModal(key, AppState.currentEntityType);
+      if (!AppState.currentEntity || !AppState.currentEntityType) return;
+      const isTeacher = AppState.currentUser && AppState.currentUser.role === 'teacher';
+      if (isTeacher) {
+        if (AppState.currentEntityType === 'student') {
+          openAddMarkModal(AppState.currentEntity.id);
+        } else {
+          showToast("Teachers cannot edit faculty records.", "error");
+        }
+        return;
       }
+      const key = AppState.currentEntityType === 'student'
+        ? AppState.currentEntity.admission_no
+        : AppState.currentEntity.id;
+      openEditModal(key, AppState.currentEntityType);
     });
   }
 }
@@ -1205,7 +1315,7 @@ function renderStudentsTable(students) {
   if (!students || students.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="7" class="text-center p-8 text-slate-400">
+        <td colspan="6" class="text-center p-8 text-slate-400">
           No students matching search criteria.
         </td>
       </tr>
@@ -1242,7 +1352,6 @@ function renderStudentsTable(students) {
         <span class="font-bold text-slate-800">${escapeHtml(s.grade)}</span>
         <span class="text-xs text-slate-500">(${escapeHtml(s.stream)})</span>
       </td>
-      <td class="p-3.5 text-xs text-slate-600">${escapeHtml(s.admission_no)}</td>
       <td class="p-3.5">
         <span class="text-xs font-bold px-2 py-0.5 rounded ${houseThemes[s.house] || 'bg-slate-100 text-slate-800'}">
           ${escapeHtml(s.house)}
@@ -2227,20 +2336,38 @@ function updateRoleBasedUI() {
       }
     }
 
+    const navStaffTab = document.getElementById('navStaffTab');
+    const studentTemplateLink = document.getElementById('studentTemplateLink');
+    const timetableForm = document.getElementById('timetableForm');
+    const timetableActionHeader = document.getElementById('timetableActionHeader');
+
     if (u.role === 'teacher') {
       if (addStudentBtn) addStudentBtn.style.display = 'none';
       if (bulkStudentBtn) bulkStudentBtn.style.display = 'none';
+      if (studentTemplateLink) studentTemplateLink.style.display = 'none';
+      if (navStaffTab) navStaffTab.style.display = 'none';
       if (staffAdminLockBadge) staffAdminLockBadge.classList.remove('hidden');
       if (staffTeacherRestrictedBanner) staffTeacherRestrictedBanner.classList.remove('hidden');
       if (staffMainContainer) staffMainContainer.classList.add('hidden');
+      if (timetableForm) timetableForm.classList.add('hidden');
+      if (timetableActionHeader) timetableActionHeader.style.display = 'none';
     } else if (u.role === 'admin') {
       if (addStudentBtn) addStudentBtn.style.display = 'inline-flex';
       if (bulkStudentBtn) bulkStudentBtn.style.display = 'inline-flex';
+      if (studentTemplateLink) studentTemplateLink.style.display = 'inline-flex';
+      if (navStaffTab) navStaffTab.style.display = 'inline-flex';
       if (staffAdminLockBadge) staffAdminLockBadge.classList.add('hidden');
       if (staffTeacherRestrictedBanner) staffTeacherRestrictedBanner.classList.add('hidden');
       if (staffMainContainer) staffMainContainer.classList.remove('hidden');
+      if (timetableForm) timetableForm.classList.remove('hidden');
+      if (timetableActionHeader) timetableActionHeader.style.display = '';
     }
   } else {
+    const navStaffTab = document.getElementById('navStaffTab');
+    const studentTemplateLink = document.getElementById('studentTemplateLink');
+    const timetableForm = document.getElementById('timetableForm');
+    const timetableActionHeader = document.getElementById('timetableActionHeader');
+
     if (portalAuthGate) {
       portalAuthGate.classList.remove('hidden');
       portalAuthGate.classList.add('flex');
@@ -2249,9 +2376,13 @@ function updateRoleBasedUI() {
     if (userProfilePill) userProfilePill.classList.add('hidden');
     if (addStudentBtn) addStudentBtn.style.display = 'inline-flex';
     if (bulkStudentBtn) bulkStudentBtn.style.display = 'inline-flex';
+    if (studentTemplateLink) studentTemplateLink.style.display = 'inline-flex';
+    if (navStaffTab) navStaffTab.style.display = 'inline-flex';
     if (staffAdminLockBadge) staffAdminLockBadge.classList.add('hidden');
     if (staffTeacherRestrictedBanner) staffTeacherRestrictedBanner.classList.add('hidden');
     if (staffMainContainer) staffMainContainer.classList.remove('hidden');
+    if (timetableForm) timetableForm.classList.remove('hidden');
+    if (timetableActionHeader) timetableActionHeader.style.display = '';
   }
 
   // Refresh student table actions if populated
