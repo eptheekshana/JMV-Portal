@@ -29,18 +29,18 @@
   --text-light: #94a3b8;
   --border-color: #e2e8f0;
 
-  /* JMV-Web School Houses: Thisara (Gold), Mayura (Blue), Paravi (Maroon) */
-  --house-thisara-bg: #fef3c7;
-  --house-thisara-text: #92400e;
-  --house-thisara-border: #f59e0b;
+  /* JMV-Web School Houses: Thisara (Green), Mayura (Blue), Paravi (Yellow) */
+  --house-thisara-bg: #dcfce7;
+  --house-thisara-text: #166534;
+  --house-thisara-border: #22c55e;
 
   --house-mayura-bg: #dbeafe;
   --house-mayura-text: #1e40af;
   --house-mayura-border: #3b82f6;
 
-  --house-paravi-bg: #fee2e2;
-  --house-paravi-text: #800020;
-  --house-paravi-border: #94172b;
+  --house-paravi-bg: #fef9c3;
+  --house-paravi-text: #854d0e;
+  --house-paravi-border: #eab308;
 
   /* Status Colors */
   --status-active-bg: #dcfce7;

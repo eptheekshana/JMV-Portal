@@ -537,9 +537,9 @@
           <label class="text-xs font-bold text-slate-500 uppercase">House:</label>
           <select id="studentFilterHouse" class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#800020]">
             <option value="">All Houses (Thisara, Mayura, Paravi)</option>
-            <option value="Thisara">Thisara House (තිසර)</option>
-            <option value="Mayura">Mayura House (මයුර)</option>
-            <option value="Paravi">Paravi House (පරවි)</option>
+            <option value="Thisara">Thisara House (තිසර — Green)</option>
+            <option value="Mayura">Mayura House (මයුර — Blue)</option>
+            <option value="Paravi">Paravi House (පරවි — Yellow)</option>
           </select>
         </div>
       </div>
@@ -1142,12 +1142,12 @@
               <span id="houseAutoCalcBadge" class="text-[10px] text-amber-800 font-bold bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded">Admission % 3</span>
             </label>
             <select id="studentHouseInput" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none bg-white font-bold text-slate-800">
-              <option value="Mayura">Mayura House (මයුර) — Mod 0</option>
-              <option value="Thisara">Thisara House (තිසර) — Mod 1</option>
-              <option value="Paravi">Paravi House (පරවි) — Mod 2</option>
+              <option value="Mayura">Mayura House (මයුර • Blue) — Mod 0</option>
+              <option value="Thisara">Thisara House (තිසර • Green) — Mod 1</option>
+              <option value="Paravi">Paravi House (පරවි • Yellow) — Mod 2</option>
             </select>
             <p id="houseCalcHint" class="text-[10px] text-slate-500 mt-1 italic">
-              Auto-calculated from Admission No mod 3: 0 = Mayura, 1 = Thisara, 2 = Paravi
+              Auto-calculated from Admission No mod 3: 0 = Mayura (Blue), 1 = Thisara (Green), 2 = Paravi (Yellow)
             </p>
           </div>
           <div>
@@ -1651,6 +1651,6 @@
   </footer>
 
   <!-- App Script with cache-busting parameter -->
-  <script src="/static/js/app.js?v=3.3"></script>
+  <script src="/static/js/app.js?v=3.4"></script>
 </body>
 </html>

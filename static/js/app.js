@@ -699,17 +699,17 @@ function autoAssignHouseFromAdmission() {
   houseSelect.value = house;
 
   const meta = {
-    'Mayura': { sinhala: 'මයුර', style: 'bg-blue-100 text-blue-900 border-blue-300' },
-    'Thisara': { sinhala: 'තිසර', style: 'bg-amber-100 text-amber-900 border-amber-300' },
-    'Paravi': { sinhala: 'පරවි', style: 'bg-rose-100 text-[#800020] border-rose-300' }
-  }[house] || { sinhala: house, style: 'bg-slate-100 text-slate-800 border-slate-300' };
+    'Mayura': { sinhala: 'මයුර', colorName: 'Blue', style: 'bg-blue-100 text-blue-900 border-blue-300' },
+    'Thisara': { sinhala: 'තිසර', colorName: 'Green', style: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
+    'Paravi': { sinhala: 'පරවි', colorName: 'Yellow', style: 'bg-yellow-100 text-yellow-900 border-yellow-400' }
+  }[house] || { sinhala: house, colorName: '', style: 'bg-slate-100 text-slate-800 border-slate-300' };
 
   if (badge) {
-    badge.textContent = `Mod ${mod} → ${house}`;
+    badge.textContent = `Mod ${mod} → ${house} (${meta.colorName})`;
     badge.className = `text-[10px] font-bold border px-1.5 py-0.5 rounded ${meta.style}`;
   }
   if (hint) {
-    hint.innerHTML = `Calculated: <span class="font-mono font-bold text-slate-700">${digits}</span> % 3 = <span class="font-extrabold text-[#800020]">${mod}</span> &rarr; Assigned to <span class="font-extrabold text-[#800020]">${house} House (${meta.sinhala} නිවාසය)</span>`;
+    hint.innerHTML = `Calculated: <span class="font-mono font-bold text-slate-700">${digits}</span> % 3 = <span class="font-extrabold text-[#800020]">${mod}</span> &rarr; Assigned to <span class="font-extrabold text-[#800020]">${house} House (${meta.sinhala} නිවාසය • ${meta.colorName})</span>`;
   }
 }
 
@@ -837,7 +837,12 @@ function renderDossier(item, type) {
         </div>
         <div>
           <span class="block uppercase font-bold text-slate-400">School House</span>
-          <span class="font-bold text-slate-800">${escapeHtml(item.house)} House</span>
+          <span class="inline-block font-bold px-2 py-0.5 rounded text-[11px] border ${
+            item.house === 'Thisara' ? 'bg-emerald-100 text-emerald-900 border-emerald-300' :
+            item.house === 'Paravi' ? 'bg-yellow-100 text-yellow-900 border-yellow-400' :
+            item.house === 'Mayura' ? 'bg-blue-100 text-blue-900 border-blue-300' :
+            'bg-slate-100 text-slate-800 border-slate-300'
+          }">${escapeHtml(item.house)} House</span>
         </div>
         <div>
           <span class="block uppercase font-bold text-slate-400">Enrolment Date</span>
@@ -1127,9 +1132,9 @@ function renderStudentsTable(students) {
   }
 
   const houseThemes = {
-    'Thisara': 'bg-amber-100 text-amber-900',
-    'Mayura': 'bg-blue-100 text-blue-900',
-    'Paravi': 'bg-rose-100 text-[#800020]'
+    'Thisara': 'bg-emerald-100 text-emerald-900 border border-emerald-300',
+    'Mayura': 'bg-blue-100 text-blue-900 border border-blue-300',
+    'Paravi': 'bg-yellow-100 text-yellow-900 border border-yellow-400'
   };
 
   const u = AppState.currentUser;
@@ -1331,19 +1336,22 @@ async function loadStats() {
     if (houseBars) {
       if (stats.houses && stats.houses.length > 0) {
         const houseTheme = {
-          'Thisara': { color: '#d4af37', bg: '#fef3c7', sinhala: 'තිසර' },
-          'Mayura': { color: '#2563eb', bg: '#dbeafe', sinhala: 'මයුර' },
-          'Paravi': { color: '#800020', bg: '#fee2e2', sinhala: 'පරවි' }
+          'Thisara': { color: '#16a34a', bg: '#dcfce7', sinhala: 'තිසර', colorName: 'Green' },
+          'Mayura': { color: '#2563eb', bg: '#dbeafe', sinhala: 'මයුර', colorName: 'Blue' },
+          'Paravi': { color: '#eab308', bg: '#fef9c3', sinhala: 'පරවි', colorName: 'Yellow' }
         };
 
         const total = stats.total_students || 1;
         houseBars.innerHTML = stats.houses.map(h => {
-          const theme = houseTheme[h.house] || { color: '#6b0f1a', bg: '#f1f5f9', sinhala: h.house };
+          const theme = houseTheme[h.house] || { color: '#6b0f1a', bg: '#f1f5f9', sinhala: h.house, colorName: '' };
           const pct = Math.round((h.count / total) * 100);
           return `
             <div class="mb-4">
               <div class="flex justify-between text-xs font-bold mb-1">
-                <span class="text-slate-800">${h.house} House (${theme.sinhala} නිවාසය)</span>
+                <span class="text-slate-800 flex items-center gap-1.5">
+                  <span style="background-color:${theme.color};" class="inline-block w-2.5 h-2.5 rounded-full"></span>
+                  ${h.house} House (${theme.sinhala} නිවාසය${theme.colorName ? ` • ${theme.colorName}` : ''})
+                </span>
                 <span class="text-slate-500">${h.count} students (${pct}%)</span>
               </div>
               <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
