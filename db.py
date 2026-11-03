@@ -962,27 +962,28 @@ def get_system_stats():
             conn = pymysql.connect(**cfg)
             try:
                 with conn.cursor() as cur:
-                    cur.execute("SELECT COUNT(*) as n FROM students")
+                    cur.execute("SELECT COUNT(*) as n FROM students WHERE LOWER(status) = 'active'")
                     stus = cur.fetchone()
-                    cur.execute("SELECT COUNT(*) as n FROM staff")
+                    cur.execute("SELECT COUNT(*) as n FROM staff WHERE LOWER(status) = 'active'")
                     stfs = cur.fetchone()
                     cur.execute("""
                         SELECT COUNT(*) as n FROM staff
-                        WHERE LOWER(role) LIKE '%clerk%'
+                        WHERE LOWER(status) = 'active'
+                          AND (LOWER(role) LIKE '%clerk%'
                            OR LOWER(role) LIKE '%attendant%'
                            OR LOWER(role) LIKE '%driver%'
                            OR LOWER(role) LIKE '%security%'
                            OR LOWER(role) LIKE '%librarian%'
                            OR LOWER(role) LIKE '%laboratory assistant%'
                            OR LOWER(role) LIKE '%lab assistant%'
-                           OR LOWER(role) LIKE '%non-academic%'
+                           OR LOWER(role) LIKE '%non-academic%')
                     """)
                     non_academic = cur.fetchone()
-                    cur.execute("SELECT grade, COUNT(*) as count FROM students GROUP BY grade ORDER BY grade")
+                    cur.execute("SELECT grade, COUNT(*) as count FROM students WHERE LOWER(status) = 'active' GROUP BY grade ORDER BY grade")
                     grades = cur.fetchall() or []
-                    cur.execute("SELECT department, COUNT(*) as count FROM staff GROUP BY department ORDER BY department")
+                    cur.execute("SELECT department, COUNT(*) as count FROM staff WHERE LOWER(status) = 'active' GROUP BY department ORDER BY department")
                     depts = cur.fetchall() or []
-                    cur.execute("SELECT house, COUNT(*) as count FROM students GROUP BY house ORDER BY house")
+                    cur.execute("SELECT house, COUNT(*) as count FROM students WHERE LOWER(status) = 'active' GROUP BY house ORDER BY house")
                     houses = cur.fetchall() or []
             finally:
                 try:
@@ -997,10 +998,15 @@ def get_system_stats():
                     return row.get(key, 0)
                 return row[0] if len(row) > 0 else 0
 
+            total_active_stf = _val(stfs, "n")
+            active_non_academic = _val(non_academic, "n")
+            active_academic = max(0, total_active_stf - active_non_academic)
+
             return {
                 "total_students": _val(stus, "n"),
-                "total_staff": _val(stfs, "n"),
-                "non_academic_staff": _val(non_academic, "n"),
+                "total_staff": active_academic,
+                "non_academic_staff": active_non_academic,
+                "active_total_staff": total_active_stf,
                 "school_total_students": "1,000+",
                 "school_total_staff": "50+",
                 "grades": [_clean_dict(g) if isinstance(g, dict) else {"grade": g[0], "count": g[1]} for g in grades],
@@ -1016,34 +1022,40 @@ def get_system_stats():
         conn = sqlite3.connect(SQLITE_PATH)
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
-        cur.execute("SELECT COUNT(*) as n FROM students")
+        cur.execute("SELECT COUNT(*) as n FROM students WHERE LOWER(status) = 'active'")
         stus = cur.fetchone()
-        cur.execute("SELECT COUNT(*) as n FROM staff")
+        cur.execute("SELECT COUNT(*) as n FROM staff WHERE LOWER(status) = 'active'")
         stfs = cur.fetchone()
         cur.execute("""
             SELECT COUNT(*) as n FROM staff
-            WHERE LOWER(role) LIKE '%clerk%'
+            WHERE LOWER(status) = 'active'
+              AND (LOWER(role) LIKE '%clerk%'
                OR LOWER(role) LIKE '%attendant%'
                OR LOWER(role) LIKE '%driver%'
                OR LOWER(role) LIKE '%security%'
                OR LOWER(role) LIKE '%librarian%'
                OR LOWER(role) LIKE '%laboratory assistant%'
                OR LOWER(role) LIKE '%lab assistant%'
-               OR LOWER(role) LIKE '%non-academic%'
+               OR LOWER(role) LIKE '%non-academic%')
         """)
         non_academic = cur.fetchone()
-        cur.execute("SELECT grade, COUNT(*) as count FROM students GROUP BY grade ORDER BY grade")
+        cur.execute("SELECT grade, COUNT(*) as count FROM students WHERE LOWER(status) = 'active' GROUP BY grade ORDER BY grade")
         grades = [dict(r) for r in cur.fetchall()]
-        cur.execute("SELECT department, COUNT(*) as count FROM staff GROUP BY department ORDER BY department")
+        cur.execute("SELECT department, COUNT(*) as count FROM staff WHERE LOWER(status) = 'active' GROUP BY department ORDER BY department")
         depts = [dict(r) for r in cur.fetchall()]
-        cur.execute("SELECT house, COUNT(*) as count FROM students GROUP BY house ORDER BY house")
+        cur.execute("SELECT house, COUNT(*) as count FROM students WHERE LOWER(status) = 'active' GROUP BY house ORDER BY house")
         houses = [dict(r) for r in cur.fetchall()]
         conn.close()
 
+        total_active_stf = stfs["n"] if stfs else 0
+        active_non_academic = non_academic["n"] if non_academic else 0
+        active_academic = max(0, total_active_stf - active_non_academic)
+
         return {
             "total_students": stus["n"] if stus else 0,
-            "total_staff": stfs["n"] if stfs else 0,
-            "non_academic_staff": non_academic["n"] if non_academic else 0,
+            "total_staff": active_academic,
+            "non_academic_staff": active_non_academic,
+            "active_total_staff": total_active_stf,
             "school_total_students": "1,000+",
             "school_total_staff": "50+",
             "grades": grades,
