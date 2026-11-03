@@ -866,7 +866,7 @@ function renderDossier(item, type) {
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
         <div>
           <span class="block uppercase font-bold text-slate-400">Full Name</span>
-          <span class="font-bold text-slate-800">${escapeHtml(item.full_name)}</span>
+          <span class="font-bold text-slate-800">${escapeHtml(item.full_name || '—')}</span>
         </div>
         <div>
           <span class="block uppercase font-bold text-slate-400">Name with Initials</span>
@@ -1146,8 +1146,8 @@ function renderStudentsTable(students) {
         <div class="flex items-center gap-3">
           <img src="${s.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(s.name_with_initials)}&background=5c0d1b&color=fff`}" class="w-8 h-8 rounded-full object-cover border border-[#d4af37]" alt="${s.name_with_initials}">
           <div>
-            <div class="font-bold text-slate-800">${escapeHtml(s.name_with_initials)}</div>
-            <div class="text-[11px] text-slate-400">${escapeHtml(s.full_name)}</div>
+            <div class="font-bold text-slate-800">${escapeHtml(s.name_with_initials || s.full_name)}</div>
+            ${s.full_name ? `<div class="text-[11px] text-slate-400">${escapeHtml(s.full_name)}</div>` : ''}
           </div>
         </div>
       </td>
@@ -1749,8 +1749,8 @@ async function openEditModal(id, type) {
     document.getElementById('studentFormMode').value = 'edit';
     document.getElementById('studentAdmissionInput').value = s.admission_no;
     document.getElementById('studentAdmissionInput').readOnly = true;
-    document.getElementById('studentInitialsInput').value = s.name_with_initials;
-    document.getElementById('studentFullNameInput').value = s.full_name;
+    document.getElementById('studentInitialsInput').value = s.name_with_initials || '';
+    document.getElementById('studentFullNameInput').value = s.full_name || '';
     document.getElementById('studentGenderInput').value = s.gender;
     document.getElementById('studentDobInput').value = s.dob;
     document.getElementById('studentGradeInput').value = s.grade;
