@@ -225,15 +225,16 @@ def init_mariadb_schema(conn):
 
         cur.execute("""
         CREATE TABLE IF NOT EXISTS subjects (
-            subject_code VARCHAR(15) PRIMARY KEY,
+            subject_code VARCHAR(15) NOT NULL,
             subject_name VARCHAR(100) NOT NULL,
-            category ENUM('Core','Basket 1','Basket 2','Basket 3','Primary') NOT NULL DEFAULT 'Core',
+            category ENUM('Core','Basket 1','Basket 2','Basket 3','Primary','A/L','Vocational','Other') NOT NULL DEFAULT 'Core',
             grade_level VARCHAR(50) NOT NULL DEFAULT '',
             medium ENUM('Sinhala','English','Tamil','All') NOT NULL DEFAULT 'Sinhala',
             is_active TINYINT(1) NOT NULL DEFAULT 1,
             description TEXT NULL,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (subject_code, grade_level),
             KEY idx_subject_name (subject_name)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         """)
@@ -418,6 +419,20 @@ def _migrate_existing_mariadb_schema(cur):
         cur.execute("ALTER TABLE staff MODIFY COLUMN `department` VARCHAR(150) NOT NULL DEFAULT ''")
     except Exception:
         pass
+    try:
+        cur.execute(
+            "ALTER TABLE subjects MODIFY COLUMN `category` "
+            "ENUM('Core','Basket 1','Basket 2','Basket 3','Primary','A/L','Vocational','Other') NOT NULL DEFAULT 'Core'"
+        )
+    except Exception:
+        pass
+    try:
+        cur.execute("SHOW INDEX FROM subjects WHERE Key_name = 'PRIMARY'")
+        pk_cols = cur.fetchall()
+        if len(pk_cols) == 1:
+            cur.execute("ALTER TABLE subjects DROP PRIMARY KEY, ADD PRIMARY KEY (subject_code, grade_level)")
+    except Exception:
+        pass
 
 def init_sqlite_schema(conn):
     cur = conn.cursor()
@@ -540,7 +555,7 @@ def init_sqlite_schema(conn):
 
     cur.execute("""
     CREATE TABLE IF NOT EXISTS subjects (
-        subject_code TEXT PRIMARY KEY,
+        subject_code TEXT NOT NULL,
         subject_name TEXT NOT NULL,
         category TEXT NOT NULL DEFAULT 'Core',
         grade_level TEXT NOT NULL DEFAULT '',
@@ -548,7 +563,8 @@ def init_sqlite_schema(conn):
         is_active INTEGER NOT NULL DEFAULT 1,
         description TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (subject_code, grade_level)
     );
     """)
 
