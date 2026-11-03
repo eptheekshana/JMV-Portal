@@ -1095,7 +1095,14 @@ function renderDossier(item, type) {
         </div>
         <div>
           <span class="block uppercase font-bold text-slate-400">National ID (NIC)</span>
-          <span class="font-bold text-slate-800">${escapeHtml(item.nic)}</span>
+          <span class="font-bold text-slate-800">${escapeHtml(item.nic || '—')}</span>
+        </div>
+        <div>
+          <span class="block uppercase font-bold text-slate-400">Date of Birth &amp; Age</span>
+          <span class="font-bold text-slate-800">
+            ${escapeHtml(item.dob || '—')}
+            ${calculateAge(item.dob) !== null ? `<span class="ml-1.5 px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300">${calculateAge(item.dob)} years old</span>` : ''}
+          </span>
         </div>
         <div>
           <span class="block uppercase font-bold text-slate-400">Official School Email</span>
@@ -1422,6 +1429,52 @@ async function loadStaff() {
   }
 }
 
+function calculateAge(dobString) {
+  if (!dobString) return null;
+  const birthDate = new Date(dobString);
+  if (isNaN(birthDate.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return (age >= 0 && age < 120) ? age : null;
+}
+
+function updateStaffAgeDisplay(dobVal) {
+  const badge = document.getElementById('staffCalculatedAgeBadge');
+  if (!badge) return;
+  const age = calculateAge(dobVal);
+  if (age !== null) {
+    badge.textContent = `${age} years old`;
+    badge.classList.remove('hidden');
+  } else {
+    badge.textContent = '';
+    badge.classList.add('hidden');
+  }
+}
+
+function deriveDobFromSriLankanNic(nic) {
+  if (!nic) return null;
+  const clean = String(nic).trim().toUpperCase();
+  let year, days;
+  if (/^\d{9}[V|X]$/.test(clean)) {
+    year = 1900 + parseInt(clean.substring(0, 2), 10);
+    days = parseInt(clean.substring(2, 5), 10);
+  } else if (/^\d{12}$/.test(clean)) {
+    year = parseInt(clean.substring(0, 4), 10);
+    days = parseInt(clean.substring(4, 7), 10);
+  } else {
+    return null;
+  }
+  if (days > 500) days -= 500;
+  if (days < 1 || days > 366) return null;
+  const d = new Date(Date.UTC(year, 0, days));
+  if (isNaN(d.getTime())) return null;
+  return d.toISOString().split('T')[0];
+}
+
 function renderStaffTable(staff) {
   const tbody = document.getElementById('staffTableBody');
   const countBadge = document.getElementById('staffCountBadge');
@@ -1432,7 +1485,7 @@ function renderStaffTable(staff) {
   if (!staff || staff.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="8" class="text-center p-8 text-slate-400">
+        <td colspan="9" class="text-center p-8 text-slate-400">
           No faculty members matching criteria.
         </td>
       </tr>
@@ -1443,7 +1496,7 @@ function renderStaffTable(staff) {
   tbody.innerHTML = staff.map(st => `
     <tr class="hover:bg-slate-50 transition-colors">
       <td class="p-3.5 font-mono font-bold text-[#800020]">
-        <button onclick="lookupFromTable('${st.id}')" class="bg-slate-100 hover:bg-[#800020] hover:text-white px-2 py-0.5 rounded transition-colors" title="View profile">
+        <button onclick="lookupFromTable('${st.id}')" class="bg-slate-100 hover:bg-[#800020] hover:text-white px-2 py-0.5 rounded transition-colors cursor-pointer" title="View profile">
           ${escapeHtml(st.id)}
         </button>
       </td>
@@ -1458,7 +1511,15 @@ function renderStaffTable(staff) {
       </td>
       <td class="p-3.5 text-xs text-slate-700">${escapeHtml(st.department || '—')}</td>
       <td class="p-3.5 text-xs text-slate-600">${escapeHtml(st.subjects_taught || 'General Administration')}</td>
-      <td class="p-3.5 text-xs text-slate-600">${escapeHtml(st.address || '—')}</td>
+      <td class="p-3.5 text-xs whitespace-nowrap">
+        ${st.dob ? `
+          <div class="font-bold text-slate-800">${escapeHtml(st.dob)}</div>
+          ${calculateAge(st.dob) !== null ? `<span class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300">${calculateAge(st.dob)} yrs old</span>` : ''}
+        ` : `<span class="text-slate-400 font-semibold">—</span>`}
+      </td>
+      <td class="p-3.5 text-xs text-slate-600 max-w-[200px] truncate" title="${escapeHtml(st.address || '')}">
+        ${escapeHtml(st.address || '—')}
+      </td>
       <td class="p-3.5 font-mono text-xs text-slate-600">${escapeHtml(st.epf_no || '—')}</td>
       <td class="p-3.5">
         <span class="text-xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
@@ -1467,13 +1528,13 @@ function renderStaffTable(staff) {
       </td>
       <td class="p-3.5">
         <div class="flex items-center gap-1.5">
-          <button class="p-1.5 bg-slate-100 hover:bg-[#800020] hover:text-white rounded transition-colors" title="View Profile" onclick="lookupFromTable('${st.id}')">
+          <button class="p-1.5 bg-slate-100 hover:bg-[#800020] hover:text-white rounded transition-colors cursor-pointer" title="View Profile" onclick="lookupFromTable('${st.id}')">
             ${icon('search')}
           </button>
-          <button class="p-1.5 bg-slate-100 hover:bg-[#800020] hover:text-white rounded transition-colors" title="Edit Staff" onclick="openEditModal('${st.id}', 'staff')">
+          <button class="p-1.5 bg-slate-100 hover:bg-[#800020] hover:text-white rounded transition-colors cursor-pointer" title="Edit Staff" onclick="openEditModal('${st.id}', 'staff')">
             ${icon('edit')}
           </button>
-          <button class="p-1.5 bg-slate-100 hover:bg-rose-600 hover:text-white rounded transition-colors" title="Delete Staff" onclick="confirmDelete('${st.id}', 'staff', '${escapeHtml(st.name_with_initials)}')">
+          <button class="p-1.5 bg-slate-100 hover:bg-rose-600 hover:text-white rounded transition-colors cursor-pointer" title="Delete Staff" onclick="confirmDelete('${st.id}', 'staff', '${escapeHtml(st.name_with_initials)}')">
             ${icon('trash')}
           </button>
         </div>
@@ -1616,6 +1677,8 @@ function openAddStaffModal() {
   const nextNum = String(1 + (AppState.staffList.length || 0)).padStart(3, '0');
   document.getElementById('staffIdInput').value = `JMV-STF-${nextNum}`;
   if (document.getElementById('staffGenderInput')) document.getElementById('staffGenderInput').value = 'Male';
+  if (document.getElementById('staffDobInput')) document.getElementById('staffDobInput').value = '';
+  updateStaffAgeDisplay('');
   if (document.getElementById('staffStatusInput')) document.getElementById('staffStatusInput').value = 'Active';
   if (document.getElementById('staffDeptInput')) document.getElementById('staffDeptInput').value = '';
   if (document.getElementById('staffAddressInput')) document.getElementById('staffAddressInput').value = '';
@@ -1696,6 +1759,26 @@ function initModals() {
   if (admInput) {
     admInput.addEventListener('input', autoAssignHouseFromAdmission);
     admInput.addEventListener('change', autoAssignHouseFromAdmission);
+  }
+
+  const staffDob = document.getElementById('staffDobInput');
+  if (staffDob) {
+    staffDob.addEventListener('input', (e) => updateStaffAgeDisplay(e.target.value));
+    staffDob.addEventListener('change', (e) => updateStaffAgeDisplay(e.target.value));
+  }
+
+  const staffNic = document.getElementById('staffNicInput');
+  if (staffNic) {
+    staffNic.addEventListener('input', (e) => {
+      const dobInput = document.getElementById('staffDobInput');
+      if (dobInput && !dobInput.value) {
+        const derivedDob = deriveDobFromSriLankanNic(e.target.value);
+        if (derivedDob) {
+          dobInput.value = derivedDob;
+          updateStaffAgeDisplay(derivedDob);
+        }
+      }
+    });
   }
 
   if (studentForm) {
@@ -1838,6 +1921,7 @@ function initModals() {
         name_with_initials: initials,
         full_name: document.getElementById('staffFullNameInput').value.trim(),
         gender: document.getElementById('staffGenderInput') ? document.getElementById('staffGenderInput').value : 'Male',
+        dob: document.getElementById('staffDobInput') ? (document.getElementById('staffDobInput').value.trim() || null) : null,
         nic: document.getElementById('staffNicInput') ? document.getElementById('staffNicInput').value.trim() : '',
         role: document.getElementById('staffRoleInput').value.trim(),
         department: document.getElementById('staffDeptInput').value,
@@ -2204,6 +2288,10 @@ async function openEditModal(id, type) {
     document.getElementById('staffInitialsInput').value = st.name_with_initials || '';
     document.getElementById('staffFullNameInput').value = st.full_name || '';
     if (document.getElementById('staffGenderInput')) document.getElementById('staffGenderInput').value = st.gender || 'Male';
+    if (document.getElementById('staffDobInput')) {
+      document.getElementById('staffDobInput').value = st.dob || '';
+      updateStaffAgeDisplay(st.dob || '');
+    }
     if (document.getElementById('staffNicInput')) document.getElementById('staffNicInput').value = st.nic || '';
     document.getElementById('staffRoleInput').value = st.role || '';
     document.getElementById('staffDeptInput').value = st.department || '';
