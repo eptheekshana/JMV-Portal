@@ -270,7 +270,7 @@ async def handle_create_student(request):
         if existing:
             return json_response({"error": f"Student with admission number '{data.get('admission_no')}' already exists"}, status=409)
 
-        created = db.create_student(data)
+        created = db.create_student(data, actor=user)
         return json_response(created, status=201)
     except Exception as e:
         return json_response({"error": str(e)}, status=500)
@@ -287,7 +287,7 @@ async def handle_update_student(request):
         if not existing:
             return json_response({"error": "Student not found"}, status=404)
         
-        updated = db.update_student(student_id, data)
+        updated = db.update_student(student_id, data, actor=user)
         return json_response(updated)
     except Exception as e:
         return json_response({"error": str(e)}, status=500)
@@ -301,7 +301,7 @@ async def handle_delete_student(request):
     existing = db.get_student_by_id(student_id)
     if not existing:
         return json_response({"error": "Student not found"}, status=404)
-    db.delete_student(student_id)
+    db.delete_student(student_id, actor=user)
     return json_response({"success": True, "message": f"Student {student_id} deleted successfully"})
 
 # --- Staff Endpoints (Teachers cannot access staff data; Admins have full access) ---
@@ -347,7 +347,7 @@ async def handle_create_staff(request):
         if existing:
             return json_response({"error": f"Staff with ID '{data.get('id')}' already exists"}, status=409)
 
-        created = db.create_staff(data)
+        created = db.create_staff(data, actor=user)
         return json_response(created, status=201)
     except Exception as e:
         return json_response({"error": str(e)}, status=500)
@@ -364,7 +364,7 @@ async def handle_update_staff(request):
         if not existing:
             return json_response({"error": "Staff member not found"}, status=404)
         
-        updated = db.update_staff(staff_id, data)
+        updated = db.update_staff(staff_id, data, actor=user)
         return json_response(updated)
     except Exception as e:
         return json_response({"error": str(e)}, status=500)
@@ -378,7 +378,7 @@ async def handle_delete_staff(request):
     existing = db.get_staff_by_id(staff_id)
     if not existing:
         return json_response({"error": "Staff member not found"}, status=404)
-    db.delete_staff(staff_id)
+    db.delete_staff(staff_id, actor=user)
     return json_response({"success": True, "message": f"Staff member {staff_id} deleted successfully"})
 
 
@@ -446,7 +446,7 @@ async def handle_bulk_upload_students(request):
         file_bytes, filename, mode = await _extract_uploaded_spreadsheet(request)
         rows_2d = excel_utils.parse_spreadsheet_bytes(file_bytes, filename)
         mapped = excel_utils.map_rows_to_student_dicts(rows_2d)
-        summary = db.bulk_upsert_students(mapped, mode=mode)
+        summary = db.bulk_upsert_students(mapped, mode=mode, actor=user)
         return json_response({"success": True, **summary})
     except ValueError as ve:
         return json_response({"error": str(ve)}, status=400)
@@ -462,12 +462,24 @@ async def handle_bulk_upload_staff(request):
         file_bytes, filename, mode = await _extract_uploaded_spreadsheet(request)
         rows_2d = excel_utils.parse_spreadsheet_bytes(file_bytes, filename)
         mapped = excel_utils.map_rows_to_staff_dicts(rows_2d)
-        summary = db.bulk_upsert_staff(mapped, mode=mode)
+        summary = db.bulk_upsert_staff(mapped, mode=mode, actor=user)
         return json_response({"success": True, **summary})
     except ValueError as ve:
         return json_response({"error": str(ve)}, status=400)
     except Exception as exc:
         return json_response({"error": f"Failed to process Excel file: {exc}"}, status=500)
+
+
+async def handle_get_audit_log(request):
+    user, err = require_role(request, ["admin"])
+    if err:
+        return err
+    rows = db.get_audit_log(
+        entity_type=request.query.get("entity_type"),
+        entity_id=request.query.get("entity_id"),
+        limit=request.query.get("limit", 200),
+    )
+    return json_response(rows)
 
 
 async def handle_get_subjects(request):
@@ -548,6 +560,7 @@ def init_app():
 
     app.router.add_get("/api/students", handle_get_students)
     app.router.add_get("/api/students/{id}", handle_get_student_by_id)
+    app.router.add_get("/api/audit", handle_get_audit_log)
     app.router.add_post("/api/students", handle_create_student)
     app.router.add_put("/api/students/{id}", handle_update_student)
     app.router.add_delete("/api/students/{id}", handle_delete_student)

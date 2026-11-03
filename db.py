@@ -8,6 +8,7 @@ Theme & Identity: WP/KE/Jayakody Maha Vidyalaya (JMV-Web)
 """
 
 import os
+import json
 import sys
 import glob
 import sqlite3
@@ -52,6 +53,13 @@ STAFF_FIELDS = list(STAFF_COLUMNS)
 USER_FIELDS = list(USER_COLUMNS)
 MARK_FIELDS = list(MARK_COLUMNS)
 SUBJECT_FIELDS = list(SUBJECT_COLUMNS)
+
+# Audit trail columns added to students and staff (who created / last updated, and when)
+AUDIT_COLUMNS = {
+    "created_by": "VARCHAR(150) NOT NULL DEFAULT ''",
+    "updated_by": "VARCHAR(150) NOT NULL DEFAULT ''",
+    "last_updated_at": "VARCHAR(32) NOT NULL DEFAULT ''",
+}
 
 # State tracking
 ACTIVE_ENGINE = "unknown"  # "mariadb" or "sqlite"
@@ -264,7 +272,30 @@ def init_mariadb_schema(conn):
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         """)
 
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS audit_log (
+            id VARCHAR(40) PRIMARY KEY,
+            entity_type VARCHAR(16) NOT NULL,
+            entity_id VARCHAR(32) NOT NULL,
+            entity_name VARCHAR(255) NOT NULL DEFAULT '',
+            action VARCHAR(16) NOT NULL,
+            changed_by VARCHAR(150) NOT NULL DEFAULT '',
+            changed_by_role VARCHAR(20) NOT NULL DEFAULT '',
+            changed_at VARCHAR(32) NOT NULL,
+            changes TEXT NULL,
+            INDEX idx_audit_entity (entity_type, entity_id),
+            INDEX idx_audit_time (changed_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        """)
+
         _migrate_existing_mariadb_schema(cur)
+
+        for _tbl in ("students", "staff"):
+            cur.execute(f"SHOW COLUMNS FROM {_tbl}")
+            _have = {(r["Field"] if isinstance(r, dict) else r[0]) for r in cur.fetchall()}
+            for _col, _def in AUDIT_COLUMNS.items():
+                if _col not in _have:
+                    cur.execute(f"ALTER TABLE {_tbl} ADD COLUMN `{_col}` {_def}")
 
         # Ensure default admin user exists if users table is empty
         cur.execute("SELECT COUNT(*) as cnt FROM users")
@@ -608,6 +639,26 @@ def init_sqlite_schema(conn):
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS audit_log (
+        id TEXT PRIMARY KEY,
+        entity_type TEXT NOT NULL,
+        entity_id TEXT NOT NULL,
+        entity_name TEXT NOT NULL DEFAULT '',
+        action TEXT NOT NULL,
+        changed_by TEXT NOT NULL DEFAULT '',
+        changed_by_role TEXT NOT NULL DEFAULT '',
+        changed_at TEXT NOT NULL,
+        changes TEXT
+    );
+    """)
+    for _tbl in ("students", "staff"):
+        cur.execute(f"PRAGMA table_info({_tbl})")
+        _have = {row[1] for row in cur.fetchall()}
+        for _col, _def in AUDIT_COLUMNS.items():
+            if _col not in _have:
+                cur.execute(f"ALTER TABLE {_tbl} ADD COLUMN {_col} {_def}")
 
     # Ensure default admin user exists if users table is empty
     cur.execute("SELECT COUNT(*) FROM users")
@@ -983,7 +1034,87 @@ def calculate_house_from_admission(admission_no):
             return "Paravi"
     return "Thisara"
 
-def create_student(data):
+def _now_iso():
+    return datetime.now().isoformat(timespec="microseconds")
+
+
+def _actor_name(actor):
+    """Readable identity of the signed-in user performing a change."""
+    if not actor:
+        return "System"
+    if isinstance(actor, str):
+        return actor
+    name = actor.get("full_name") or actor.get("username") or "Unknown"
+    uname = actor.get("username")
+    return f"{name} ({uname})" if uname and uname not in name else name
+
+
+def _actor_role(actor):
+    return actor.get("role", "") if isinstance(actor, dict) else ""
+
+
+def record_audit(entity_type, entity_id, entity_name, action, actor, changes=None):
+    """Append an entry to the audit log (never raises into the caller)."""
+    try:
+        execute_query(
+            "INSERT INTO audit_log (id, entity_type, entity_id, entity_name, action, changed_by,"
+            " changed_by_role, changed_at, changes) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (uuid.uuid4().hex, entity_type, str(entity_id), entity_name or "", action,
+             _actor_name(actor), _actor_role(actor), _now_iso(),
+             json.dumps(changes, ensure_ascii=False) if changes else None),
+            commit=True,
+        )
+    except Exception:
+        pass
+
+
+def _diff_records(old, new, fields):
+    """Return {field: {"old":..., "new":...}} for fields whose values changed."""
+    diff = {}
+    for f in fields:
+        o = old.get(f)
+        n = new.get(f)
+        o = "" if o is None else str(o)
+        n = "" if n is None else str(n)
+        if o != n:
+            diff[f] = {"old": o, "new": n}
+    return diff
+
+
+def get_audit_log(entity_type=None, entity_id=None, limit=200):
+    sql = "SELECT * FROM audit_log WHERE 1=1"
+    params = []
+    if entity_type:
+        sql += " AND entity_type = %s"
+        params.append(entity_type)
+    if entity_id:
+        sql += " AND UPPER(entity_id) = UPPER(%s)"
+        params.append(str(entity_id))
+    sql += " ORDER BY changed_at DESC LIMIT %s"
+    params.append(int(limit))
+    rows = execute_query(sql, params, fetchall=True) or []
+    for r in rows:
+        try:
+            r["changes"] = json.loads(r["changes"]) if r.get("changes") else {}
+        except Exception:
+            r["changes"] = {}
+    return rows
+
+
+def _stamp(table, key, actor, created=False):
+    now = _now_iso()
+    who = _actor_name(actor)
+    if created:
+        execute_query(
+            f"UPDATE {table} SET created_by=%s, updated_by=%s, last_updated_at=%s WHERE id=%s",
+            (who, who, now, key), commit=True)
+    else:
+        execute_query(
+            f"UPDATE {table} SET updated_by=%s, last_updated_at=%s WHERE id=%s",
+            (who, now, key), commit=True)
+
+
+def create_student(data, actor=None):
     cols = ", ".join([f"`{f}`" for f in STUDENT_FIELDS])
     placeholders = ", ".join(["%s"] * len(STUDENT_FIELDS))
     sanitized = dict(data)
@@ -995,9 +1126,13 @@ def create_student(data):
         sanitized[df] = str(val).strip() if val and str(val).strip() else None
     vals = [sanitized.get(f) if sanitized.get(f) is not None else "" for f in STUDENT_FIELDS]
     execute_query(f"INSERT INTO students ({cols}) VALUES ({placeholders})", vals, commit=True)
+    _stamp("students", sanitized.get("id"), actor, created=True)
+    record_audit("student", sanitized.get("id"), sanitized.get("name_with_initials"), "create", actor,
+                 {f: {"old": "", "new": str(sanitized.get(f))} for f in STUDENT_FIELDS
+                  if f != "id" and sanitized.get(f) not in (None, "")})
     return get_student_by_id(sanitized.get("id"))
 
-def update_student(student_id, data):
+def update_student(student_id, data, actor=None):
     current = get_student_by_id(student_id) or {}
     merged = {**current, **{k: v for k, v in data.items() if v is not None}}
     if "admission_no" in merged and not merged.get("house"):
@@ -1010,13 +1145,19 @@ def update_student(student_id, data):
     set_clause = ", ".join([f"`{f}`=%s" for f in fields])
     vals = [merged.get(f) if merged.get(f) is not None else "" for f in fields] + [student_id]
     execute_query(f"UPDATE students SET {set_clause} WHERE id=%s", vals, commit=True)
+    changes = _diff_records(current, merged, fields)
+    if changes:
+        _stamp("students", student_id, actor)
+        record_audit("student", student_id, merged.get("name_with_initials"), "update", actor, changes)
     return get_student_by_id(student_id)
 
-def delete_student(student_id):
+def delete_student(student_id, actor=None):
+    current = get_student_by_id(student_id) or {}
     execute_query("DELETE FROM students WHERE id=%s", (student_id,), commit=True)
+    record_audit("student", student_id, current.get("name_with_initials"), "delete", actor)
     return True
 
-def create_staff(data):
+def create_staff(data, actor=None):
     cols = ", ".join([f"`{f}`" for f in STAFF_FIELDS])
     placeholders = ", ".join(["%s"] * len(STAFF_FIELDS))
     sanitized = dict(data)
@@ -1029,9 +1170,13 @@ def create_staff(data):
         for f in STAFF_FIELDS
     ]
     execute_query(f"INSERT INTO staff ({cols}) VALUES ({placeholders})", vals, commit=True)
+    _stamp("staff", sanitized.get("id"), actor, created=True)
+    record_audit("staff", sanitized.get("id"), sanitized.get("name_with_initials"), "create", actor,
+                 {f: {"old": "", "new": str(sanitized.get(f))} for f in STAFF_FIELDS
+                  if f != "id" and sanitized.get(f) not in (None, "")})
     return get_staff_by_id(sanitized.get("id"))
 
-def update_staff(staff_id, data):
+def update_staff(staff_id, data, actor=None):
     current = get_staff_by_id(staff_id) or {}
     sanitized = dict(data)
     if "epf_no" in sanitized:
@@ -1048,14 +1193,20 @@ def update_staff(staff_id, data):
         for f in fields
     ] + [staff_id]
     execute_query(f"UPDATE staff SET {set_clause} WHERE id=%s", vals, commit=True)
+    changes = _diff_records(current, merged, fields)
+    if changes:
+        _stamp("staff", staff_id, actor)
+        record_audit("staff", staff_id, merged.get("name_with_initials"), "update", actor, changes)
     return get_staff_by_id(staff_id)
 
-def delete_staff(staff_id):
+def delete_staff(staff_id, actor=None):
+    current = get_staff_by_id(staff_id) or {}
     execute_query("DELETE FROM staff WHERE id=%s", (staff_id,), commit=True)
+    record_audit("staff", staff_id, current.get("name_with_initials"), "delete", actor)
     return True
 
 
-def bulk_upsert_students(mapped_records, mode="upsert"):
+def bulk_upsert_students(mapped_records, mode="upsert", actor=None):
     """
     Bulk create or update students from [(row_number, student_dict), ...].
     mode: 'upsert' (create new + update existing) or 'skip' (create new, skip existing).
@@ -1082,10 +1233,10 @@ def bulk_upsert_students(mapped_records, mode="upsert"):
                 if mode == "skip":
                     skipped_count += 1
                 else:
-                    update_student(existing["id"], rec)
+                    update_student(existing["id"], rec, actor=actor)
                     updated_count += 1
             else:
-                create_student(rec)
+                create_student(rec, actor=actor)
                 created_count += 1
         except Exception as exc:
             errors.append({
@@ -1104,7 +1255,7 @@ def bulk_upsert_students(mapped_records, mode="upsert"):
     }
 
 
-def bulk_upsert_staff(mapped_records, mode="upsert"):
+def bulk_upsert_staff(mapped_records, mode="upsert", actor=None):
     """
     Bulk create or update teachers/staff from [(row_number, staff_dict), ...].
     mode: 'upsert' (create new + update existing) or 'skip' (create new, skip existing).
@@ -1141,10 +1292,10 @@ def bulk_upsert_staff(mapped_records, mode="upsert"):
                 if mode == "skip":
                     skipped_count += 1
                 else:
-                    update_staff(existing["id"], rec)
+                    update_staff(existing["id"], rec, actor=actor)
                     updated_count += 1
             else:
-                create_staff(rec)
+                create_staff(rec, actor=actor)
                 created_count += 1
         except Exception as exc:
             errors.append({
