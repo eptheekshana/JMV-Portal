@@ -29,6 +29,7 @@ const AppState = {
 
 // DOM Ready
 document.addEventListener('DOMContentLoaded', async () => {
+  initTheme();
   initLiveClock();
   initNavigation();
   initUniversalSearch();
@@ -136,6 +137,65 @@ function initLiveClock() {
   }
   update();
   setInterval(update, 1000);
+}
+
+/* --------------------------------------------------------------------------
+   Dark / Light Theme Engine with Persistence
+   -------------------------------------------------------------------------- */
+function initTheme() {
+  const saved = localStorage.getItem('jmv_theme');
+  const isDark = saved === 'dark' || (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  applyTheme(isDark, false);
+}
+
+function toggleDarkMode() {
+  const isCurrentlyDark = document.documentElement.classList.contains('dark');
+  const newDark = !isCurrentlyDark;
+  applyTheme(newDark, true);
+}
+
+function applyTheme(isDark, notify = false) {
+  if (isDark) {
+    document.documentElement.classList.add('dark');
+    document.body.classList.add('dark-mode');
+  } else {
+    document.documentElement.classList.remove('dark');
+    document.body.classList.remove('dark-mode');
+  }
+
+  try {
+    localStorage.setItem('jmv_theme', isDark ? 'dark' : 'light');
+  } catch (e) {}
+
+  // Update toggle button visuals
+  const moonIcon = document.querySelector('.theme-icon-moon');
+  const sunIcon = document.querySelector('.theme-icon-sun');
+  const textEl = document.getElementById('themeToggleText');
+  const btn = document.getElementById('themeToggleBtn');
+
+  if (moonIcon && sunIcon) {
+    if (isDark) {
+      moonIcon.classList.add('hidden');
+      sunIcon.classList.remove('hidden');
+    } else {
+      moonIcon.classList.remove('hidden');
+      sunIcon.classList.add('hidden');
+    }
+  }
+
+  if (textEl) {
+    textEl.textContent = isDark ? 'Light' : 'Dark';
+  }
+
+  if (btn) {
+    const label = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+    btn.setAttribute('aria-label', label);
+    btn.title = label;
+  }
+
+  if (notify && typeof showToast === 'function') {
+    showToast(isDark ? 'Dark mode enabled' : 'Light mode enabled', 'info');
+  }
 }
 
 /* --------------------------------------------------------------------------
