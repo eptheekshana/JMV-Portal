@@ -59,6 +59,7 @@ STAFF_TEMPLATE_COLUMNS = [
     ("qualifications", "Academic & Professional Qualifications", 36),
     ("contact_no", "Contact Mobile No", 20),
     ("email", "Official / Personal Email", 28),
+    ("address", "Residential Address", 36),
     ("notes", "Service Notes / Commendations", 32),
     ("photo_url", "Photo URL (Optional)", 28),
 ]
@@ -158,6 +159,7 @@ STAFF_SAMPLE_ROWS = [
         "qualifications": "B.Sc. (Kelaniya), PGDE (Colombo)",
         "contact_no": "077 445 6677",
         "email": "hms.bandara@jmv.sch.lk",
+        "address": "No. 28, Galahitiyawa, Ganemulla",
         "notes": "Sectional Head - Grade 11",
         "photo_url": "",
     },
@@ -177,6 +179,7 @@ STAFF_SAMPLE_ROWS = [
         "qualifications": "B.Com. Special (Jayewardenepura)",
         "contact_no": "071 223 3445",
         "email": "wan.fernando@jmv.sch.lk",
+        "address": "112/B, Kadawatha Road, Gampaha",
         "notes": "ICT Lab In-Charge",
         "photo_url": "",
     },
@@ -226,6 +229,7 @@ STAFF_INSTRUCTIONS = [
     ["Academic & Professional Qualifications", "NO", "Degrees, diplomas, PGDE, training certifications."],
     ["Contact Mobile No", "NO", "Direct mobile/telephone number."],
     ["Official / Personal Email", "NO", "Email address."],
+    ["Residential Address", "NO", "Permanent or residential address of the staff member."],
     ["Service Notes / Commendations", "NO", "Special responsibilities, sectional head roles, commendations."],
     ["Photo URL (Optional)", "NO", "Direct URL to staff photo (auto-avatar generated if blank)."],
 ]
@@ -652,6 +656,7 @@ STAFF_HEADER_ALIASES = {
     "qualifications": {"qualifications", "academic_professional_qualifications", "academic_qualifications", "degrees"},
     "contact_no": {"contact_no", "contact_mobile_no", "mobile", "phone", "mobile_no", "telephone"},
     "email": {"email", "official_personal_email", "email_address", "school_email"},
+    "address": {"address", "residential_address", "permanent_address", "home_address"},
     "notes": {"notes", "service_notes_commendations", "service_notes", "remarks", "comments"},
     "photo_url": {"photo_url", "photo", "image_url", "avatar_url"},
 }
@@ -888,6 +893,7 @@ def map_rows_to_staff_dicts(rows_2d):
             "qualifications": get_val("qualifications"),
             "contact_no": get_val("contact_no"),
             "email": get_val("email"),
+            "address": get_val("address"),
             "notes": get_val("notes"),
             "photo_url": photo,
         }
