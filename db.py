@@ -871,7 +871,7 @@ def universal_id_search(query_str):
 
     return None
 
-def quick_suggestions(prefix, limit=6):
+def quick_suggestions(prefix, limit=6, include_staff=True):
     p = (prefix or "").strip()
     if not p:
         return []
@@ -882,12 +882,14 @@ def quick_suggestions(prefix, limit=6):
         (like, like, like, like, limit),
         fetchall=True
     ) or []
-    staff = execute_query(
-        "SELECT id, name_with_initials, role, photo_url FROM staff"
-        " WHERE id LIKE %s OR full_name LIKE %s OR name_with_initials LIKE %s OR epf_no LIKE %s LIMIT %s",
-        (like, like, like, like, limit),
-        fetchall=True
-    ) or []
+    staff = []
+    if include_staff:
+        staff = execute_query(
+            "SELECT id, name_with_initials, role, photo_url FROM staff"
+            " WHERE id LIKE %s OR full_name LIKE %s OR name_with_initials LIKE %s OR epf_no LIKE %s LIMIT %s",
+            (like, like, like, like, limit),
+            fetchall=True
+        ) or []
 
     results = [
         {"id": s["admission_no"], "title": s["name_with_initials"], "subtitle": f"Student • Grade {s['grade']}",
@@ -1547,12 +1549,18 @@ def delete_student_mark(mark_id):
 
 TIMETABLE_DAYS = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
 
-def get_timetable(class_name=None):
+def get_timetable(class_name=None, teacher_id=None):
     sql = "SELECT * FROM school_timetable"
+    conditions = []
     params = []
     if class_name:
-        sql += " WHERE class_name = %s"
+        conditions.append("class_name = %s")
         params.append(class_name)
+    if teacher_id:
+        conditions.append("teacher_id = %s")
+        params.append(teacher_id)
+    if conditions:
+        sql += " WHERE " + " AND ".join(conditions)
     sql += " ORDER BY CASE day_of_week " + " ".join(
         f"WHEN '{day}' THEN {index}" for index, day in enumerate(TIMETABLE_DAYS, 1)
     ) + " END, period_no"

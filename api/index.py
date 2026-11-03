@@ -132,20 +132,23 @@ def stats():
 
 @app.get("/api/lookup")
 @requires_roles("admin", "teacher")
-def lookup(_user):
+def lookup(user):
     target = request.args.get("id", "").strip()
     if not target:
         return jsonify(found=False, error="ID parameter is required"), 400
     result = db.universal_id_search(target)
-    return (jsonify(found=True, type=result.get("entity_type"), data=result)
-            if result else
-            (jsonify(found=False, message="No matching record found"), 404))
+    if result:
+        if user and user.get("role") == "teacher" and result.get("entity_type") == "staff":
+            return jsonify(found=False, error="Access denied. Teachers cannot access faculty records."), 403
+        return jsonify(found=True, type=result.get("entity_type"), data=result)
+    return jsonify(found=False, message="No matching record found"), 404
 
 
 @app.get("/api/suggestions")
 @requires_roles("admin", "teacher")
-def suggestions(_user):
-    return jsonify(db.quick_suggestions(request.args.get("q", ""), limit=8))
+def suggestions(user):
+    include_staff = not (user and user.get("role") == "teacher")
+    return jsonify(db.quick_suggestions(request.args.get("q", ""), limit=8, include_staff=include_staff))
 
 
 @app.get("/api/students")
@@ -321,9 +324,10 @@ def student_marks(user, student_id):
 
 
 @app.get("/api/timetable")
-@requires_roles("admin")
+@requires_roles("admin", "teacher")
 def timetable(_user):
-    return jsonify(db.get_timetable(request.args.get("class_name")))
+    return jsonify(db.get_timetable(class_name=request.args.get("class_name"),
+                                    teacher_id=request.args.get("teacher_id")))
 
 
 @app.post("/api/timetable")

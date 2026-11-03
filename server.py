@@ -92,8 +92,11 @@ async def handle_lookup(request):
     if not target_id:
         return json_response({"found": False, "error": "ID parameter is required"}, status=400)
     
+    user = get_current_user(request)
     result = db.universal_id_search(target_id)
     if result:
+        if user and user.get("role") == "teacher" and result.get("entity_type") == "staff":
+            return json_response({"found": False, "error": "Access denied. Teachers cannot access faculty records."}, status=403)
         return json_response({"found": True, "type": result.get("entity_type"), "data": result})
     else:
         return json_response({"found": False, "message": f"No student or staff found with ID or search query: '{target_id}'"}, status=404)
@@ -102,7 +105,9 @@ async def handle_suggestions(request):
     q = request.query.get("q", "").strip()
     if not q:
         return json_response([])
-    suggestions = db.quick_suggestions(q, limit=8)
+    user = get_current_user(request)
+    include_staff = not (user and user.get("role") == "teacher")
+    suggestions = db.quick_suggestions(q, limit=8, include_staff=include_staff)
     return json_response(suggestions)
 
 # --- Authentication Endpoints ---
@@ -208,12 +213,14 @@ async def handle_delete_mark(request):
     db.delete_student_mark(mark_id)
     return json_response({"success": True, "message": "Mark entry deleted successfully"})
 
-# --- School Timetable Endpoints (Admin only) ---
+# --- School Timetable Endpoints (Admins manage, Teachers & Admins view) ---
 async def handle_get_timetable(request):
-    user, err = require_role(request, ["admin"])
+    user, err = require_role(request, ["admin", "teacher"])
     if err:
         return err
-    return json_response(db.get_timetable(request.query.get("class_name")))
+    teacher_id = request.query.get("teacher_id")
+    class_name = request.query.get("class_name")
+    return json_response(db.get_timetable(class_name=class_name, teacher_id=teacher_id))
 
 async def handle_save_timetable_entry(request):
     user, err = require_role(request, ["admin"])
