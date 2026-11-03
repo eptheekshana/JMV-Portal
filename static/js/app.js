@@ -244,7 +244,6 @@ function switchTab(tabId) {
   if (tabId === 'students') loadStudents();
   if (tabId === 'marks') loadAllMarksLedger();
   if (tabId === 'timetable') loadTimetable();
-  if (tabId === 'overview') loadStats();
   if (tabId === 'staff') {
     if (AppState.currentUser && AppState.currentUser.role === 'teacher') {
       const banner = document.getElementById('staffTeacherRestrictedBanner');
