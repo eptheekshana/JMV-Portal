@@ -175,8 +175,8 @@ def student(user, student_id):
 @requires_roles("admin")
 def create_student(_user):
     data = request.get_json(silent=True) or {}
-    if not data.get("admission_no") or not data.get("full_name"):
-        return jsonify(error="Missing required fields (admission_no, full_name)"), 400
+    if not data.get("admission_no") or not data.get("name_with_initials"):
+        return jsonify(error="Missing required fields (admission_no, name_with_initials)"), 400
     if db.get_student_by_id(data["admission_no"]):
         return jsonify(error="Admission number already exists"), 409
     return jsonify(db.create_student(data)), 201
@@ -193,8 +193,8 @@ def staff(_user):
 @requires_roles("admin")
 def create_staff(_user):
     data = request.get_json(silent=True) or {}
-    if not data.get("id") or not data.get("full_name"):
-        return jsonify(error="Missing required fields (id, full_name)"), 400
+    if not data.get("id") or not data.get("name_with_initials"):
+        return jsonify(error="Missing required fields (id, name_with_initials)"), 400
     if db.get_staff_by_id(data["id"]):
         return jsonify(error="Staff ID already exists"), 409
     return jsonify(db.create_staff(data)), 201

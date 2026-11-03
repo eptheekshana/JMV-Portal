@@ -259,8 +259,8 @@ async def handle_create_student(request):
         return err
     try:
         data = await request.json()
-        if not data.get("admission_no") or not data.get("full_name"):
-            return json_response({"error": "Missing required fields (admission_no, full_name)"}, status=400)
+        if not data.get("admission_no") or not data.get("name_with_initials"):
+            return json_response({"error": "Missing required fields (admission_no, name_with_initials)"}, status=400)
         
         existing = db.get_student_by_id(data.get("admission_no"))
         if existing:
@@ -336,8 +336,8 @@ async def handle_create_staff(request):
         return err
     try:
         data = await request.json()
-        if not data.get("id") or not data.get("full_name"):
-            return json_response({"error": "Missing required fields (id, full_name)"}, status=400)
+        if not data.get("id") or not data.get("name_with_initials"):
+            return json_response({"error": "Missing required fields (id, name_with_initials)"}, status=400)
         
         existing = db.get_staff_by_id(data.get("id"))
         if existing:

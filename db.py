@@ -111,7 +111,7 @@ def init_mariadb_schema(conn):
         CREATE TABLE IF NOT EXISTS students (
             id VARCHAR(32) PRIMARY KEY,
             admission_no VARCHAR(32) NOT NULL UNIQUE,
-            full_name VARCHAR(255) NOT NULL,
+            full_name VARCHAR(255) NOT NULL DEFAULT '',
             name_with_initials VARCHAR(150) NOT NULL,
             gender VARCHAR(16) NOT NULL,
             dob VARCHAR(32) NULL,
@@ -147,7 +147,7 @@ def init_mariadb_schema(conn):
         CREATE TABLE IF NOT EXISTS staff (
             id VARCHAR(32) PRIMARY KEY,
             epf_no VARCHAR(32) NULL UNIQUE,
-            full_name VARCHAR(255) NOT NULL,
+            full_name VARCHAR(255) NOT NULL DEFAULT '',
             name_with_initials VARCHAR(150) NOT NULL,
             gender VARCHAR(16) NOT NULL,
             role VARCHAR(150) NOT NULL,
@@ -393,6 +393,14 @@ def _migrate_existing_mariadb_schema(cur):
         cur.execute("ALTER TABLE staff MODIFY COLUMN `epf_no` VARCHAR(32) NULL DEFAULT NULL")
     except Exception:
         pass
+    try:
+        cur.execute("ALTER TABLE students MODIFY COLUMN `full_name` VARCHAR(255) NOT NULL DEFAULT ''")
+    except Exception:
+        pass
+    try:
+        cur.execute("ALTER TABLE staff MODIFY COLUMN `full_name` VARCHAR(255) NOT NULL DEFAULT ''")
+    except Exception:
+        pass
 
 def init_sqlite_schema(conn):
     cur = conn.cursor()
@@ -400,7 +408,7 @@ def init_sqlite_schema(conn):
     CREATE TABLE IF NOT EXISTS students (
         id TEXT PRIMARY KEY,
         admission_no TEXT UNIQUE NOT NULL,
-        full_name TEXT NOT NULL,
+        full_name TEXT NOT NULL DEFAULT '',
         name_with_initials TEXT NOT NULL,
         gender TEXT NOT NULL,
         dob TEXT,
@@ -440,7 +448,7 @@ def init_sqlite_schema(conn):
     CREATE TABLE IF NOT EXISTS staff (
         id TEXT PRIMARY KEY,
         epf_no TEXT UNIQUE,
-        full_name TEXT NOT NULL,
+        full_name TEXT NOT NULL DEFAULT '',
         name_with_initials TEXT NOT NULL,
         gender TEXT NOT NULL,
         role TEXT NOT NULL,
@@ -950,12 +958,17 @@ def delete_student(student_id):
     return True
 
 def create_staff(data):
-    cols = ", ".join(STAFF_FIELDS)
+    cols = ", ".join([f"`{f}`" for f in STAFF_FIELDS])
     placeholders = ", ".join(["%s"] * len(STAFF_FIELDS))
     sanitized = dict(data)
     epf = sanitized.get("epf_no")
     sanitized["epf_no"] = str(epf).strip() if epf and str(epf).strip() else None
-    vals = [sanitized.get(f) if f == "epf_no" else sanitized.get(f, "") for f in STAFF_FIELDS]
+    app_date = sanitized.get("appointed_date")
+    sanitized["appointed_date"] = str(app_date).strip() if app_date and str(app_date).strip() else None
+    vals = [
+        sanitized.get(f) if f in ("epf_no", "appointed_date") else (sanitized.get(f) if sanitized.get(f) is not None else "")
+        for f in STAFF_FIELDS
+    ]
     execute_query(f"INSERT INTO staff ({cols}) VALUES ({placeholders})", vals, commit=True)
     return get_staff_by_id(sanitized.get("id"))
 
@@ -965,10 +978,16 @@ def update_staff(staff_id, data):
     if "epf_no" in sanitized:
         epf = sanitized.get("epf_no")
         sanitized["epf_no"] = str(epf).strip() if epf and str(epf).strip() else None
-    merged = {**current, **{k: v for k, v in sanitized.items() if v is not None or k == "epf_no"}}
+    if "appointed_date" in sanitized:
+        app_date = sanitized.get("appointed_date")
+        sanitized["appointed_date"] = str(app_date).strip() if app_date and str(app_date).strip() else None
+    merged = {**current, **{k: v for k, v in sanitized.items() if v is not None or k in ("epf_no", "appointed_date")}}
     fields = [f for f in STAFF_FIELDS if f != "id"]
-    set_clause = ", ".join([f"{f}=%s" for f in fields])
-    vals = [merged.get(f) if f == "epf_no" else merged.get(f, "") for f in fields] + [staff_id]
+    set_clause = ", ".join([f"`{f}`=%s" for f in fields])
+    vals = [
+        merged.get(f) if f in ("epf_no", "appointed_date") else (merged.get(f) if merged.get(f) is not None else "")
+        for f in fields
+    ] + [staff_id]
     execute_query(f"UPDATE staff SET {set_clause} WHERE id=%s", vals, commit=True)
     return get_staff_by_id(staff_id)
 
