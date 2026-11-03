@@ -1400,6 +1400,7 @@ function openAddStudentModal() {
   document.getElementById('studentFormMode').value = 'create';
   document.getElementById('studentAdmissionInput').readOnly = false;
   autoAssignHouseFromAdmission();
+  document.body.style.overflow = 'hidden';
   modal.classList.remove('hidden');
 }
 
@@ -1425,6 +1426,7 @@ function openAddStaffModal() {
   if (document.getElementById('staffGenderInput')) document.getElementById('staffGenderInput').value = 'Male';
   if (document.getElementById('staffStatusInput')) document.getElementById('staffStatusInput').value = 'Active';
   if (document.getElementById('staffDeptInput')) document.getElementById('staffDeptInput').value = '';
+  document.body.style.overflow = 'hidden';
   modal.classList.remove('hidden');
 }
 
@@ -1439,6 +1441,7 @@ function closeModals() {
   if (loginModal) loginModal.classList.add('hidden');
   if (marksModal) marksModal.classList.add('hidden');
   if (bulkUploadModal) bulkUploadModal.classList.add('hidden');
+  document.body.style.overflow = '';
 }
 
 function openBulkUploadModal(entityType = 'student') {
@@ -1987,6 +1990,7 @@ async function openEditModal(id, type) {
     if (document.getElementById('studentHealthInput')) document.getElementById('studentHealthInput').value = s.health_issues || '';
     if (document.getElementById('studentNotesInput')) document.getElementById('studentNotesInput').value = s.notes || '';
 
+    document.body.style.overflow = 'hidden';
     document.getElementById('studentModal').classList.remove('hidden');
   } else {
     if (AppState.currentUser.role !== 'admin') {
@@ -2019,6 +2023,7 @@ async function openEditModal(id, type) {
     if (document.getElementById('staffPhotoInput')) document.getElementById('staffPhotoInput').value = st.photo_url || '';
     if (document.getElementById('staffNotesInput')) document.getElementById('staffNotesInput').value = st.notes || '';
 
+    document.body.style.overflow = 'hidden';
     document.getElementById('staffModal').classList.remove('hidden');
   }
 }
