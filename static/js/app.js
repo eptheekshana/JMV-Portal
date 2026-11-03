@@ -956,7 +956,7 @@ function renderDossier(item, type) {
         </div>
         <div>
           <span class="block uppercase font-bold text-slate-400">Department</span>
-          <span class="font-bold text-slate-800">${escapeHtml(item.department)}</span>
+          <span class="font-bold text-slate-800">${escapeHtml(item.department || '—')}</span>
         </div>
         <div>
           <span class="block uppercase font-bold text-slate-400">Subjects Taught</span>
@@ -1260,7 +1260,7 @@ function renderStaffTable(staff) {
           </div>
         </div>
       </td>
-      <td class="p-3.5 text-xs text-slate-700">${escapeHtml(st.department)}</td>
+      <td class="p-3.5 text-xs text-slate-700">${escapeHtml(st.department || '—')}</td>
       <td class="p-3.5 text-xs text-slate-600">${escapeHtml(st.subjects_taught || 'General Administration')}</td>
       <td class="p-3.5 font-mono text-xs text-slate-600">${escapeHtml(st.epf_no || '—')}</td>
       <td class="p-3.5">
@@ -1416,6 +1416,7 @@ function openAddStaffModal() {
   document.getElementById('staffIdInput').value = `JMV-STF-${nextNum}`;
   if (document.getElementById('staffGenderInput')) document.getElementById('staffGenderInput').value = 'Male';
   if (document.getElementById('staffStatusInput')) document.getElementById('staffStatusInput').value = 'Active';
+  if (document.getElementById('staffDeptInput')) document.getElementById('staffDeptInput').value = '';
   modal.classList.remove('hidden');
 }
 
@@ -1469,7 +1470,7 @@ function setBulkUploadType(entityType) {
     if (stfTab) stfTab.className = 'px-3 py-1.5 rounded font-bold text-xs transition-all cursor-pointer bg-[#800020] text-white';
     if (titleEl) titleEl.innerHTML = `${icon('clipboard')} Bulk Upload Teachers &amp; Staff (Excel / CSV)`;
     if (helperEl) {
-      helperEl.innerHTML = 'Required columns for Teachers/Staff: <strong>Name with Initials *</strong>, <strong>Designation / Role *</strong>, <strong>Department *</strong>. (Staff ID is auto-generated if blank; Full Name and EPF No are optional).';
+      helperEl.innerHTML = 'Required columns for Teachers/Staff: <strong>Name with Initials *</strong>, <strong>Designation / Role *</strong>. (Staff ID is auto-generated if blank; Full Name, Department, and EPF No are optional).';
     }
   } else {
     if (stuTab) stuTab.className = 'px-3 py-1.5 rounded font-bold text-xs transition-all cursor-pointer bg-[#800020] text-white';
@@ -1999,7 +2000,7 @@ async function openEditModal(id, type) {
     if (document.getElementById('staffGenderInput')) document.getElementById('staffGenderInput').value = st.gender || 'Male';
     if (document.getElementById('staffNicInput')) document.getElementById('staffNicInput').value = st.nic || '';
     document.getElementById('staffRoleInput').value = st.role || '';
-    document.getElementById('staffDeptInput').value = st.department || 'Commerce & Management';
+    document.getElementById('staffDeptInput').value = st.department || '';
     if (document.getElementById('staffAppointedDateInput')) document.getElementById('staffAppointedDateInput').value = st.appointed_date || '';
     if (document.getElementById('staffStatusInput')) document.getElementById('staffStatusInput').value = st.status || 'Active';
     document.getElementById('staffSubjectsInput').value = st.subjects_taught || '';

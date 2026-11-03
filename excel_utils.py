@@ -51,7 +51,7 @@ STAFF_TEMPLATE_COLUMNS = [
     ("gender", "Gender (Male/Female)", 18),
     ("nic", "NIC Number", 20),
     ("role", "Designation / Role *", 28),
-    ("department", "Department *", 28),
+    ("department", "Department (Optional)", 28),
     ("appointed_date", "Appointed Date (YYYY-MM-DD)", 24),
     ("status", "Status (Active/On Leave/Retired)", 24),
     ("subjects_taught", "Subjects Taught", 32),
@@ -218,7 +218,7 @@ STAFF_INSTRUCTIONS = [
     ["Gender (Male/Female)", "NO", "Male, Female, or Other (defaults to Male)."],
     ["NIC Number", "NO", "National Identity Card number (e.g. 198214501234 or 821450123V)."],
     ["Designation / Role *", "YES", "Role/Grade (e.g. Senior Teacher (SLTS 1), Graduate Teacher, Principal)."],
-    ["Department *", "YES", "Administration | Science & Mathematics | Commerce & ICT | Arts & Humanities | Languages | Primary Section | Aesthetic & Sports | Non-Academic Support"],
+    ["Department (Optional)", "NO", "Optional: Administration | Science & Mathematics | Commerce & ICT | Arts & Humanities | Languages | Primary Section | Aesthetic & Sports | Non-Academic Support"],
     ["Appointed Date (YYYY-MM-DD)", "NO", "Appointment date at school in YYYY-MM-DD format."],
     ["Status (Active/On Leave/Retired)", "NO", "Active, On Leave, Transferred, or Retired (defaults to Active)."],
     ["Subjects Taught", "NO", "Comma-separated list of subjects taught."],
@@ -880,7 +880,7 @@ def map_rows_to_staff_dicts(rows_2d):
             "gender": gender_val,
             "nic": get_val("nic"),
             "role": get_val("role") or "Teacher",
-            "department": get_val("department") or "Academic",
+            "department": get_val("department"),
             "appointed_date": app_date_raw if app_date_raw else None,
             "status": get_val("status") or "Active",
             "subjects_taught": get_val("subjects_taught"),
@@ -894,3 +894,4 @@ def map_rows_to_staff_dicts(rows_2d):
         mapped_records.append((row_idx, record))
 
     return mapped_records
+
