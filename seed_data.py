@@ -8,6 +8,72 @@ USER_COLUMNS = ("id", "username", "password_hash", "role", "full_name", "email",
 
 MARK_COLUMNS = ("id", "student_id", "subject", "term", "year", "marks", "grade", "remarks", "updated_by")
 
+SUBJECT_COLUMNS = ("subject_code", "subject_name", "category", "grade_level", "medium", "is_active", "description")
+
+# G.C.E. (O/L) Examination - Official List of Subjects & Module Codes (53 Subjects)
+SAMPLE_SUBJECTS = [
+    # Core Subjects (Category = 'Core')
+    ("11", "Buddhism", "Core", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Core Subject - Module Code 11"),
+    ("12", "Saivanery", "Core", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Core Subject - Module Code 12"),
+    ("14", "Catholicism", "Core", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Core Subject - Module Code 14"),
+    ("15", "Christianity", "Core", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Core Subject - Module Code 15"),
+    ("16", "Islam", "Core", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Core Subject - Module Code 16"),
+    ("21", "Sinhala Language & Literature", "Core", "G.C.E. (O/L) - Grades 10-11", "Sinhala", 1, "G.C.E. (O/L) Core Subject - Module Code 21"),
+    ("22", "Tamil Language & Literature", "Core", "G.C.E. (O/L) - Grades 10-11", "Tamil", 1, "G.C.E. (O/L) Core Subject - Module Code 22"),
+    ("31", "English Language", "Core", "G.C.E. (O/L) - Grades 10-11", "English", 1, "G.C.E. (O/L) Core Subject - Module Code 31"),
+    ("32", "Mathematics", "Core", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Core Subject - Module Code 32"),
+    ("33", "History", "Core", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Core Subject - Module Code 33"),
+    ("34", "Science", "Core", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Core Subject - Module Code 34"),
+
+    # Category I (Category = 'Basket 1')
+    ("60", "Business & Accounting Studies", "Basket 1", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category I (Basket 1) - Module Code 60"),
+    ("61", "Geography", "Basket 1", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category I (Basket 1) - Module Code 61"),
+    ("62", "Civic Education", "Basket 1", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category I (Basket 1) - Module Code 62"),
+    ("63", "Entrepreneurship Studies", "Basket 1", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category I (Basket 1) - Module Code 63"),
+    ("64", "Second Language (Sinhala)", "Basket 1", "G.C.E. (O/L) - Grades 10-11", "Sinhala", 1, "G.C.E. (O/L) Category I (Basket 1) - Module Code 64"),
+    ("65", "Second Language (Tamil)", "Basket 1", "G.C.E. (O/L) - Grades 10-11", "Tamil", 1, "G.C.E. (O/L) Category I (Basket 1) - Module Code 65"),
+    ("66", "Pali", "Basket 1", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category I (Basket 1) - Module Code 66"),
+    ("67", "Sanskrit", "Basket 1", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category I (Basket 1) - Module Code 67"),
+    ("68", "French", "Basket 1", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category I (Basket 1) - Module Code 68"),
+    ("69", "German", "Basket 1", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category I (Basket 1) - Module Code 69"),
+    ("70", "Hindi", "Basket 1", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category I (Basket 1) - Module Code 70"),
+    ("71", "Japanese", "Basket 1", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category I (Basket 1) - Module Code 71"),
+    ("72", "Arabic", "Basket 1", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category I (Basket 1) - Module Code 72"),
+    ("73", "Korean", "Basket 1", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category I (Basket 1) - Module Code 73"),
+    ("74", "Chinese", "Basket 1", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category I (Basket 1) - Module Code 74"),
+    ("75", "Russian", "Basket 1", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category I (Basket 1) - Module Code 75"),
+
+    # Category II (Category = 'Basket 2')
+    ("40", "Music (Oriental)", "Basket 2", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category II (Basket 2) - Module Code 40"),
+    ("41", "Music (Western)", "Basket 2", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category II (Basket 2) - Module Code 41"),
+    ("42", "Music (Carnatic)", "Basket 2", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category II (Basket 2) - Module Code 42"),
+    ("43", "Art", "Basket 2", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category II (Basket 2) - Module Code 43"),
+    ("44", "Dancing (Oriental)", "Basket 2", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category II (Basket 2) - Module Code 44"),
+    ("45", "Dancing (Bharata)", "Basket 2", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category II (Basket 2) - Module Code 45"),
+    ("46", "Appreciation of English Literary Texts", "Basket 2", "G.C.E. (O/L) - Grades 10-11", "English", 1, "G.C.E. (O/L) Category II (Basket 2) - Module Code 46"),
+    ("47", "Appreciation of Sinhala Literary Texts", "Basket 2", "G.C.E. (O/L) - Grades 10-11", "Sinhala", 1, "G.C.E. (O/L) Category II (Basket 2) - Module Code 47"),
+    ("48", "Appreciation of Tamil Literary Texts", "Basket 2", "G.C.E. (O/L) - Grades 10-11", "Tamil", 1, "G.C.E. (O/L) Category II (Basket 2) - Module Code 48"),
+    ("49", "Appreciation of Arabic Literary Texts", "Basket 2", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category II (Basket 2) - Module Code 49"),
+    ("50", "Drama and Theatre (Sinhala)", "Basket 2", "G.C.E. (O/L) - Grades 10-11", "Sinhala", 1, "G.C.E. (O/L) Category II (Basket 2) - Module Code 50"),
+    ("51", "Drama and Theatre (Tamil)", "Basket 2", "G.C.E. (O/L) - Grades 10-11", "Tamil", 1, "G.C.E. (O/L) Category II (Basket 2) - Module Code 51"),
+    ("52", "Drama and Theatre (English)", "Basket 2", "G.C.E. (O/L) - Grades 10-11", "English", 1, "G.C.E. (O/L) Category II (Basket 2) - Module Code 52"),
+
+    # Category III (Category = 'Basket 3')
+    ("80", "Information & Communication Technology", "Basket 3", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category III (Basket 3) - Module Code 80"),
+    ("81", "Agriculture & Food Technology", "Basket 3", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category III (Basket 3) - Module Code 81"),
+    ("82", "Aquatic Bioresources Technology", "Basket 3", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category III (Basket 3) - Module Code 82"),
+    ("84", "Art & Crafts", "Basket 3", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category III (Basket 3) - Module Code 84"),
+    ("85", "Home Economics", "Basket 3", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category III (Basket 3) - Module Code 85"),
+    ("86", "Health & Physical Education", "Basket 3", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category III (Basket 3) - Module Code 86"),
+    ("87", "Communication & Media Studies", "Basket 3", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category III (Basket 3) - Module Code 87"),
+    ("88", "Design & Construction Technology", "Basket 3", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category III (Basket 3) - Module Code 88"),
+    ("89", "Design & Mechanical Technology", "Basket 3", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category III (Basket 3) - Module Code 89"),
+    ("90", "Design, Electrical & Electronic Technology", "Basket 3", "G.C.E. (O/L) - Grades 10-11", "All", 1, "G.C.E. (O/L) Category III (Basket 3) - Module Code 90"),
+    ("92", "Electronic Writing & Shorthand (Sinhala)", "Basket 3", "G.C.E. (O/L) - Grades 10-11", "Sinhala", 1, "G.C.E. (O/L) Category III (Basket 3) - Module Code 92"),
+    ("93", "Electronic Writing & Shorthand (Tamil)", "Basket 3", "G.C.E. (O/L) - Grades 10-11", "Tamil", 1, "G.C.E. (O/L) Category III (Basket 3) - Module Code 93"),
+    ("94", "Electronic Writing & Shorthand (English)", "Basket 3", "G.C.E. (O/L) - Grades 10-11", "English", 1, "G.C.E. (O/L) Category III (Basket 3) - Module Code 94"),
+]
+
 SAMPLE_USERS = [
     (
         "USR-ADM-001",

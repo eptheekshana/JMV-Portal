@@ -38,7 +38,8 @@ except ImportError:
 
 from seed_data import (
     SAMPLE_STUDENTS, SAMPLE_STAFF, STUDENT_COLUMNS, STAFF_COLUMNS,
-    USER_COLUMNS, MARK_COLUMNS, SAMPLE_USERS, SAMPLE_MARKS
+    USER_COLUMNS, MARK_COLUMNS, SAMPLE_USERS, SAMPLE_MARKS,
+    SUBJECT_COLUMNS, SAMPLE_SUBJECTS
 )
 
 SQLITE_PATH = (
@@ -50,6 +51,7 @@ STUDENT_FIELDS = list(STUDENT_COLUMNS)
 STAFF_FIELDS = list(STAFF_COLUMNS)
 USER_FIELDS = list(USER_COLUMNS)
 MARK_FIELDS = list(MARK_COLUMNS)
+SUBJECT_FIELDS = list(SUBJECT_COLUMNS)
 
 # State tracking
 ACTIVE_ENGINE = "unknown"  # "mariadb" or "sqlite"
@@ -278,6 +280,17 @@ def init_mariadb_schema(conn):
                     "eptheekshana@gmail.com",
                     ""
                 )
+            )
+
+        # Populate official G.C.E. (O/L) subjects & module codes
+        subj_cols = ", ".join([f"`{c}`" for c in SUBJECT_FIELDS])
+        subj_placeholders = ", ".join(["%s"] * len(SUBJECT_FIELDS))
+        subj_updates = ", ".join([f"`{c}`=VALUES(`{c}`)" for c in SUBJECT_FIELDS if c != "subject_code"])
+        for s_row in SAMPLE_SUBJECTS:
+            cur.execute(
+                f"INSERT INTO subjects ({subj_cols}) VALUES ({subj_placeholders}) "
+                f"ON DUPLICATE KEY UPDATE {subj_updates}",
+                s_row
             )
     conn.commit()
 
@@ -579,6 +592,15 @@ def init_sqlite_schema(conn):
                 "eptheekshana@gmail.com",
                 ""
             )
+        )
+
+    # Populate official G.C.E. (O/L) subjects & module codes
+    subj_cols = ", ".join(SUBJECT_FIELDS)
+    subj_placeholders = ", ".join(["?"] * len(SUBJECT_FIELDS))
+    for s_row in SAMPLE_SUBJECTS:
+        cur.execute(
+            f"INSERT OR REPLACE INTO subjects ({subj_cols}) VALUES ({subj_placeholders})",
+            s_row
         )
     conn.commit()
 
@@ -1409,6 +1431,17 @@ def save_timetable_entry(data):
 def delete_timetable_entry(entry_id):
     execute_query("DELETE FROM school_timetable WHERE id = %s", (entry_id,), commit=True)
     return True
+
+
+def get_all_subjects(category=None):
+    sql = "SELECT * FROM subjects WHERE is_active = 1"
+    params = []
+    if category:
+        sql += " AND category = %s"
+        params.append(category)
+    sql += " ORDER BY CAST(subject_code AS UNSIGNED) ASC, subject_code ASC"
+    return execute_query(sql, tuple(params), fetchall=True)
+
 
 if __name__ == "__main__":
     init_db()

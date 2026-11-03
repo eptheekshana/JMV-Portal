@@ -173,6 +173,12 @@ def student(user, student_id):
     return jsonify(record)
 
 
+@app.get("/api/subjects")
+@requires_roles("admin", "teacher")
+def get_subjects(_user):
+    return jsonify(db.get_all_subjects(category=request.args.get("category")))
+
+
 @app.get("/api/templates/students.xlsx")
 def download_student_template():
     xlsx_bytes = excel_utils.generate_student_template_xlsx()

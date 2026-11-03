@@ -470,6 +470,11 @@ async def handle_bulk_upload_staff(request):
         return json_response({"error": f"Failed to process Excel file: {exc}"}, status=500)
 
 
+async def handle_get_subjects(request):
+    category = request.query.get("category")
+    return json_response(db.get_all_subjects(category=category))
+
+
 async def handle_reset_demo(request):
     db.reset_to_demo_data()
     return json_response({"success": True, "message": "Database reset to official JMV-Web sample records."})
@@ -535,6 +540,7 @@ def init_app():
     app.router.add_put("/api/timetable/{entry_id}", handle_save_timetable_entry)
     app.router.add_delete("/api/timetable/{entry_id}", handle_delete_timetable_entry)
 
+    app.router.add_get("/api/subjects", handle_get_subjects)
     app.router.add_get("/api/templates/students.xlsx", handle_download_student_template)
     app.router.add_get("/api/templates/staff.xlsx", handle_download_staff_template)
     app.router.add_post("/api/students/bulk", handle_bulk_upload_students)
