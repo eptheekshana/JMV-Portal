@@ -21,6 +21,11 @@ const AppState = {
   studentsList: [],
   staffList: [],
   timetableList: [],
+  timetableData: null,
+  currentTimetableMode: 'class',
+  selectedClass: '6-A',
+  selectedTeacher: '',
+  userHasManuallySelectedTimetable: false,
   marksList: [],
   stats: null,
   activeTab: 'lookup',
@@ -263,13 +268,26 @@ function initTimetable() {
   if (refresh) refresh.addEventListener('click', loadTimetable);
   const cancel = document.getElementById('timetableCancelBtn');
   if (cancel) cancel.addEventListener('click', resetTimetableForm);
-  const filterMode = document.getElementById('timetableFilterMode');
-  if (filterMode) {
-    filterMode.addEventListener('change', () => {
-      filterMode.dataset.userChanged = 'true';
-      if (AppState.timetableList) renderTimetableTable(AppState.timetableList);
-    });
-  }
+}
+
+function getSubjectBadgeClass(subject) {
+  const s = (subject || '').toLowerCase();
+  if (s.includes('math')) return 'bg-blue-100 text-blue-900 border-blue-300';
+  if (s.includes('sci')) return 'bg-emerald-100 text-emerald-900 border-emerald-300';
+  if (s.includes('sinhala')) return 'bg-amber-100 text-amber-900 border-amber-300';
+  if (s.includes('eng')) return 'bg-purple-100 text-purple-900 border-purple-300';
+  if (s.includes('buddh') || s.includes('relig')) return 'bg-yellow-100 text-yellow-900 border-yellow-400';
+  if (s.includes('hist')) return 'bg-rose-100 text-rose-900 border-rose-300';
+  if (s.includes('geo')) return 'bg-teal-100 text-teal-900 border-teal-300';
+  if (s.includes('civ')) return 'bg-cyan-100 text-cyan-900 border-cyan-300';
+  if (s.includes('tamil')) return 'bg-orange-100 text-orange-900 border-orange-300';
+  if (s.includes('it') || s.includes('ict') || s.includes('git')) return 'bg-sky-100 text-sky-900 border-sky-300';
+  if (s.includes('phys') || s.includes('pt') || s.includes('sport')) return 'bg-green-100 text-green-900 border-green-300';
+  if (s.includes('art') || s.includes('mus') || s.includes('dan') || s.includes('dra')) return 'bg-pink-100 text-pink-900 border-pink-300';
+  if (s.includes('acc') || s.includes('econ') || s.includes('bus') || s.includes('com')) return 'bg-violet-100 text-violet-900 border-violet-300';
+  if (s.includes('tour') || s.includes('grap')) return 'bg-indigo-100 text-indigo-900 border-indigo-300';
+  if (s.includes('lib')) return 'bg-stone-100 text-stone-800 border-stone-300';
+  return 'bg-slate-100 text-slate-800 border-slate-300';
 }
 
 async function loadTimetable() {
@@ -278,9 +296,7 @@ async function loadTimetable() {
   const isTeacher = u && u.role === 'teacher';
   const restricted = document.getElementById('timetableRestrictedBanner');
   const container = document.getElementById('timetableAdminContainer');
-  const form = document.getElementById('timetableForm');
-  const actionHeader = document.getElementById('timetableActionHeader');
-  const filterMode = document.getElementById('timetableFilterMode');
+  const toggleFormBtn = document.getElementById('timetableToggleFormBtn');
 
   if (!isAdmin && !isTeacher) {
     if (restricted) restricted.classList.remove('hidden');
@@ -290,45 +306,369 @@ async function loadTimetable() {
   if (restricted) restricted.classList.add('hidden');
   if (container) container.classList.remove('hidden');
 
-  if (form) {
-    if (isTeacher) {
-      form.classList.add('hidden');
-    } else {
-      form.classList.remove('hidden');
-    }
-  }
-
-  if (actionHeader) {
-    actionHeader.style.display = isTeacher ? 'none' : '';
-  }
-
-  if (filterMode && !filterMode.dataset.userChanged) {
-    filterMode.value = isTeacher ? 'my' : 'all';
+  if (toggleFormBtn) {
+    if (isAdmin) toggleFormBtn.classList.remove('hidden');
+    else toggleFormBtn.classList.add('hidden');
   }
 
   try {
-    const promises = [fetch('/api/timetable', { credentials: 'include', headers: getAuthHeaders() })];
+    const promises = [
+      fetch('/static/data/timetable_2026.json').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/timetable', { credentials: 'include', headers: getAuthHeaders() }).then(r => r.ok ? r.json() : []).catch(() => [])
+    ];
     if (isAdmin) {
-      promises.push(fetch('/api/staff', { credentials: 'include', headers: getAuthHeaders() }));
+      promises.push(fetch('/api/staff', { credentials: 'include', headers: getAuthHeaders() }).then(r => r.ok ? r.json() : []).catch(() => []));
     }
-    const [entriesRes, staffRes] = await Promise.all(promises);
-    if (!entriesRes.ok) throw new Error('Unable to load timetable data.');
-    const entries = await entriesRes.json();
-    AppState.timetableList = entries;
+    const [jsonData, apiEntries, staffList] = await Promise.all(promises);
 
-    if (isAdmin && staffRes && staffRes.ok) {
-      const staff = await staffRes.json();
+    if (jsonData) {
+      AppState.timetableData = jsonData;
+    }
+    if (apiEntries) {
+      AppState.timetableList = apiEntries;
+    }
+
+    if (isAdmin && staffList && staffList.length) {
       const teacherSelect = document.getElementById('timetableTeacher');
       if (teacherSelect) {
         teacherSelect.innerHTML = '<option value="">Select teacher</option>' +
-          staff.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name_with_initials || t.full_name)}</option>`).join('');
+          staffList.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name_with_initials || t.full_name)}</option>`).join('');
       }
     }
 
-    renderTimetableTable(entries);
+    // Populate selectors
+    populateTimetableClassSelect();
+    populateTimetableTeacherSelect();
+
+    // Auto-select logged-in teacher if applicable
+    if (isTeacher && u && !AppState.userHasManuallySelectedTimetable) {
+      const myName = (u.full_name || '').toLowerCase();
+      const myInit = (u.name_with_initials || '').toLowerCase();
+      const teachers = Object.keys(AppState.timetableData?.teachers || {});
+      const matched = teachers.find(t => {
+        const tl = t.toLowerCase();
+        return (myName && tl.includes(myName)) || (myName && myName.includes(tl)) || (myInit && tl.includes(myInit));
+      });
+      if (matched) {
+        AppState.selectedTeacher = matched;
+        switchTimetableMode('teacher');
+      } else {
+        switchTimetableMode('class');
+      }
+    } else if (!AppState.currentTimetableMode) {
+      switchTimetableMode('class');
+    } else {
+      switchTimetableMode(AppState.currentTimetableMode);
+    }
+
   } catch (error) {
-    showToast(error.message, 'error');
+    console.error("Timetable load error:", error);
+    showToast("Error loading timetable: " + error.message, "error");
   }
+}
+
+function populateTimetableClassSelect() {
+  const select = document.getElementById('ttClassSelect');
+  if (!select) return;
+  const classes = AppState.timetableData?.classes || {};
+  const classNames = Object.keys(classes);
+  if (!classNames.length) return;
+
+  const junior = classNames.filter(c => /^[6-9]-/.test(c));
+  const ol = classNames.filter(c => /^1[0-1]-/.test(c));
+  const al = classNames.filter(c => /^1[2-3]/.test(c));
+
+  select.innerHTML = `
+    <optgroup label="Junior Secondary (Grades 6–9)">
+      ${junior.map(c => `<option value="${escapeHtml(c)}">Grade ${escapeHtml(c)}</option>`).join('')}
+    </optgroup>
+    <optgroup label="G.C.E. Ordinary Level (Grades 10–11)">
+      ${ol.map(c => `<option value="${escapeHtml(c)}">Grade ${escapeHtml(c)}</option>`).join('')}
+    </optgroup>
+    <optgroup label="Collegiate Advanced Level (Grades 12–13)">
+      ${al.map(c => `<option value="${escapeHtml(c)}">Grade ${escapeHtml(c)}</option>`).join('')}
+    </optgroup>
+  `;
+
+  if (AppState.selectedClass && classNames.includes(AppState.selectedClass)) {
+    select.value = AppState.selectedClass;
+  } else if (classNames.length) {
+    AppState.selectedClass = classNames[0];
+    select.value = AppState.selectedClass;
+  }
+}
+
+function populateTimetableTeacherSelect() {
+  const select = document.getElementById('ttTeacherSelect');
+  if (!select) return;
+  const teachers = AppState.timetableData?.teachers || {};
+  const teacherNames = Object.keys(teachers).sort();
+  if (!teacherNames.length) return;
+
+  select.innerHTML = teacherNames.map(t => {
+    const load = teachers[t]?.teaching_load || 0;
+    return `<option value="${escapeHtml(t)}">${escapeHtml(t)} (${load} Periods / Week)</option>`;
+  }).join('');
+
+  if (AppState.selectedTeacher && teacherNames.includes(AppState.selectedTeacher)) {
+    select.value = AppState.selectedTeacher;
+  } else if (teacherNames.length) {
+    AppState.selectedTeacher = teacherNames[0];
+    select.value = AppState.selectedTeacher;
+  }
+}
+
+function renderTimetableGrid() {
+  const table = document.getElementById('ttGridTable');
+  if (!table) return;
+
+  const mode = AppState.currentTimetableMode || 'class';
+  const data = AppState.timetableData;
+  if (!data) {
+    table.innerHTML = '<tr><td class="p-8 text-center text-slate-400">Loading timetable data...</td></tr>';
+    return;
+  }
+
+  const days = data.days || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+  const times = data.period_times || [
+    "07:50 - 08:30", "08:30 - 09:10", "09:10 - 09:50", "09:50 - 10:30",
+    "10:50 - 11:30", "11:30 - 12:10", "12:10 - 12:50", "12:50 - 13:30"
+  ];
+
+  if (mode === 'class') {
+    const clsKey = AppState.selectedClass || '6-A';
+    const clsObj = (data.classes && data.classes[clsKey]) ? data.classes[clsKey] : {};
+    const formTeacher = clsObj.form_teacher || 'Not assigned';
+    const schedule = clsObj.schedule || {};
+
+    // Update sheet header & badges
+    const titleEl = document.getElementById('ttSheetTitle');
+    const subtitleEl = document.getElementById('ttSheetSubtitle');
+    const teacherBadge = document.getElementById('ttClassFormTeacherText');
+    if (titleEl) titleEl.textContent = `Grade ${clsKey} Weekly Timetable`;
+    if (subtitleEl) subtitleEl.textContent = `Form Teacher: ${formTeacher}`;
+    if (teacherBadge) teacherBadge.textContent = `Class Teacher: ${formTeacher}`;
+
+    let html = `
+      <thead>
+        <tr class="bg-slate-100 text-slate-700 font-extrabold uppercase text-[11px] border-b-2 border-slate-300">
+          <th class="p-3 w-32 border-r border-slate-200">Period &amp; Time</th>
+          ${days.map(d => `<th class="p-3 border-r border-slate-200 text-[#800020] font-black">${d}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-200">
+    `;
+
+    for (let p = 1; p <= 8; p++) {
+      if (p === 5) {
+        // Morning Interval Row
+        html += `
+          <tr class="bg-amber-100/80 border-y-2 border-[#d4af37] text-[#5c0d1b]">
+            <td colspan="6" class="py-2.5 px-4 text-center font-extrabold uppercase tracking-wide text-xs">
+              ☕ Morning Interval (10:30 AM – 10:50 AM) • උදෑසන විවේක කාලය (විනාඩි 20)
+            </td>
+          </tr>
+        `;
+      }
+
+      const pTime = times[p - 1] || '';
+      html += `
+        <tr class="hover:bg-slate-50/70 transition-colors">
+          <td class="tt-time-col p-2.5 text-center font-mono">
+            <div class="font-extrabold text-slate-800 text-xs">Period ${p}</div>
+            <div class="text-[10px] text-slate-500 font-semibold">${pTime}</div>
+          </td>
+      `;
+
+      for (const d of days) {
+        const daySlots = schedule[d] || [];
+        const slot = daySlots.find(s => s.period === p) || { subject: 'Free Period', teacher: '' };
+        const isFree = !slot.subject || slot.subject === 'Free Period';
+
+        html += `<td class="tt-grid-cell border-r border-slate-200 p-2.5">`;
+        if (isFree) {
+          html += `<span class="tt-free-pill">— Free Period —</span>`;
+        } else {
+          const badgeClass = getSubjectBadgeClass(slot.subject);
+          html += `
+            <div class="tt-subject-badge ${badgeClass} shadow-xs">
+              ${escapeHtml(slot.subject)}
+            </div>
+            ${slot.teacher ? `
+              <div class="tt-teacher-pill">
+                ${icon('users')}
+                <span>${escapeHtml(slot.teacher)}</span>
+              </div>
+            ` : ''}
+          `;
+        }
+        html += `</td>`;
+      }
+
+      html += `</tr>`;
+    }
+
+    html += `</tbody>`;
+    table.innerHTML = html;
+
+  } else if (mode === 'teacher') {
+    const tKey = AppState.selectedTeacher || Object.keys(data.teachers || {})[0];
+    const tObj = (data.teachers && data.teachers[tKey]) ? data.teachers[tKey] : {};
+    const schedule = tObj.schedule || {};
+    const load = tObj.teaching_load || 0;
+
+    // Update sheet header & badges
+    const titleEl = document.getElementById('ttSheetTitle');
+    const subtitleEl = document.getElementById('ttSheetSubtitle');
+    const loadBadge = document.getElementById('ttTeacherLoadText');
+    if (titleEl) titleEl.textContent = `${tKey} — Teaching Timetable`;
+    if (subtitleEl) subtitleEl.textContent = `Weekly Load: ${load} Teaching Periods`;
+    if (loadBadge) loadBadge.textContent = `Teaching Load: ${load} Periods / Week`;
+
+    let html = `
+      <thead>
+        <tr class="bg-slate-100 text-slate-700 font-extrabold uppercase text-[11px] border-b-2 border-slate-300">
+          <th class="p-3 w-32 border-r border-slate-200">Period &amp; Time</th>
+          ${days.map(d => `<th class="p-3 border-r border-slate-200 text-[#800020] font-black">${d}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-200">
+    `;
+
+    for (let p = 1; p <= 8; p++) {
+      if (p === 5) {
+        html += `
+          <tr class="bg-amber-100/80 border-y-2 border-[#d4af37] text-[#5c0d1b]">
+            <td colspan="6" class="py-2.5 px-4 text-center font-extrabold uppercase tracking-wide text-xs">
+              ☕ Morning Interval (10:30 AM – 10:50 AM) • උදෑසන විවේක කාලය (විනාඩි 20)
+            </td>
+          </tr>
+        `;
+      }
+
+      const pTime = times[p - 1] || '';
+      html += `
+        <tr class="hover:bg-slate-50/70 transition-colors">
+          <td class="tt-time-col p-2.5 text-center font-mono">
+            <div class="font-extrabold text-slate-800 text-xs">Period ${p}</div>
+            <div class="text-[10px] text-slate-500 font-semibold">${pTime}</div>
+          </td>
+      `;
+
+      for (const d of days) {
+        const daySlots = schedule[d] || [];
+        const slot = daySlots.find(s => s.period === p) || { is_free: true };
+
+        html += `<td class="tt-grid-cell border-r border-slate-200 p-2.5">`;
+        if (slot.is_free) {
+          html += `<span class="tt-free-pill">Free Period</span>`;
+        } else {
+          const badgeClass = getSubjectBadgeClass(slot.subject);
+          html += `
+            <div class="mb-1">
+              <span class="tt-class-pill shadow-xs">${escapeHtml(slot.class_name)}</span>
+            </div>
+            <div class="tt-subject-badge ${badgeClass}">
+              ${escapeHtml(slot.subject)}
+            </div>
+          `;
+        }
+        html += `</td>`;
+      }
+
+      html += `</tr>`;
+    }
+
+    html += `</tbody>`;
+    table.innerHTML = html;
+  }
+}
+
+function switchTimetableMode(mode) {
+  AppState.currentTimetableMode = mode;
+
+  const btnClass = document.getElementById('ttModeClassBtn');
+  const btnTeacher = document.getElementById('ttModeTeacherBtn');
+  const btnTable = document.getElementById('ttModeTableBtn');
+
+  const classSel = document.getElementById('ttClassSelectorContainer');
+  const teacherSel = document.getElementById('ttTeacherSelectorContainer');
+  const tableFilter = document.getElementById('ttTableFilterContainer');
+
+  const classBadge = document.getElementById('ttClassFormTeacherBadge');
+  const teacherBadge = document.getElementById('ttTeacherLoadBadge');
+
+  const gridView = document.getElementById('timetableGridView');
+  const tableView = document.getElementById('timetableTableView');
+
+  [btnClass, btnTeacher, btnTable].forEach(b => {
+    if (b) {
+      b.className = 'px-3.5 py-1.5 text-xs font-extrabold rounded-lg transition-all text-slate-600 hover:text-[#800020] flex items-center gap-1.5 cursor-pointer';
+    }
+  });
+
+  if (mode === 'class') {
+    if (btnClass) btnClass.className = 'px-3.5 py-1.5 text-xs font-extrabold rounded-lg transition-all bg-[#800020] text-white shadow-sm flex items-center gap-1.5 cursor-pointer';
+    if (classSel) classSel.classList.remove('hidden');
+    if (teacherSel) teacherSel.classList.add('hidden');
+    if (tableFilter) tableFilter.classList.add('hidden');
+    if (classBadge) classBadge.classList.remove('hidden');
+    if (teacherBadge) teacherBadge.classList.add('hidden');
+    if (gridView) gridView.classList.remove('hidden');
+    if (tableView) tableView.classList.add('hidden');
+    renderTimetableGrid();
+  } else if (mode === 'teacher') {
+    if (btnTeacher) btnTeacher.className = 'px-3.5 py-1.5 text-xs font-extrabold rounded-lg transition-all bg-[#800020] text-white shadow-sm flex items-center gap-1.5 cursor-pointer';
+    if (classSel) classSel.classList.add('hidden');
+    if (teacherSel) teacherSel.classList.remove('hidden');
+    if (tableFilter) tableFilter.classList.add('hidden');
+    if (classBadge) classBadge.classList.add('hidden');
+    if (teacherBadge) teacherBadge.classList.remove('hidden');
+    if (gridView) gridView.classList.remove('hidden');
+    if (tableView) tableView.classList.add('hidden');
+    renderTimetableGrid();
+  } else if (mode === 'table') {
+    if (btnTable) btnTable.className = 'px-3.5 py-1.5 text-xs font-extrabold rounded-lg transition-all bg-[#800020] text-white shadow-sm flex items-center gap-1.5 cursor-pointer';
+    if (classSel) classSel.classList.add('hidden');
+    if (teacherSel) teacherSel.classList.add('hidden');
+    if (tableFilter) tableFilter.classList.remove('hidden');
+    if (classBadge) classBadge.classList.add('hidden');
+    if (teacherBadge) teacherBadge.classList.add('hidden');
+    if (gridView) gridView.classList.add('hidden');
+    if (tableView) tableView.classList.remove('hidden');
+    renderTimetableTable(AppState.timetableList);
+  }
+}
+
+function onTimetableClassChange(className) {
+  AppState.selectedClass = className;
+  AppState.userHasManuallySelectedTimetable = true;
+  renderTimetableGrid();
+}
+
+function onTimetableTeacherChange(teacherName) {
+  AppState.selectedTeacher = teacherName;
+  AppState.userHasManuallySelectedTimetable = true;
+  renderTimetableGrid();
+}
+
+function printTimetable() {
+  window.print();
+}
+
+function toggleTimetableForm() {
+  const form = document.getElementById('timetableForm');
+  if (form) form.classList.toggle('hidden');
+}
+
+function cancelTimetableForm() {
+  const form = document.getElementById('timetableForm');
+  if (form) {
+    form.reset();
+    form.classList.add('hidden');
+  }
+  const idInput = document.getElementById('timetableEntryId');
+  if (idInput) idInput.value = '';
 }
 
 function renderTimetableTable(entries) {
@@ -370,88 +710,87 @@ function renderTimetableTable(entries) {
       <td class="p-3">${escapeHtml(entry.teacher_name)}</td>
       ${!isTeacher ? `
       <td class="p-3 text-right whitespace-nowrap">
-        <button onclick="editTimetableEntryById('${escapeHtml(entry.id)}')" class="text-[#800020] font-bold text-xs mr-3">${icon('edit')} Edit</button>
-        <button onclick="deleteTimetableEntry('${escapeHtml(entry.id)}')" class="text-red-700 font-bold text-xs">${icon('trash')} Delete</button>
+        <button onclick="editTimetableEntryById('${escapeHtml(entry.id)}')" class="text-[#800020] font-bold text-xs mr-3 cursor-pointer">${icon('edit')} Edit</button>
+        <button onclick="deleteTimetableEntry('${escapeHtml(entry.id)}')" class="text-red-700 font-bold text-xs cursor-pointer">${icon('trash')} Delete</button>
       </td>` : ''}
     </tr>`).join('');
 }
 
-    async function saveTimetableEntry(event) {
-      event.preventDefault();
-      if (!AppState.currentUser || AppState.currentUser.role !== 'admin') {
-        showToast("Only school administrators can create or modify timetable entries.", "error");
-        return;
-      }
-      const id = document.getElementById('timetableEntryId').value;
-      const payload = {
-        id: id || undefined,
-        class_name: document.getElementById('timetableClass').value,
-        day_of_week: document.getElementById('timetableDay').value,
-        period_no: Number(document.getElementById('timetablePeriod').value),
-        subject: document.getElementById('timetableSubject').value,
-        teacher_id: document.getElementById('timetableTeacher').value
-      };
-      try {
-        const response = await fetch(id ? `/api/timetable/${encodeURIComponent(id)}` : '/api/timetable', {
-          method: id ? 'PUT' : 'POST',
-          headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Unable to save timetable entry.');
-        showToast('Timetable entry saved.', 'success');
-        resetTimetableForm();
-        loadTimetable();
-      } catch (error) {
-        showToast(error.message, 'error');
-      }
-    }
+async function saveTimetableEntry(event) {
+  event.preventDefault();
+  if (!AppState.currentUser || AppState.currentUser.role !== 'admin') {
+    showToast("Only school administrators can create or modify timetable entries.", "error");
+    return;
+  }
+  const id = document.getElementById('timetableEntryId').value;
+  const payload = {
+    id: id || undefined,
+    class_name: document.getElementById('timetableClass').value,
+    day_of_week: document.getElementById('timetableDay').value,
+    period_no: Number(document.getElementById('timetablePeriod').value),
+    subject: document.getElementById('timetableSubject').value,
+    teacher_id: document.getElementById('timetableTeacher').value
+  };
+  try {
+    const response = await fetch(id ? `/api/timetable/${encodeURIComponent(id)}` : '/api/timetable', {
+      method: id ? 'PUT' : 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Unable to save timetable entry.');
+    showToast('Timetable entry saved.', 'success');
+    cancelTimetableForm();
+    loadTimetable();
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
 
-    function editTimetableEntry(entry) {
-      if (!AppState.currentUser || AppState.currentUser.role !== 'admin') {
-        showToast("Only school administrators can edit timetable entries.", "error");
-        return;
-      }
-      document.getElementById('timetableEntryId').value = entry.id;
-      document.getElementById('timetableClass').value = entry.class_name;
-      document.getElementById('timetableDay').value = entry.day_of_week;
-      document.getElementById('timetablePeriod').value = entry.period_no;
-      document.getElementById('timetableSubject').value = entry.subject;
-      document.getElementById('timetableTeacher').value = entry.teacher_id;
-      document.getElementById('timetableCancelBtn').classList.remove('hidden');
-      document.getElementById('timetableClass').focus();
-    }
+function editTimetableEntry(entry) {
+  if (!AppState.currentUser || AppState.currentUser.role !== 'admin') {
+    showToast("Only school administrators can edit timetable entries.", "error");
+    return;
+  }
+  const form = document.getElementById('timetableForm');
+  if (form) form.classList.remove('hidden');
+  document.getElementById('timetableEntryId').value = entry.id;
+  document.getElementById('timetableClass').value = entry.class_name;
+  document.getElementById('timetableDay').value = entry.day_of_week;
+  document.getElementById('timetablePeriod').value = entry.period_no;
+  document.getElementById('timetableSubject').value = entry.subject;
+  document.getElementById('timetableTeacher').value = entry.teacher_id;
+  document.getElementById('timetableClass').focus();
+}
 
-    function editTimetableEntryById(id) {
-      const entry = AppState.timetableList.find(item => String(item.id) === String(id));
-      if (entry) editTimetableEntry(entry);
-    }
+function editTimetableEntryById(id) {
+  const entry = AppState.timetableList.find(item => String(item.id) === String(id));
+  if (entry) editTimetableEntry(entry);
+}
 
-    async function deleteTimetableEntry(id) {
-      if (!AppState.currentUser || AppState.currentUser.role !== 'admin') {
-        showToast("Only school administrators can delete timetable entries.", "error");
-        return;
-      }
-      if (!confirm('Delete this timetable entry?')) return;
-      try {
-        const response = await fetch(`/api/timetable/${encodeURIComponent(id)}`, {
-          method: 'DELETE',
-          headers: getAuthHeaders()
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Unable to delete timetable entry.');
-        showToast('Timetable entry deleted.', 'success');
-        loadTimetable();
-      } catch (error) {
-        showToast(error.message, 'error');
-      }
-    }
+async function deleteTimetableEntry(id) {
+  if (!AppState.currentUser || AppState.currentUser.role !== 'admin') {
+    showToast("Only school administrators can delete timetable entries.", "error");
+    return;
+  }
+  if (!confirm('Delete this timetable entry?')) return;
+  try {
+    const response = await fetch(`/api/timetable/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Unable to delete timetable entry.');
+    showToast('Timetable entry deleted.', 'success');
+    loadTimetable();
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
 
-    function resetTimetableForm() {
-      document.getElementById('timetableForm').reset();
-      document.getElementById('timetableEntryId').value = '';
-      document.getElementById('timetableCancelBtn').classList.add('hidden');
-    }
+function resetTimetableForm() {
+  cancelTimetableForm();
+}
 
 /* --------------------------------------------------------------------------
    Instant Universal ID Search & Live Typeahead

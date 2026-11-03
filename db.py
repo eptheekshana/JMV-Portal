@@ -160,7 +160,6 @@ def init_mariadb_schema(conn):
             full_name VARCHAR(255) NOT NULL DEFAULT '',
             name_with_initials VARCHAR(150) NOT NULL,
             gender VARCHAR(16) NOT NULL,
-            dob VARCHAR(32) NULL,
             role VARCHAR(150) NOT NULL,
             department VARCHAR(150) NOT NULL DEFAULT '',
             subjects_taught VARCHAR(255),
@@ -443,8 +442,6 @@ def _migrate_existing_mariadb_schema(cur):
             (row["Field"] if isinstance(row, dict) else row[0])
             for row in raw_staff_cols
         }
-        if "dob" not in staff_columns:
-            cur.execute("ALTER TABLE staff ADD COLUMN `dob` VARCHAR(32) NULL AFTER `gender`")
         if "address" not in staff_columns:
             cur.execute("ALTER TABLE staff ADD COLUMN `address` VARCHAR(255) NOT NULL DEFAULT '' AFTER `email`")
     except Exception:
@@ -479,6 +476,42 @@ def _migrate_existing_mariadb_schema(cur):
             cur.execute("ALTER TABLE subjects DROP PRIMARY KEY, ADD PRIMARY KEY (subject_code, grade_level)")
     except Exception:
         pass
+
+    # Seed timetable if empty in MariaDB
+    try:
+        cur.execute("SELECT COUNT(*) as n FROM school_timetable")
+        tt_cnt = cur.fetchone()
+        cnt = (tt_cnt["n"] if isinstance(tt_cnt, dict) else tt_cnt[0]) if tt_cnt else 0
+        if cnt < 50:
+            json_path = os.path.join(BASE_DIR, "static", "data", "timetable_2026.json")
+            if os.path.exists(json_path):
+                import json
+                with open(json_path, "r", encoding="utf-8") as f:
+                    tt_data = json.load(f)
+                classes = tt_data.get("classes", {})
+                for cls_name, cls_obj in classes.items():
+                    for day_name, p_slots in cls_obj.get("schedule", {}).items():
+                        for slot in p_slots:
+                            if slot.get("subject") and slot["subject"] != "Free Period":
+                                slot_id = f"TT-{cls_name.replace(' ', '')}-{day_name[:3].upper()}-P{slot['period']}"
+                                cur.execute("""
+                                    INSERT INTO school_timetable
+                                    (id, class_name, day_of_week, period_no, subject, teacher_id, teacher_name)
+                                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                                    ON DUPLICATE KEY UPDATE
+                                    subject=VALUES(subject), teacher_id=VALUES(teacher_id), teacher_name=VALUES(teacher_name)
+                                """, (
+                                    slot_id,
+                                    cls_name,
+                                    day_name,
+                                    slot["period"],
+                                    slot["subject"],
+                                    slot.get("teacher", "Faculty Member"),
+                                    slot.get("teacher", "Faculty Member")
+                                ))
+                conn.commit()
+    except Exception as e:
+        print(f"[MARIADB TIMETABLE SEED ERROR] {e}")
 
 def init_sqlite_schema(conn):
     cur = conn.cursor()
@@ -529,7 +562,6 @@ def init_sqlite_schema(conn):
         full_name TEXT NOT NULL DEFAULT '',
         name_with_initials TEXT NOT NULL,
         gender TEXT NOT NULL,
-        dob TEXT NULL,
         role TEXT NOT NULL,
         department TEXT NOT NULL DEFAULT '',
         subjects_taught TEXT,
@@ -547,52 +579,7 @@ def init_sqlite_schema(conn):
     );
     """)
     cur.execute("PRAGMA table_info(staff)")
-    cols_info = {row[1]: row for row in cur.fetchall()}
-    if cols_info.get("epf_no", (0, 0, 0, 0))[3] == 1:
-        try:
-            cur.execute("ALTER TABLE staff RENAME TO _staff_old")
-            cur.execute("""
-            CREATE TABLE staff (
-                id TEXT PRIMARY KEY,
-                epf_no TEXT UNIQUE,
-                full_name TEXT NOT NULL DEFAULT '',
-                name_with_initials TEXT NOT NULL,
-                gender TEXT NOT NULL,
-                dob TEXT NULL,
-                role TEXT NOT NULL,
-                department TEXT NOT NULL DEFAULT '',
-                subjects_taught TEXT,
-                qualifications TEXT NOT NULL DEFAULT '',
-                appointed_date TEXT,
-                contact_no TEXT NOT NULL DEFAULT '',
-                email TEXT NOT NULL DEFAULT '',
-                address TEXT NOT NULL DEFAULT '',
-                nic TEXT NOT NULL DEFAULT '',
-                status TEXT NOT NULL DEFAULT 'Active',
-                assigned_classes TEXT,
-                photo_url TEXT,
-                notes TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                created_by VARCHAR(150) NOT NULL DEFAULT '',
-                updated_by VARCHAR(150) NOT NULL DEFAULT '',
-                last_updated_at VARCHAR(32) NOT NULL DEFAULT ''
-            );
-            """)
-            common = [c for c in cols_info.keys() if c != "epf_no" or True]
-            # Copy all matching columns
-            cur.execute("PRAGMA table_info(staff)")
-            new_col_names = {row[1] for row in cur.fetchall()}
-            shared = [c for c in cols_info.keys() if c in new_col_names]
-            cols_csv = ", ".join(shared)
-            cur.execute(f"INSERT INTO staff ({cols_csv}) SELECT {cols_csv} FROM _staff_old")
-            cur.execute("DROP TABLE _staff_old")
-            conn.commit()
-        except Exception:
-            pass
-    cur.execute("PRAGMA table_info(staff)")
     sqlite_staff_cols = {row[1] for row in cur.fetchall()}
-    if "dob" not in sqlite_staff_cols:
-        cur.execute("ALTER TABLE staff ADD COLUMN dob TEXT NULL")
     if "address" not in sqlite_staff_cols:
         cur.execute("ALTER TABLE staff ADD COLUMN address TEXT NOT NULL DEFAULT ''")
 
@@ -735,6 +722,40 @@ def init_sqlite_schema(conn):
             f"INSERT OR REPLACE INTO subjects ({subj_cols}) VALUES ({subj_placeholders})",
             s_row
         )
+
+    # Seed timetable if empty
+    try:
+        cur.execute("SELECT COUNT(*) as n FROM school_timetable")
+        tt_cnt = cur.fetchone()
+        cnt = tt_cnt[0] if tt_cnt else 0
+        if cnt < 50:
+            json_path = os.path.join(BASE_DIR, "static", "data", "timetable_2026.json")
+            if os.path.exists(json_path):
+                import json
+                with open(json_path, "r", encoding="utf-8") as f:
+                    tt_data = json.load(f)
+                classes = tt_data.get("classes", {})
+                for cls_name, cls_obj in classes.items():
+                    for day_name, p_slots in cls_obj.get("schedule", {}).items():
+                        for slot in p_slots:
+                            if slot.get("subject") and slot["subject"] != "Free Period":
+                                slot_id = f"TT-{cls_name.replace(' ', '')}-{day_name[:3].upper()}-P{slot['period']}"
+                                cur.execute("""
+                                    INSERT OR REPLACE INTO school_timetable
+                                    (id, class_name, day_of_week, period_no, subject, teacher_id, teacher_name)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                                """, (
+                                    slot_id,
+                                    cls_name,
+                                    day_name,
+                                    slot["period"],
+                                    slot["subject"],
+                                    slot.get("teacher", "Faculty Member"),
+                                    slot.get("teacher", "Faculty Member")
+                                ))
+    except Exception as e:
+        print(f"[TIMETABLE SEED ERROR] {e}")
+
     conn.commit()
 
 def init_db():
@@ -928,6 +949,12 @@ def quick_suggestions(prefix, limit=6, include_staff=True):
     students = execute_query(
         "SELECT id, admission_no, name_with_initials, grade, photo_url FROM students"
         " WHERE id LIKE %s OR full_name LIKE %s OR name_with_initials LIKE %s OR admission_no LIKE %s LIMIT %s",
+        (like, like, like, like, limit),
+        fetchall=True
+    ) or []
+    staff = execute_query(
+        "SELECT id, name_with_initials, role, photo_url FROM staff"
+        " WHERE id LIKE %s OR full_name LIKE %s OR name_with_initials LIKE %s OR epf_no LIKE %s LIMIT %s",
         (like, like, like, like, limit),
         fetchall=True
     ) or []
@@ -1228,10 +1255,8 @@ def create_staff(data, actor=None):
     sanitized["epf_no"] = str(epf).strip() if epf and str(epf).strip() else None
     app_date = sanitized.get("appointed_date")
     sanitized["appointed_date"] = str(app_date).strip() if app_date and str(app_date).strip() else None
-    dob = sanitized.get("dob")
-    sanitized["dob"] = str(dob).strip() if dob and str(dob).strip() else None
     vals = [
-        sanitized.get(f) if f in ("epf_no", "appointed_date", "dob") else (sanitized.get(f) if sanitized.get(f) is not None else "")
+        sanitized.get(f) if f in ("epf_no", "appointed_date") else (sanitized.get(f) if sanitized.get(f) is not None else "")
         for f in STAFF_FIELDS
     ]
     execute_query(f"INSERT INTO staff ({cols}) VALUES ({placeholders})", vals, commit=True)
@@ -1250,14 +1275,11 @@ def update_staff(staff_id, data, actor=None):
     if "appointed_date" in sanitized:
         app_date = sanitized.get("appointed_date")
         sanitized["appointed_date"] = str(app_date).strip() if app_date and str(app_date).strip() else None
-    if "dob" in sanitized:
-        dob = sanitized.get("dob")
-        sanitized["dob"] = str(dob).strip() if dob and str(dob).strip() else None
-    merged = {**current, **{k: v for k, v in sanitized.items() if v is not None or k in ("epf_no", "appointed_date", "dob")}}
+    merged = {**current, **{k: v for k, v in sanitized.items() if v is not None or k in ("epf_no", "appointed_date")}}
     fields = [f for f in STAFF_FIELDS if f != "id"]
     set_clause = ", ".join([f"`{f}`=%s" for f in fields])
     vals = [
-        merged.get(f) if f in ("epf_no", "appointed_date", "dob") else (merged.get(f) if merged.get(f) is not None else "")
+        merged.get(f) if f in ("epf_no", "appointed_date") else (merged.get(f) if merged.get(f) is not None else "")
         for f in fields
     ] + [staff_id]
     execute_query(f"UPDATE staff SET {set_clause} WHERE id=%s", vals, commit=True)
@@ -1396,27 +1418,12 @@ def reset_to_demo_data():
             r, commit=True
         )
 
-    cols_stf = ", ".join([f"`{f}`" for f in STAFF_FIELDS])
+    cols_stf = ", ".join(STAFF_FIELDS)
     placeholders_stf = ", ".join(["%s"] * len(STAFF_FIELDS))
-    sample_staff_keys = [
-        "id", "epf_no", "full_name", "name_with_initials", "gender", "role",
-        "department", "subjects_taught", "qualifications", "appointed_date",
-        "contact_no", "email", "nic", "status", "assigned_classes", "photo_url", "notes"
-    ]
     for r in SAMPLE_STAFF:
-        rec = dict(zip(sample_staff_keys, r))
-        nic = rec.get("nic", "")
-        if len(nic) == 12 and nic.startswith(("19", "20")):
-            rec["dob"] = f"{nic[:4]}-06-15"
-        elif len(nic) == 10 and nic[:2].isdigit():
-            rec["dob"] = f"19{nic[:2]}-06-15"
-        else:
-            rec["dob"] = "1980-05-15"
-        rec["address"] = "Jayakody Maha Vidyalaya Quarters, Ganemulla"
-        vals = [rec.get(f, "") for f in STAFF_FIELDS]
         execute_query(
             f"INSERT INTO staff ({cols_stf}) VALUES ({placeholders_stf})",
-            vals, commit=True
+            r, commit=True
         )
 
     cols_usr = ", ".join(USER_FIELDS)
