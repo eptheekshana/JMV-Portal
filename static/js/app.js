@@ -1424,10 +1424,61 @@ function closeModals() {
   const staffModal = document.getElementById('staffModal');
   const loginModal = document.getElementById('loginModal');
   const marksModal = document.getElementById('marksModal');
+  const bulkUploadModal = document.getElementById('bulkUploadModal');
   if (studentModal) studentModal.classList.add('hidden');
   if (staffModal) staffModal.classList.add('hidden');
   if (loginModal) loginModal.classList.add('hidden');
   if (marksModal) marksModal.classList.add('hidden');
+  if (bulkUploadModal) bulkUploadModal.classList.add('hidden');
+}
+
+function openBulkUploadModal(entityType = 'student') {
+  if (!AppState.currentUser) {
+    showToast("Please sign in as Administrator to upload bulk records.", "info");
+    openLoginModal();
+    return;
+  }
+  if (AppState.currentUser.role !== 'admin') {
+    showToast("Only school administrators can perform bulk Excel uploads.", "error");
+    return;
+  }
+  const modal = document.getElementById('bulkUploadModal');
+  const form = document.getElementById('bulkUploadForm');
+  const resBox = document.getElementById('bulkUploadResultBox');
+  if (!modal || !form) return;
+  form.reset();
+  if (resBox) {
+    resBox.classList.add('hidden');
+    resBox.innerHTML = '';
+  }
+  setBulkUploadType(entityType);
+  modal.classList.remove('hidden');
+}
+
+function setBulkUploadType(entityType) {
+  const hiddenInput = document.getElementById('bulkUploadEntityType');
+  const stuTab = document.getElementById('bulkTypeStudentTab');
+  const stfTab = document.getElementById('bulkTypeStaffTab');
+  const titleEl = document.getElementById('bulkUploadModalTitle');
+  const helperEl = document.getElementById('bulkUploadHelperNote');
+
+  if (hiddenInput) hiddenInput.value = entityType;
+
+  if (entityType === 'staff') {
+    if (stuTab) stuTab.className = 'px-3 py-1.5 rounded font-bold text-xs transition-all cursor-pointer text-slate-700 hover:bg-slate-100';
+    if (stfTab) stfTab.className = 'px-3 py-1.5 rounded font-bold text-xs transition-all cursor-pointer bg-[#800020] text-white';
+    if (titleEl) titleEl.innerHTML = `${icon('clipboard')} Bulk Upload Teachers &amp; Staff (Excel / CSV)`;
+    if (helperEl) {
+      helperEl.innerHTML = 'Required columns for Teachers/Staff: <strong>Name with Initials *</strong>, <strong>Designation / Role *</strong>, <strong>Department *</strong>. (Staff ID is auto-generated if blank; Full Name and EPF No are optional).';
+    }
+  } else {
+    if (stuTab) stuTab.className = 'px-3 py-1.5 rounded font-bold text-xs transition-all cursor-pointer bg-[#800020] text-white';
+    if (stfTab) stfTab.className = 'px-3 py-1.5 rounded font-bold text-xs transition-all cursor-pointer text-slate-700 hover:bg-slate-100';
+    if (titleEl) titleEl.innerHTML = `${icon('clipboard')} Bulk Upload Students (Excel / CSV)`;
+    if (helperEl) {
+      helperEl.innerHTML = 'Required columns for Students: <strong>Admission Number *</strong>, <strong>Name with Initials *</strong>, <strong>Education Level *</strong>, <strong>Grade / Class *</strong>. (Full Name is optional; House is auto-calculated from Admission No mod 3 if left blank).';
+    }
+  }
 }
 
 function initModals() {
@@ -1725,6 +1776,116 @@ function initModals() {
   if (mfSearch) mfSearch.addEventListener('input', debounce(() => loadAllMarksLedger(), 300));
   if (mfTerm) mfTerm.addEventListener('change', () => loadAllMarksLedger());
   if (mfYear) mfYear.addEventListener('change', () => loadAllMarksLedger());
+
+  // Bulk Excel Upload form handler
+  const bulkUploadForm = document.getElementById('bulkUploadForm');
+  if (bulkUploadForm) {
+    bulkUploadForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const entityType = document.getElementById('bulkUploadEntityType')?.value || 'student';
+      const fileInput = document.getElementById('bulkUploadFileInput');
+      const modeSelect = document.getElementById('bulkUploadModeSelect');
+      const submitBtn = document.getElementById('bulkUploadSubmitBtn');
+      const submitText = document.getElementById('bulkUploadSubmitText');
+      const resBox = document.getElementById('bulkUploadResultBox');
+
+      if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        showToast("Please select an Excel (.xlsx) or CSV (.csv) file to upload.", "error");
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const mode = modeSelect ? modeSelect.value : 'upsert';
+
+      if (submitBtn) submitBtn.disabled = true;
+      if (submitText) submitText.textContent = "Processing Sheet...";
+      if (resBox) {
+        resBox.className = "rounded-xl border border-slate-200 bg-slate-50 p-4 text-slate-600 text-xs";
+        resBox.innerHTML = "Reading and validating Excel records...";
+        resBox.classList.remove('hidden');
+      }
+
+      try {
+        const base64Data = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = (err) => reject(err);
+          reader.readAsDataURL(file);
+        });
+
+        const endpoint = entityType === 'staff' ? '/api/staff/bulk' : '/api/students/bulk';
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            filename: file.name,
+            file_base64: base64Data,
+            mode: mode
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          const hasErrors = data.error_count > 0;
+          if (resBox) {
+            resBox.className = `rounded-xl border p-4 space-y-2 text-xs ${
+              hasErrors ? 'bg-amber-50 border-amber-300 text-amber-900' : 'bg-emerald-50 border-emerald-300 text-emerald-900'
+            }`;
+            const errListHtml = hasErrors
+              ? `<div class="mt-2 pt-2 border-t border-amber-200 max-h-36 overflow-y-auto space-y-1">
+                   <div class="font-extrabold uppercase text-[10px] text-rose-800">Row Warnings / Errors (${data.error_count}):</div>
+                   ${data.errors.map(er => `<div class="text-[11px] text-rose-700">• <strong>Row ${er.row}</strong> (${escapeHtml(er.identifier)}): ${escapeHtml(er.error)}</div>`).join('')}
+                 </div>`
+              : '';
+
+            resBox.innerHTML = `
+              <div class="font-extrabold uppercase text-xs flex items-center justify-between">
+                <span>✓ Bulk Import Completed (${escapeHtml(file.name)})</span>
+                <span class="font-mono">${data.total_rows} Rows Processed</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 pt-1 text-center">
+                <div class="bg-white p-2 rounded border border-emerald-200">
+                  <div class="text-base font-extrabold text-emerald-700">${data.created_count}</div>
+                  <div class="text-[10px] uppercase font-bold text-slate-500">New Added</div>
+                </div>
+                <div class="bg-white p-2 rounded border border-blue-200">
+                  <div class="text-base font-extrabold text-blue-700">${data.updated_count}</div>
+                  <div class="text-[10px] uppercase font-bold text-slate-500">Updated</div>
+                </div>
+                <div class="bg-white p-2 rounded border border-slate-200">
+                  <div class="text-base font-extrabold text-slate-600">${data.skipped_count}</div>
+                  <div class="text-[10px] uppercase font-bold text-slate-500">Skipped</div>
+                </div>
+              </div>
+              ${errListHtml}
+            `;
+          }
+          showToast(`Imported ${data.created_count} new and updated ${data.updated_count} ${entityType} records!`, "success");
+          loadStats();
+          if (entityType === 'staff') {
+            loadStaff();
+          } else {
+            loadStudents();
+          }
+        } else {
+          if (resBox) {
+            resBox.className = "rounded-xl border border-rose-300 bg-rose-50 p-4 text-rose-800 text-xs font-bold";
+            resBox.textContent = data.error || "Failed to process bulk upload.";
+          }
+          showToast(data.error || "Bulk upload failed", "error");
+        }
+      } catch (err) {
+        if (resBox) {
+          resBox.className = "rounded-xl border border-rose-300 bg-rose-50 p-4 text-rose-800 text-xs font-bold";
+          resBox.textContent = "Error reading or uploading the file to the server.";
+        }
+        showToast("Error uploading Excel file", "error");
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+        if (submitText) submitText.textContent = "Upload & Import Records";
+      }
+    });
+  }
 }
 
 async function openEditModal(id, type) {
@@ -1924,6 +2085,7 @@ function updateRoleBasedUI() {
   const userRoleBadge = document.getElementById('userRoleBadge');
   const userNameDisplay = document.getElementById('userNameDisplay');
   const addStudentBtn = document.getElementById('addStudentBtn');
+  const bulkStudentBtn = document.getElementById('bulkStudentBtn');
   const staffAdminLockBadge = document.getElementById('staffAdminLockBadge');
   const staffTeacherRestrictedBanner = document.getElementById('staffTeacherRestrictedBanner');
   const staffMainContainer = document.getElementById('staffMainContainer');
@@ -1967,11 +2129,13 @@ function updateRoleBasedUI() {
 
     if (u.role === 'teacher') {
       if (addStudentBtn) addStudentBtn.style.display = 'none';
+      if (bulkStudentBtn) bulkStudentBtn.style.display = 'none';
       if (staffAdminLockBadge) staffAdminLockBadge.classList.remove('hidden');
       if (staffTeacherRestrictedBanner) staffTeacherRestrictedBanner.classList.remove('hidden');
       if (staffMainContainer) staffMainContainer.classList.add('hidden');
     } else if (u.role === 'admin') {
       if (addStudentBtn) addStudentBtn.style.display = 'inline-flex';
+      if (bulkStudentBtn) bulkStudentBtn.style.display = 'inline-flex';
       if (staffAdminLockBadge) staffAdminLockBadge.classList.add('hidden');
       if (staffTeacherRestrictedBanner) staffTeacherRestrictedBanner.classList.add('hidden');
       if (staffMainContainer) staffMainContainer.classList.remove('hidden');
@@ -1984,6 +2148,7 @@ function updateRoleBasedUI() {
     if (openLoginBtn) openLoginBtn.classList.remove('hidden');
     if (userProfilePill) userProfilePill.classList.add('hidden');
     if (addStudentBtn) addStudentBtn.style.display = 'inline-flex';
+    if (bulkStudentBtn) bulkStudentBtn.style.display = 'inline-flex';
     if (staffAdminLockBadge) staffAdminLockBadge.classList.add('hidden');
     if (staffTeacherRestrictedBanner) staffTeacherRestrictedBanner.classList.add('hidden');
     if (staffMainContainer) staffMainContainer.classList.remove('hidden');

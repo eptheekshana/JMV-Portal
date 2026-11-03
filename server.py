@@ -7,8 +7,10 @@ Theme & Reference: JMV-Web (Royal Maroon & Imperial Gold)
 
 import os
 import json
+import base64
 from aiohttp import web
 import db
+import excel_utils
 
 DB_STATE = {"ok": False, "message": "Not checked yet"}
 
@@ -151,7 +153,9 @@ async def account_required_middleware(request, handler):
             "/api/auth/login",
             "/api/auth/logout",
             "/api/auth/me",
-            "/api/stats"
+            "/api/stats",
+            "/api/templates/students.xlsx",
+            "/api/templates/staff.xlsx"
         }
         if request.path not in public_paths:
             user = get_current_user(request)
@@ -377,6 +381,95 @@ async def handle_delete_staff(request):
     db.delete_staff(staff_id)
     return json_response({"success": True, "message": f"Staff member {staff_id} deleted successfully"})
 
+
+# --- Bulk Excel Upload & Template Download Endpoints ---
+async def _extract_uploaded_spreadsheet(request):
+    """Extract (file_bytes, filename, mode) from either JSON base64 payload or multipart upload."""
+    content_type = request.headers.get("Content-Type", "")
+    mode = request.query.get("mode", "upsert")
+    filename = "upload.xlsx"
+    file_bytes = b""
+
+    if "multipart/form-data" in content_type:
+        reader = await request.multipart()
+        while True:
+            part = await reader.next()
+            if part is None:
+                break
+            if part.name == "file":
+                filename = part.filename or filename
+                file_bytes = await part.read(decode=False)
+            elif part.name == "mode":
+                mode = (await part.text()).strip() or "upsert"
+    else:
+        data = await request.json()
+        filename = data.get("filename", filename)
+        mode = data.get("mode", mode)
+        b64 = data.get("file_base64", "")
+        if "," in b64 and b64.startswith("data:"):
+            b64 = b64.split(",", 1)[1]
+        if b64:
+            file_bytes = base64.b64decode(b64)
+
+    return file_bytes, filename, mode
+
+
+async def handle_download_student_template(request):
+    xlsx_bytes = excel_utils.generate_student_template_xlsx()
+    return web.Response(
+        body=xlsx_bytes,
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": 'attachment; filename="JMV_Student_Bulk_Upload_Template.xlsx"',
+            "Cache-Control": "no-cache"
+        }
+    )
+
+
+async def handle_download_staff_template(request):
+    xlsx_bytes = excel_utils.generate_staff_template_xlsx()
+    return web.Response(
+        body=xlsx_bytes,
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": 'attachment; filename="JMV_Teachers_Staff_Bulk_Upload_Template.xlsx"',
+            "Cache-Control": "no-cache"
+        }
+    )
+
+
+async def handle_bulk_upload_students(request):
+    user, err = require_role(request, ["admin"])
+    if err:
+        return err
+    try:
+        file_bytes, filename, mode = await _extract_uploaded_spreadsheet(request)
+        rows_2d = excel_utils.parse_spreadsheet_bytes(file_bytes, filename)
+        mapped = excel_utils.map_rows_to_student_dicts(rows_2d)
+        summary = db.bulk_upsert_students(mapped, mode=mode)
+        return json_response({"success": True, **summary})
+    except ValueError as ve:
+        return json_response({"error": str(ve)}, status=400)
+    except Exception as exc:
+        return json_response({"error": f"Failed to process Excel file: {exc}"}, status=500)
+
+
+async def handle_bulk_upload_staff(request):
+    user, err = require_role(request, ["admin"])
+    if err:
+        return err
+    try:
+        file_bytes, filename, mode = await _extract_uploaded_spreadsheet(request)
+        rows_2d = excel_utils.parse_spreadsheet_bytes(file_bytes, filename)
+        mapped = excel_utils.map_rows_to_staff_dicts(rows_2d)
+        summary = db.bulk_upsert_staff(mapped, mode=mode)
+        return json_response({"success": True, **summary})
+    except ValueError as ve:
+        return json_response({"error": str(ve)}, status=400)
+    except Exception as exc:
+        return json_response({"error": f"Failed to process Excel file: {exc}"}, status=500)
+
+
 async def handle_reset_demo(request):
     db.reset_to_demo_data()
     return json_response({"success": True, "message": "Database reset to official JMV-Web sample records."})
@@ -441,6 +534,11 @@ def init_app():
     app.router.add_post("/api/timetable", handle_save_timetable_entry)
     app.router.add_put("/api/timetable/{entry_id}", handle_save_timetable_entry)
     app.router.add_delete("/api/timetable/{entry_id}", handle_delete_timetable_entry)
+
+    app.router.add_get("/api/templates/students.xlsx", handle_download_student_template)
+    app.router.add_get("/api/templates/staff.xlsx", handle_download_staff_template)
+    app.router.add_post("/api/students/bulk", handle_bulk_upload_students)
+    app.router.add_post("/api/staff/bulk", handle_bulk_upload_staff)
 
     app.router.add_get("/api/students", handle_get_students)
     app.router.add_get("/api/students/{id}", handle_get_student_by_id)

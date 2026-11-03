@@ -995,6 +995,114 @@ def delete_staff(staff_id):
     execute_query("DELETE FROM staff WHERE id=%s", (staff_id,), commit=True)
     return True
 
+
+def bulk_upsert_students(mapped_records, mode="upsert"):
+    """
+    Bulk create or update students from [(row_number, student_dict), ...].
+    mode: 'upsert' (create new + update existing) or 'skip' (create new, skip existing).
+    """
+    created_count = 0
+    updated_count = 0
+    skipped_count = 0
+    errors = []
+
+    for row_num, rec in mapped_records:
+        adm_no = str(rec.get("admission_no") or "").strip()
+        initials = str(rec.get("name_with_initials") or "").strip()
+        if not adm_no or not initials:
+            errors.append({
+                "row": row_num,
+                "identifier": adm_no or "Missing Admission No",
+                "error": "Admission Number and Name with Initials are required."
+            })
+            continue
+
+        try:
+            existing = get_student_by_id(adm_no)
+            if existing:
+                if mode == "skip":
+                    skipped_count += 1
+                else:
+                    update_student(existing["id"], rec)
+                    updated_count += 1
+            else:
+                create_student(rec)
+                created_count += 1
+        except Exception as exc:
+            errors.append({
+                "row": row_num,
+                "identifier": adm_no,
+                "error": str(exc)
+            })
+
+    return {
+        "total_rows": len(mapped_records),
+        "created_count": created_count,
+        "updated_count": updated_count,
+        "skipped_count": skipped_count,
+        "error_count": len(errors),
+        "errors": errors,
+    }
+
+
+def bulk_upsert_staff(mapped_records, mode="upsert"):
+    """
+    Bulk create or update teachers/staff from [(row_number, staff_dict), ...].
+    mode: 'upsert' (create new + update existing) or 'skip' (create new, skip existing).
+    """
+    created_count = 0
+    updated_count = 0
+    skipped_count = 0
+    errors = []
+
+    existing_staff = get_all_staff()
+    next_seq = len(existing_staff) + 1
+
+    for row_num, rec in mapped_records:
+        staff_id = str(rec.get("id") or "").strip()
+        initials = str(rec.get("name_with_initials") or "").strip()
+        if not initials:
+            errors.append({
+                "row": row_num,
+                "identifier": staff_id or "Missing ID",
+                "error": "Name with Initials is required."
+            })
+            continue
+
+        if not staff_id:
+            while get_staff_by_id(f"JMV-STF-{next_seq:03d}"):
+                next_seq += 1
+            staff_id = f"JMV-STF-{next_seq:03d}"
+            rec["id"] = staff_id
+            next_seq += 1
+
+        try:
+            existing = get_staff_by_id(staff_id)
+            if existing:
+                if mode == "skip":
+                    skipped_count += 1
+                else:
+                    update_staff(existing["id"], rec)
+                    updated_count += 1
+            else:
+                create_staff(rec)
+                created_count += 1
+        except Exception as exc:
+            errors.append({
+                "row": row_num,
+                "identifier": staff_id,
+                "error": str(exc)
+            })
+
+    return {
+        "total_rows": len(mapped_records),
+        "created_count": created_count,
+        "updated_count": updated_count,
+        "skipped_count": skipped_count,
+        "error_count": len(errors),
+        "errors": errors,
+    }
+
 def reset_to_demo_data():
     execute_query("DELETE FROM students", commit=True)
     execute_query("DELETE FROM staff", commit=True)
