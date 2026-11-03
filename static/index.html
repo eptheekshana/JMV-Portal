@@ -899,458 +899,590 @@
   <!-- ======================================================================
        6. MODAL DIALOGS (Enroll Student & Add Faculty)
        ====================================================================== -->
-  <!-- Student Modal -->
-  <div id="studentModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border-2 border-[#d4af37] overflow-hidden">
-      <div class="bg-gradient-to-r from-[#38050b] to-[#5c0d1b] text-white px-6 py-4 flex items-center justify-between border-b-2 border-[#d4af37]">
-        <h3 id="studentModalTitle" class="text-base font-bold uppercase tracking-wide">Enroll New Student</h3>
-        <button onclick="closeModals()" class="text-white hover:text-[#fde047] text-2xl leading-none">&times;</button>
+  <!-- Student Full-Screen Form -->
+  <div id="studentModal" class="fixed inset-0 bg-slate-100 z-50 w-screen h-screen flex flex-col overflow-hidden hidden">
+    <!-- Full-Screen Sticky Header -->
+    <div class="bg-gradient-to-r from-[#38050b] via-[#5c0d1b] to-[#38050b] text-white px-6 sm:px-10 py-4 flex items-center justify-between border-b-2 border-[#d4af37] shadow-md shrink-0">
+      <div class="flex items-center gap-3.5">
+        <div class="w-10 h-10 rounded-xl bg-white/10 border border-[#d4af37]/60 flex items-center justify-center text-[#fde047] shadow-inner">
+          <svg class="ui-icon ui-icon-lg" aria-hidden="true"><use href="#icon-graduation"></use></svg>
+        </div>
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-widest text-[#fde047] block">WP/GM/Jayakody Maha Vidyalaya • Student Registry</span>
+          <h3 id="studentModalTitle" class="text-lg sm:text-xl font-extrabold uppercase tracking-wide">Enroll New Student</h3>
+        </div>
       </div>
-      <form id="studentForm" class="flex-1 overflow-y-auto p-6 space-y-4">
-        <input type="hidden" id="studentFormMode" value="create">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Admission Number *</label>
-            <input type="text" id="studentAdmissionInput" required oninput="autoAssignHouseFromAdmission()" onchange="autoAssignHouseFromAdmission()" placeholder="e.g. 2024/0912 or 10234" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-          <div class="sm:col-span-2">
-            <label class="block font-bold text-slate-700 mb-1">Name with Initials *</label>
-            <input type="text" id="studentInitialsInput" required placeholder="e.g. K.N. Jayawardena" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-          <div class="sm:col-span-2">
-            <label class="block font-bold text-slate-700 mb-1">Full Name (Optional)</label>
-            <input type="text" id="studentFullNameInput" placeholder="e.g. Kavindu Nimnada Jayawardena (Optional)" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Gender</label>
-            <select id="studentGenderInput" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-            </select>
-          </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Date of Birth</label>
-            <input type="date" id="studentDobInput" value="2007-05-10" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Education Level *</label>
-            <select id="studentAcademicLevelInput" required onchange="handleEducationLevelChange()" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none bg-white font-semibold text-slate-800">
-              <option value="">-- Select Education Level --</option>
-              <option value="Primary">Primary (Grades 1–5)</option>
-              <option value="Grade 6 - 9">Grade 6 - 9</option>
-              <option value="Ordinary Level">Ordinary Level (Grades 10–11 / O/L)</option>
-              <option value="Advanced Level">Advanced Level (Grades 12–13 / A/L)</option>
-              <option value="13 Years Guaranteed Education Program">13 Years Guaranteed Education Program (13-YGEP)</option>
-            </select>
-          </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Grade / Class *</label>
-            <input type="text" id="studentGradeInput" required placeholder="e.g. 11-A, 12-Com, 6-B, 1-A" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-            <input type="hidden" id="studentStreamInput" value="">
-          </div>
-
-          <!-- O/L Bucket Subjects Panel (Shown when Education Level == Ordinary Level) -->
-          <div id="olSubjectsContainer" class="sm:col-span-2 hidden bg-amber-50/80 border-2 border-amber-300 rounded-xl p-4 space-y-3">
-            <div class="flex items-center justify-between border-b border-amber-200 pb-2">
-              <h4 class="font-extrabold text-[#800020] text-xs uppercase flex items-center gap-1.5">
-                <svg class="ui-icon" aria-hidden="true"><use href="#icon-clipboard"></use></svg>
-                Ordinary Level (O/L) Bucket Subject Selection *
-              </h4>
-              <span class="text-[10px] bg-[#800020] text-white font-extrabold px-2 py-0.5 rounded">3 Elective Buckets</span>
-            </div>
-            <p class="text-[11px] text-slate-600 font-medium">
-              Select one subject from each mandatory bucket according to the National Ordinary Level curriculum:
-            </p>
-
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-              <!-- Bucket 1 (Category I) -->
-              <div>
-                <label class="block font-bold text-slate-800 mb-1">
-                  1st Bucket (Category I) <span class="text-rose-600 font-extrabold">*</span>
-                </label>
-                <select id="olBucket1Input" class="w-full border border-slate-300 rounded p-2 text-xs focus:border-[#800020] focus:outline-none bg-white font-medium">
-                  <option value="">-- Choose Category I Subject --</option>
-                  <option value="60 - Business &amp; Accounting Studies">60 - Business &amp; Accounting Studies</option>
-                  <option value="61 - Geography">61 - Geography</option>
-                  <option value="62 - Civic Education">62 - Civic Education (Citizenship Education)</option>
-                  <option value="63 - Entrepreneurship Studies">63 - Entrepreneurship Studies</option>
-                  <option value="64 - Second Language (Sinhala)">64 - Second Language (Sinhala)</option>
-                  <option value="65 - Second Language (Tamil)">65 - Second Language (Tamil)</option>
-                  <option value="66 - Pali">66 - Pali</option>
-                  <option value="67 - Sanskrit">67 - Sanskrit</option>
-                  <option value="68 - French">68 - French</option>
-                  <option value="69 - German">69 - German</option>
-                  <option value="70 - Hindi">70 - Hindi</option>
-                  <option value="71 - Japanese">71 - Japanese</option>
-                  <option value="72 - Arabic">72 - Arabic</option>
-                  <option value="73 - Korean">73 - Korean</option>
-                  <option value="74 - Chinese">74 - Chinese</option>
-                  <option value="75 - Russian">75 - Russian</option>
-                </select>
-              </div>
-
-              <!-- Bucket 2 (Category II) -->
-              <div>
-                <label class="block font-bold text-slate-800 mb-1">
-                  2nd Bucket (Category II) <span class="text-rose-600 font-extrabold">*</span>
-                </label>
-                <select id="olBucket2Input" class="w-full border border-slate-300 rounded p-2 text-xs focus:border-[#800020] focus:outline-none bg-white font-medium">
-                  <option value="">-- Choose Category II Subject --</option>
-                  <option value="40 - Music (Oriental)">40 - Music (Oriental)</option>
-                  <option value="41 - Music (Western)">41 - Music (Western)</option>
-                  <option value="42 - Music (Carnatic)">42 - Music (Carnatic)</option>
-                  <option value="43 - Art">43 - Art</option>
-                  <option value="44 - Dancing (Oriental)">44 - Dancing (Oriental)</option>
-                  <option value="45 - Dancing (Bharata)">45 - Dancing (Bharata)</option>
-                  <option value="46 - Appreciation of English Literary Texts">46 - Appreciation of English Literary Texts</option>
-                  <option value="47 - Appreciation of Sinhala Literary Texts">47 - Appreciation of Sinhala Literary Texts</option>
-                  <option value="48 - Appreciation of Tamil Literary Texts">48 - Appreciation of Tamil Literary Texts</option>
-                  <option value="49 - Appreciation of Arabic Literary Texts">49 - Appreciation of Arabic Literary Texts</option>
-                  <option value="50 - Drama and Theatre (Sinhala)">50 - Drama and Theatre (Sinhala)</option>
-                  <option value="51 - Drama and Theatre (Tamil)">51 - Drama and Theatre (Tamil)</option>
-                  <option value="52 - Drama and Theatre (English)">52 - Drama and Theatre (English)</option>
-                </select>
-              </div>
-
-              <!-- Bucket 3 (Category III) -->
-              <div>
-                <label class="block font-bold text-slate-800 mb-1">
-                  3rd Bucket (Category III) <span class="text-rose-600 font-extrabold">*</span>
-                </label>
-                <select id="olBucket3Input" class="w-full border border-slate-300 rounded p-2 text-xs focus:border-[#800020] focus:outline-none bg-white font-medium">
-                  <option value="">-- Choose Category III Subject --</option>
-                  <option value="80 - Information &amp; Communication Technology">80 - Information &amp; Communication Technology</option>
-                  <option value="81 - Agriculture &amp; Food Technology">81 - Agriculture &amp; Food Technology</option>
-                  <option value="82 - Aquatic Bioresources Technology">82 - Aquatic Bioresources Technology</option>
-                  <option value="84 - Art &amp; Crafts">84 - Art &amp; Crafts</option>
-                  <option value="85 - Home Economics">85 - Home Economics</option>
-                  <option value="86 - Health &amp; Physical Education">86 - Health &amp; Physical Education</option>
-                  <option value="87 - Communication &amp; Media Studies">87 - Communication &amp; Media Studies</option>
-                  <option value="88 - Design &amp; Construction Technology">88 - Design &amp; Construction Technology</option>
-                  <option value="89 - Design &amp; Mechanical Technology">89 - Design &amp; Mechanical Technology</option>
-                  <option value="90 - Design, Electrical &amp; Electronic Technology">90 - Design, Electrical &amp; Electronic Technology</option>
-                  <option value="92 - Electronic Writing &amp; Shorthand (Sinhala)">92 - Electronic Writing &amp; Shorthand (Sinhala)</option>
-                  <option value="93 - Electronic Writing &amp; Shorthand (Tamil)">93 - Electronic Writing &amp; Shorthand (Tamil)</option>
-                  <option value="94 - Electronic Writing &amp; Shorthand (English)">94 - Electronic Writing &amp; Shorthand (English)</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- A/L Stream & Subject Panel (Shown when Education Level == Advanced Level) -->
-          <div id="alSubjectsContainer" class="sm:col-span-2 hidden bg-blue-50/80 border-2 border-blue-300 rounded-xl p-4 space-y-4">
-            <div class="flex items-center justify-between border-b border-blue-200 pb-2">
-              <h4 class="font-extrabold text-[#800020] text-xs uppercase flex items-center gap-1.5">
-                <svg class="ui-icon" aria-hidden="true"><use href="#icon-graduation"></use></svg>
-                Advanced Level (A/L) Stream &amp; Subject Selection *
-              </h4>
-              <span class="text-[10px] bg-blue-700 text-white font-extrabold px-2 py-0.5 rounded">G.C.E. A/L</span>
-            </div>
-
-            <!-- Mandatory English Notice -->
-            <div class="flex items-center gap-2 p-2.5 bg-emerald-50 border border-emerald-300 rounded-lg text-emerald-900 text-xs">
-              <span class="text-emerald-700 font-extrabold text-sm">✓</span>
-              <div>
-                <strong>Compulsory Core Subject:</strong> <span class="font-extrabold text-emerald-800">13 - General English</span> is default and mandatory for every A/L student.
-              </div>
-            </div>
-
-            <!-- Stream Selector -->
-            <div>
-              <label class="block font-bold text-slate-800 mb-1">Subject Stream <span class="text-rose-600">*</span></label>
-              <select id="alStreamInput" onchange="handleAlStreamChange()" class="w-full sm:w-1/2 border border-slate-300 rounded p-2 text-xs focus:border-[#800020] focus:outline-none bg-white font-bold text-slate-800">
-                <option value="">-- Choose Subject Stream --</option>
-                <option value="Commerce">Commerce Stream (වාණිජ අංශය)</option>
-                <option value="Art">Art Stream (කලා අංශය)</option>
-              </select>
-            </div>
-
-            <!-- Commerce Stream Subjects (Select 3 of 4) -->
-            <div id="alCommerceSection" class="hidden bg-white border border-slate-200 rounded-lg p-3 space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="font-bold text-xs text-slate-800">Select Exactly 03 Commerce Subjects:</span>
-                <span id="alCommerceCounter" class="text-[11px] font-extrabold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
-                  0 of 3 Selected
-                </span>
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
-                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
-                  <input type="checkbox" name="alCommerceSubject" value="Accounting" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
-                  <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">33</span> - Accounting</span>
-                </label>
-                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
-                  <input type="checkbox" name="alCommerceSubject" value="Economics" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
-                  <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">21</span> - Economics</span>
-                </label>
-                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
-                  <input type="checkbox" name="alCommerceSubject" value="Business Studies" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
-                  <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">32</span> - Business Studies</span>
-                </label>
-                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
-                  <input type="checkbox" name="alCommerceSubject" value="Information &amp; Communication Technology" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
-                  <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">20</span> - Information &amp; Communication Technology</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Art Stream Subjects (Select 3 of 12) -->
-            <div id="alArtSection" class="hidden bg-white border border-slate-200 rounded-lg p-3 space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="font-bold text-xs text-slate-800">Select Exactly 03 Art Subjects:</span>
-                <span id="alArtCounter" class="text-[11px] font-extrabold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
-                  0 of 3 Selected
-                </span>
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-xs pt-1">
-                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
-                  <input type="checkbox" name="alArtSubject" value="Sinhala" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
-                  <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">71</span> - Sinhala</span>
-                </label>
-                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
-                  <input type="checkbox" name="alArtSubject" value="Geography" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
-                  <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">22</span> - Geography</span>
-                </label>
-                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
-                  <input type="checkbox" name="alArtSubject" value="Drama" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
-                  <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">57</span> - Drama &amp; Theatre</span>
-                </label>
-                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
-                  <input type="checkbox" name="alArtSubject" value="Dancing" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
-                  <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">52</span> - Dancing</span>
-                </label>
-                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
-                  <input type="checkbox" name="alArtSubject" value="Music" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
-                  <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">54</span> - Music (Oriental)</span>
-                </label>
-                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
-                  <input type="checkbox" name="alArtSubject" value="Art" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
-                  <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">51</span> - Art</span>
-                </label>
-                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
-                  <input type="checkbox" name="alArtSubject" value="Information &amp; Communication Technology" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
-                  <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">20</span> - ICT</span>
-                </label>
-                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
-                  <input type="checkbox" name="alArtSubject" value="History" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
-                  <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">25</span> - History</span>
-                </label>
-                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
-                  <input type="checkbox" name="alArtSubject" value="Buddhist Civilization" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
-                  <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">45</span> - Buddhist Civilization</span>
-                </label>
-                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
-                  <input type="checkbox" name="alArtSubject" value="Communication &amp; Mass Media" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
-                  <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">29</span> - Communication &amp; Media</span>
-                </label>
-                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
-                  <input type="checkbox" name="alArtSubject" value="Economics" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
-                  <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">21</span> - Economics</span>
-                </label>
-                <label class="flex items-center gap-2 p-2 border border-slate-200 rounded hover:bg-slate-50 cursor-pointer">
-                  <input type="checkbox" name="alArtSubject" value="Political Science" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
-                  <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">23</span> - Political Science</span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <!-- Curriculum Notice for Primary, 6-9, 13-YGEP -->
-          <div id="generalCurriculumNotice" class="sm:col-span-2 hidden bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-600 flex items-center gap-2">
-            <span class="text-base text-[#800020] font-bold">ℹ</span>
-            <span id="generalCurriculumText">Standard National Curriculum applied for this educational stage.</span>
-          </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Medium</label>
-            <select id="studentMediumInput" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-              <option value="Sinhala">Sinhala</option>
-              <option value="English">English</option>
-            </select>
-          </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1 flex items-center justify-between">
-              <span>House (නිවාසය) *</span>
-              <span id="houseAutoCalcBadge" class="text-[10px] text-amber-800 font-bold bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded">Admission % 3</span>
-            </label>
-            <select id="studentHouseInput" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none bg-white font-bold text-slate-800">
-              <option value="Mayura">Mayura House (මයුර • Blue) — Mod 0</option>
-              <option value="Thisara">Thisara House (තිසර • Green) — Mod 1</option>
-              <option value="Paravi">Paravi House (පරවි • Yellow) — Mod 2</option>
-            </select>
-            <p id="houseCalcHint" class="text-[10px] text-slate-500 mt-1 italic">
-              Auto-calculated from Admission No mod 3: 0 = Mayura (Blue), 1 = Thisara (Green), 2 = Paravi (Yellow)
-            </p>
-          </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Guardian Name</label>
-            <input type="text" id="studentGuardianInput" placeholder="e.g. Sunil Jayawardena" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Guardian Phone Number</label>
-            <input type="text" id="studentContactInput" placeholder="e.g. 077 123 4567" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-          <div class="sm:col-span-2">
-            <label class="block font-bold text-slate-700 mb-1">Residential Address</label>
-            <input type="text" id="studentAddressInput" placeholder="e.g. No. 45, Welipillawa, Ganemulla" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Status</label>
-            <select id="studentStatusInput" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-              <option value="Active">Active</option>
-              <option value="Leave">On Leave</option>
-              <option value="Graduated">Graduated</option>
-            </select>
-          </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Photo URL (Optional)</label>
-            <input type="url" id="studentPhotoInput" placeholder="https://..." class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-          <div class="sm:col-span-2">
-            <label class="block font-bold text-slate-700 mb-1">Clubs &amp; Extracurriculars</label>
-            <input type="text" id="studentExtraInput" placeholder="e.g. Buddhist Society, Scrabble Club, Cricket" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-          <div class="sm:col-span-2">
-            <label class="block font-bold text-slate-700 mb-1 flex items-center justify-between">
-              <span>Health Issues / Medical Conditions / Allergies</span>
-              <span class="text-[10px] text-slate-400 font-normal">Optional • e.g. Asthma, Penicillin allergy, None</span>
-            </label>
-            <textarea id="studentHealthInput" rows="2" placeholder="List any chronic conditions, severe allergies, dietary requirements, or emergency medical instructions..." class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none"></textarea>
-          </div>
-          <div class="sm:col-span-2">
-            <label class="block font-bold text-slate-700 mb-1">Special Notes &amp; Institutional Remarks</label>
-            <input type="text" id="studentNotesInput" placeholder="e.g. Sibling studying in Grade 8, transport requirements, general notes" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-        </div>
-        <div class="pt-4 border-t border-slate-100 flex justify-end gap-2">
-          <button type="button" onclick="closeModals()" class="px-4 py-2 border border-slate-300 rounded text-slate-600 font-bold text-xs uppercase">Cancel</button>
-          <button type="submit" class="px-5 py-2 bg-[#800020] hover:bg-[#5c0d1b] text-white font-bold text-xs uppercase rounded shadow">Save Student</button>
-        </div>
-      </form>
+      <div class="flex items-center gap-3">
+        <button type="button" onclick="closeModals()" class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/25 text-white font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition">
+          <span class="text-base leading-none">&times;</span> Close Form
+        </button>
+      </div>
     </div>
+
+    <!-- Full-Screen Scrollable Form Body -->
+    <form id="studentForm" class="flex-1 flex flex-col overflow-hidden">
+      <input type="hidden" id="studentFormMode" value="create">
+      <div class="flex-1 overflow-y-auto px-4 sm:px-8 lg:px-12 py-6">
+        <div class="max-w-6xl mx-auto space-y-6 text-sm">
+
+          <!-- SECTION 1: Student Identity & Personal Information -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-5">
+              <div class="flex items-center gap-2.5">
+                <span class="w-7 h-7 rounded-lg bg-[#800020] text-white font-extrabold text-xs flex items-center justify-center">01</span>
+                <div>
+                  <h4 class="font-extrabold text-slate-800 text-sm uppercase tracking-wide">Student Identity &amp; Personal Details</h4>
+                  <p class="text-xs text-slate-500">Official admission number, name with initials, personal demographics, and house allocation.</p>
+                </div>
+              </div>
+              <span class="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-md">* Mandatory Fields</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Admission Number <span class="text-rose-600">*</span></label>
+                <input type="text" id="studentAdmissionInput" required oninput="autoAssignHouseFromAdmission()" onchange="autoAssignHouseFromAdmission()" placeholder="e.g. 2024/0912 or 10234" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none font-mono font-semibold">
+              </div>
+              <div class="md:col-span-2">
+                <label class="block font-bold text-slate-700 mb-1.5">Name with Initials <span class="text-rose-600">*</span></label>
+                <input type="text" id="studentInitialsInput" required placeholder="e.g. K.N. Jayawardena" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none font-semibold">
+              </div>
+              <div class="md:col-span-3">
+                <label class="block font-bold text-slate-700 mb-1.5">Full Name <span class="text-xs font-normal text-slate-400">(Optional)</span></label>
+                <input type="text" id="studentFullNameInput" placeholder="e.g. Kavindu Nimnada Jayawardena (Optional)" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Gender</label>
+                <select id="studentGenderInput" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Date of Birth</label>
+                <input type="date" id="studentDobInput" value="2007-05-10" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Enrollment Status</label>
+                <select id="studentStatusInput" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none font-semibold">
+                  <option value="Active">Active</option>
+                  <option value="Leave">On Leave</option>
+                  <option value="Graduated">Graduated</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 2: Academic Placement, House & Subject Selection -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div class="flex items-center gap-2.5">
+                <span class="w-7 h-7 rounded-lg bg-[#800020] text-white font-extrabold text-xs flex items-center justify-center">02</span>
+                <div>
+                  <h4 class="font-extrabold text-slate-800 text-sm uppercase tracking-wide">Academic Level, Class, House &amp; Curriculum</h4>
+                  <p class="text-xs text-slate-500">Select the educational stage to configure O/L Bucket Subjects or A/L Stream Subjects.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+              <div class="md:col-span-2">
+                <label class="block font-bold text-slate-700 mb-1.5">Education Level <span class="text-rose-600">*</span></label>
+                <select id="studentAcademicLevelInput" required onchange="handleEducationLevelChange()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none bg-white font-semibold text-slate-800">
+                  <option value="">-- Select Education Level --</option>
+                  <option value="Primary">Primary (Grades 1–5)</option>
+                  <option value="Grade 6 - 9">Grade 6 - 9</option>
+                  <option value="Ordinary Level">Ordinary Level (Grades 10–11 / O/L)</option>
+                  <option value="Advanced Level">Advanced Level (Grades 12–13 / A/L)</option>
+                  <option value="13 Years Guaranteed Education Program">13 Years Guaranteed Education Program (13-YGEP)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Grade / Class <span class="text-rose-600">*</span></label>
+                <input type="text" id="studentGradeInput" required placeholder="e.g. 11-A, 12-Com, 6-B, 1-A" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none font-semibold">
+                <input type="hidden" id="studentStreamInput" value="">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Medium of Instruction</label>
+                <select id="studentMediumInput" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
+                  <option value="Sinhala">Sinhala</option>
+                  <option value="English">English</option>
+                </select>
+              </div>
+
+              <!-- House Allocation (Full-width row inside Academic Card) -->
+              <div class="md:col-span-4 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                  <div>
+                    <label class="block font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                      <span>House (නිවාසය) <span class="text-rose-600">*</span></span>
+                      <span id="houseAutoCalcBadge" class="text-[11px] text-amber-800 font-bold bg-amber-100 border border-amber-300 px-2 py-0.5 rounded">Admission % 3</span>
+                    </label>
+                    <select id="studentHouseInput" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:outline-none bg-white font-bold text-slate-800">
+                      <option value="Mayura">Mayura House (මයුර • Blue) — Mod 0</option>
+                      <option value="Thisara">Thisara House (තිසර • Green) — Mod 1</option>
+                      <option value="Paravi">Paravi House (පරවි • Yellow) — Mod 2</option>
+                    </select>
+                  </div>
+                  <div class="text-xs text-slate-600 space-y-1">
+                    <div class="font-bold text-slate-700">Automatic House Formula (Admission No mod 3):</div>
+                    <p id="houseCalcHint" class="text-xs text-slate-500 italic">
+                      Auto-calculated from Admission No mod 3: 0 = Mayura (Blue), 1 = Thisara (Green), 2 = Paravi (Yellow)
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- O/L Bucket Subjects Panel (Shown when Education Level == Ordinary Level) -->
+            <div id="olSubjectsContainer" class="hidden bg-amber-50/80 border-2 border-amber-300 rounded-xl p-5 space-y-4">
+              <div class="flex items-center justify-between border-b border-amber-200 pb-2.5">
+                <h4 class="font-extrabold text-[#800020] text-sm uppercase flex items-center gap-2">
+                  <svg class="ui-icon" aria-hidden="true"><use href="#icon-clipboard"></use></svg>
+                  Ordinary Level (O/L) Bucket Subject Selection *
+                </h4>
+                <span class="text-xs bg-[#800020] text-white font-extrabold px-2.5 py-1 rounded">3 Elective Buckets</span>
+              </div>
+              <p class="text-xs text-slate-600 font-medium">
+                Select one subject from each mandatory bucket according to the National Ordinary Level curriculum:
+              </p>
+
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <!-- Bucket 1 (Category I) -->
+                <div>
+                  <label class="block font-bold text-slate-800 mb-1.5">
+                    1st Bucket (Category I) <span class="text-rose-600 font-extrabold">*</span>
+                  </label>
+                  <select id="olBucket1Input" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:outline-none bg-white font-medium">
+                    <option value="">-- Choose Category I Subject --</option>
+                    <option value="60 - Business &amp; Accounting Studies">60 - Business &amp; Accounting Studies</option>
+                    <option value="61 - Geography">61 - Geography</option>
+                    <option value="62 - Civic Education">62 - Civic Education (Citizenship Education)</option>
+                    <option value="63 - Entrepreneurship Studies">63 - Entrepreneurship Studies</option>
+                    <option value="64 - Second Language (Sinhala)">64 - Second Language (Sinhala)</option>
+                    <option value="65 - Second Language (Tamil)">65 - Second Language (Tamil)</option>
+                    <option value="66 - Pali">66 - Pali</option>
+                    <option value="67 - Sanskrit">67 - Sanskrit</option>
+                    <option value="68 - French">68 - French</option>
+                    <option value="69 - German">69 - German</option>
+                    <option value="70 - Hindi">70 - Hindi</option>
+                    <option value="71 - Japanese">71 - Japanese</option>
+                    <option value="72 - Arabic">72 - Arabic</option>
+                    <option value="73 - Korean">73 - Korean</option>
+                    <option value="74 - Chinese">74 - Chinese</option>
+                    <option value="75 - Russian">75 - Russian</option>
+                  </select>
+                </div>
+
+                <!-- Bucket 2 (Category II) -->
+                <div>
+                  <label class="block font-bold text-slate-800 mb-1.5">
+                    2nd Bucket (Category II) <span class="text-rose-600 font-extrabold">*</span>
+                  </label>
+                  <select id="olBucket2Input" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:outline-none bg-white font-medium">
+                    <option value="">-- Choose Category II Subject --</option>
+                    <option value="40 - Music (Oriental)">40 - Music (Oriental)</option>
+                    <option value="41 - Music (Western)">41 - Music (Western)</option>
+                    <option value="42 - Music (Carnatic)">42 - Music (Carnatic)</option>
+                    <option value="43 - Art">43 - Art</option>
+                    <option value="44 - Dancing (Oriental)">44 - Dancing (Oriental)</option>
+                    <option value="45 - Dancing (Bharata)">45 - Dancing (Bharata)</option>
+                    <option value="46 - Appreciation of English Literary Texts">46 - Appreciation of English Literary Texts</option>
+                    <option value="47 - Appreciation of Sinhala Literary Texts">47 - Appreciation of Sinhala Literary Texts</option>
+                    <option value="48 - Appreciation of Tamil Literary Texts">48 - Appreciation of Tamil Literary Texts</option>
+                    <option value="49 - Appreciation of Arabic Literary Texts">49 - Appreciation of Arabic Literary Texts</option>
+                    <option value="50 - Drama and Theatre (Sinhala)">50 - Drama and Theatre (Sinhala)</option>
+                    <option value="51 - Drama and Theatre (Tamil)">51 - Drama and Theatre (Tamil)</option>
+                    <option value="52 - Drama and Theatre (English)">52 - Drama and Theatre (English)</option>
+                  </select>
+                </div>
+
+                <!-- Bucket 3 (Category III) -->
+                <div>
+                  <label class="block font-bold text-slate-800 mb-1.5">
+                    3rd Bucket (Category III) <span class="text-rose-600 font-extrabold">*</span>
+                  </label>
+                  <select id="olBucket3Input" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:outline-none bg-white font-medium">
+                    <option value="">-- Choose Category III Subject --</option>
+                    <option value="80 - Information &amp; Communication Technology">80 - Information &amp; Communication Technology</option>
+                    <option value="81 - Agriculture &amp; Food Technology">81 - Agriculture &amp; Food Technology</option>
+                    <option value="82 - Aquatic Bioresources Technology">82 - Aquatic Bioresources Technology</option>
+                    <option value="84 - Art &amp; Crafts">84 - Art &amp; Crafts</option>
+                    <option value="85 - Home Economics">85 - Home Economics</option>
+                    <option value="86 - Health &amp; Physical Education">86 - Health &amp; Physical Education</option>
+                    <option value="87 - Communication &amp; Media Studies">87 - Communication &amp; Media Studies</option>
+                    <option value="88 - Design &amp; Construction Technology">88 - Design &amp; Construction Technology</option>
+                    <option value="89 - Design &amp; Mechanical Technology">89 - Design &amp; Mechanical Technology</option>
+                    <option value="90 - Design, Electrical &amp; Electronic Technology">90 - Design, Electrical &amp; Electronic Technology</option>
+                    <option value="92 - Electronic Writing &amp; Shorthand (Sinhala)">92 - Electronic Writing &amp; Shorthand (Sinhala)</option>
+                    <option value="93 - Electronic Writing &amp; Shorthand (Tamil)">93 - Electronic Writing &amp; Shorthand (Tamil)</option>
+                    <option value="94 - Electronic Writing &amp; Shorthand (English)">94 - Electronic Writing &amp; Shorthand (English)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- A/L Stream & Subject Panel (Shown when Education Level == Advanced Level) -->
+            <div id="alSubjectsContainer" class="hidden bg-blue-50/80 border-2 border-blue-300 rounded-xl p-5 space-y-4">
+              <div class="flex items-center justify-between border-b border-blue-200 pb-2.5">
+                <h4 class="font-extrabold text-[#800020] text-sm uppercase flex items-center gap-2">
+                  <svg class="ui-icon" aria-hidden="true"><use href="#icon-graduation"></use></svg>
+                  Advanced Level (A/L) Stream &amp; Subject Selection *
+                </h4>
+                <span class="text-xs bg-blue-700 text-white font-extrabold px-2.5 py-1 rounded">G.C.E. A/L</span>
+              </div>
+
+              <!-- Mandatory English Notice -->
+              <div class="flex items-center gap-2.5 p-3 bg-emerald-50 border border-emerald-300 rounded-lg text-emerald-900 text-sm">
+                <span class="text-emerald-700 font-extrabold text-base">✓</span>
+                <div>
+                  <strong>Compulsory Core Subject:</strong> <span class="font-extrabold text-emerald-800">13 - General English</span> is default and mandatory for every A/L student.
+                </div>
+              </div>
+
+              <!-- Stream Selector -->
+              <div>
+                <label class="block font-bold text-slate-800 mb-1.5">Subject Stream <span class="text-rose-600">*</span></label>
+                <select id="alStreamInput" onchange="handleAlStreamChange()" class="w-full md:w-1/2 border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:outline-none bg-white font-bold text-slate-800">
+                  <option value="">-- Choose Subject Stream --</option>
+                  <option value="Commerce">Commerce Stream (වාණිජ අංශය)</option>
+                  <option value="Art">Art Stream (කලා අංශය)</option>
+                </select>
+              </div>
+
+              <!-- Commerce Stream Subjects (Select 3 of 4) -->
+              <div id="alCommerceSection" class="hidden bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-sm text-slate-800">Select Exactly 03 Commerce Subjects:</span>
+                  <span id="alCommerceCounter" class="text-xs font-extrabold px-2.5 py-1 rounded bg-amber-100 text-amber-900 border border-amber-300">
+                    0 of 3 Selected
+                  </span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm pt-1">
+                  <label class="flex items-center gap-2.5 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                    <input type="checkbox" name="alCommerceSubject" value="Accounting" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                    <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">33</span> - Accounting</span>
+                  </label>
+                  <label class="flex items-center gap-2.5 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                    <input type="checkbox" name="alCommerceSubject" value="Economics" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                    <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">21</span> - Economics</span>
+                  </label>
+                  <label class="flex items-center gap-2.5 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                    <input type="checkbox" name="alCommerceSubject" value="Business Studies" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                    <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">32</span> - Business Studies</span>
+                  </label>
+                  <label class="flex items-center gap-2.5 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                    <input type="checkbox" name="alCommerceSubject" value="Information &amp; Communication Technology" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                    <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">20</span> - ICT</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Art Stream Subjects (Select 3 of 12) -->
+              <div id="alArtSection" class="hidden bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-sm text-slate-800">Select Exactly 03 Art Subjects:</span>
+                  <span id="alArtCounter" class="text-xs font-extrabold px-2.5 py-1 rounded bg-amber-100 text-amber-900 border border-amber-300">
+                    0 of 3 Selected
+                  </span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-sm pt-1">
+                  <label class="flex items-center gap-2.5 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                    <input type="checkbox" name="alArtSubject" value="Sinhala" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                    <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">71</span> - Sinhala</span>
+                  </label>
+                  <label class="flex items-center gap-2.5 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                    <input type="checkbox" name="alArtSubject" value="Geography" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                    <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">22</span> - Geography</span>
+                  </label>
+                  <label class="flex items-center gap-2.5 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                    <input type="checkbox" name="alArtSubject" value="Drama" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                    <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">57</span> - Drama &amp; Theatre</span>
+                  </label>
+                  <label class="flex items-center gap-2.5 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                    <input type="checkbox" name="alArtSubject" value="Dancing" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                    <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">52</span> - Dancing</span>
+                  </label>
+                  <label class="flex items-center gap-2.5 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                    <input type="checkbox" name="alArtSubject" value="Music" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                    <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">54</span> - Music (Oriental)</span>
+                  </label>
+                  <label class="flex items-center gap-2.5 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                    <input type="checkbox" name="alArtSubject" value="Art" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                    <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">51</span> - Art</span>
+                  </label>
+                  <label class="flex items-center gap-2.5 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                    <input type="checkbox" name="alArtSubject" value="Information &amp; Communication Technology" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                    <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">20</span> - ICT</span>
+                  </label>
+                  <label class="flex items-center gap-2.5 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                    <input type="checkbox" name="alArtSubject" value="History" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                    <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">25</span> - History</span>
+                  </label>
+                  <label class="flex items-center gap-2.5 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                    <input type="checkbox" name="alArtSubject" value="Buddhist Civilization" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                    <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">45</span> - Buddhist Civilization</span>
+                  </label>
+                  <label class="flex items-center gap-2.5 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                    <input type="checkbox" name="alArtSubject" value="Communication &amp; Mass Media" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                    <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">29</span> - Communication &amp; Media</span>
+                  </label>
+                  <label class="flex items-center gap-2.5 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                    <input type="checkbox" name="alArtSubject" value="Economics" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                    <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">21</span> - Economics</span>
+                  </label>
+                  <label class="flex items-center gap-2.5 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                    <input type="checkbox" name="alArtSubject" value="Political Science" onchange="updateAlSubjectCounters()" class="accent-[#800020] w-4 h-4">
+                    <span class="font-semibold text-slate-800"><span class="font-mono text-[#800020] font-bold">23</span> - Political Science</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Curriculum Notice for Primary, 6-9, 13-YGEP -->
+            <div id="generalCurriculumNotice" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm text-slate-600 flex items-center gap-2.5">
+              <span class="text-base text-[#800020] font-bold">ℹ</span>
+              <span id="generalCurriculumText">Standard National Curriculum applied for this educational stage.</span>
+            </div>
+          </div>
+
+          <!-- SECTION 3: Guardian, Contact, Co-Curricular & Medical Profile -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-5">
+              <div class="flex items-center gap-2.5">
+                <span class="w-7 h-7 rounded-lg bg-[#800020] text-white font-extrabold text-xs flex items-center justify-center">03</span>
+                <div>
+                  <h4 class="font-extrabold text-slate-800 text-sm uppercase tracking-wide">Guardian Contact, Extracurricular &amp; Medical Records</h4>
+                  <p class="text-xs text-slate-500">Emergency guardian contact, residential address, societies/sports, and health information.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Guardian Name</label>
+                <input type="text" id="studentGuardianInput" placeholder="e.g. Sunil Jayawardena" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Guardian Phone Number</label>
+                <input type="text" id="studentContactInput" placeholder="e.g. 077 123 4567" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Photo URL <span class="text-xs font-normal text-slate-400">(Optional)</span></label>
+                <input type="url" id="studentPhotoInput" placeholder="https://..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
+              </div>
+              <div class="md:col-span-2">
+                <label class="block font-bold text-slate-700 mb-1.5">Residential Address</label>
+                <input type="text" id="studentAddressInput" placeholder="e.g. No. 45, Welipillawa, Ganemulla" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Clubs &amp; Extracurriculars</label>
+                <input type="text" id="studentExtraInput" placeholder="e.g. Buddhist Society, Scrabble Club, Cricket" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
+              </div>
+              <div class="md:col-span-2">
+                <label class="block font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                  <span>Health Issues / Medical Conditions / Allergies</span>
+                  <span class="text-xs text-slate-400 font-normal">Optional • e.g. Asthma, Penicillin allergy, None</span>
+                </label>
+                <textarea id="studentHealthInput" rows="2" placeholder="List any chronic conditions, severe allergies, dietary requirements, or emergency medical instructions..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none"></textarea>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Special Notes &amp; Institutional Remarks</label>
+                <textarea id="studentNotesInput" rows="2" placeholder="e.g. Sibling studying in Grade 8, transport requirements, general notes" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none"></textarea>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Full-Screen Sticky Bottom Action Bar -->
+      <div class="bg-white border-t border-slate-200 px-6 sm:px-10 py-4 flex items-center justify-between shrink-0 shadow-lg">
+        <span class="text-xs text-slate-500 hidden sm:inline">All changes are saved directly to the JMV Institutional Database.</span>
+        <div class="flex items-center gap-3 ml-auto">
+          <button type="button" onclick="closeModals()" class="px-5 py-2.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-slate-700 font-bold text-xs uppercase tracking-wider transition">Cancel</button>
+          <button type="submit" class="px-6 py-2.5 bg-[#800020] hover:bg-[#5c0d1b] text-white font-bold text-xs uppercase tracking-wider rounded-lg shadow-md transition">Save Student Record</button>
+        </div>
+      </div>
+    </form>
   </div>
 
-  <!-- Staff Modal -->
-  <div id="staffModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border-2 border-[#d4af37] overflow-hidden">
-      <div class="bg-gradient-to-r from-[#38050b] to-[#5c0d1b] text-white px-6 py-4 flex items-center justify-between border-b-2 border-[#d4af37]">
-        <h3 id="staffModalTitle" class="text-base font-bold uppercase tracking-wide">Add Faculty Member</h3>
-        <button onclick="closeModals()" class="text-white hover:text-[#fde047] text-2xl leading-none">&times;</button>
+  <!-- Staff Full-Screen Form -->
+  <div id="staffModal" class="fixed inset-0 bg-slate-100 z-50 w-screen h-screen flex flex-col overflow-hidden hidden">
+    <!-- Full-Screen Sticky Header -->
+    <div class="bg-gradient-to-r from-[#38050b] via-[#5c0d1b] to-[#38050b] text-white px-6 sm:px-10 py-4 flex items-center justify-between border-b-2 border-[#d4af37] shadow-md shrink-0">
+      <div class="flex items-center gap-3.5">
+        <div class="w-10 h-10 rounded-xl bg-white/10 border border-[#d4af37]/60 flex items-center justify-center text-[#fde047] shadow-inner">
+          <svg class="ui-icon ui-icon-lg" aria-hidden="true"><use href="#icon-teacher"></use></svg>
+        </div>
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-widest text-[#fde047] block">WP/GM/Jayakody Maha Vidyalaya • Academic &amp; Staff Registry</span>
+          <h3 id="staffModalTitle" class="text-lg sm:text-xl font-extrabold uppercase tracking-wide">Add Faculty Member</h3>
+        </div>
       </div>
-      <form id="staffForm" class="flex-1 overflow-y-auto p-6 space-y-4">
-        <input type="hidden" id="staffFormMode" value="create">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-          <!-- Official IDs -->
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Staff Member ID *</label>
-            <input type="text" id="staffIdInput" required placeholder="e.g. JMV-STF-009" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">EPF / Service No (Optional)</label>
-            <input type="text" id="staffEpfInput" placeholder="e.g. EPF-95123 (Optional)" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-
-          <!-- Name with Initials & NIC -->
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Name with Initials *</label>
-            <input type="text" id="staffInitialsInput" required placeholder="e.g. C.K. Jayasinghe" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">National Identity Card (NIC)</label>
-            <input type="text" id="staffNicInput" placeholder="e.g. 198012345678 or 801234567V" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-
-          <!-- Full Name -->
-          <div class="sm:col-span-2">
-            <label class="block font-bold text-slate-700 mb-1">Full Name (Optional)</label>
-            <input type="text" id="staffFullNameInput" placeholder="e.g. Chandrika Kanthi Jayasinghe (Optional)" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-
-          <!-- Gender & Status -->
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Gender *</label>
-            <select id="staffGenderInput" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Employment Status</label>
-            <select id="staffStatusInput" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-              <option value="Active">Active</option>
-              <option value="On Leave">On Leave</option>
-              <option value="Transferred">Transferred</option>
-              <option value="Retired">Retired</option>
-            </select>
-          </div>
-
-          <!-- Role & Department -->
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Role / Designation *</label>
-            <input type="text" id="staffRoleInput" required placeholder="e.g. Principal, Sectional Head, Senior Teacher" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Department / Division (Optional)</label>
-            <select id="staffDeptInput" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-              <option value="">-- Not Specified (Optional) --</option>
-              <option value="Executive & Academic Administration">Executive &amp; Academic Administration</option>
-              <option value="Commerce & Management">Commerce &amp; Management</option>
-              <option value="Science & Mathematics">Science &amp; Mathematics</option>
-              <option value="Languages & Humanities">Languages &amp; Humanities</option>
-              <option value="Information Technology">Information Technology</option>
-              <option value="Aesthetic & Cultural Studies">Aesthetic &amp; Cultural Studies</option>
-              <option value="Primary Section">Primary Section (Grades 1–5)</option>
-              <option value="Physical Education & Sports">Physical Education &amp; Sports</option>
-              <option value="Non-Academic & Operational Staff">Non-Academic &amp; Operational Staff</option>
-              <option value="Other">Other / Specialized Duties</option>
-            </select>
-          </div>
-
-          <!-- Date of Appointment & Qualifications -->
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Date of Appointment</label>
-            <input type="date" id="staffAppointedDateInput" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Qualifications</label>
-            <input type="text" id="staffQualInput" placeholder="e.g. B.Com (Hons), PGDE (NIE)" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-
-          <!-- Subjects Taught & Assigned Classes -->
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Subjects Taught</label>
-            <input type="text" id="staffSubjectsInput" placeholder="e.g. Business Studies, Accounting" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Assigned Classes</label>
-            <input type="text" id="staffClassesInput" placeholder="e.g. 12-Com, 13-Com" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-
-          <!-- Contact Number & Email -->
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Phone Number</label>
-            <input type="text" id="staffContactInput" placeholder="e.g. 071 234 5678" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Email Address</label>
-            <input type="email" id="staffEmailInput" placeholder="e.g. teacher@jayakodymv.edu.lk" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-
-          <!-- Photo URL & Administrative Notes -->
-          <div class="sm:col-span-2">
-            <label class="block font-bold text-slate-700 mb-1">Photo URL (Optional)</label>
-            <input type="url" id="staffPhotoInput" placeholder="https://... (Leave blank for official avatar)" class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none">
-          </div>
-          <div class="sm:col-span-2">
-            <label class="block font-bold text-slate-700 mb-1">Administrative Notes / Remarks</label>
-            <textarea id="staffNotesInput" rows="2" placeholder="Special duties, extracurricular master-in-charge, remarks..." class="w-full border border-slate-300 rounded p-2 focus:border-[#800020] focus:outline-none"></textarea>
-          </div>
-        </div>
-        <div class="pt-4 border-t border-slate-100 flex justify-end gap-2">
-          <button type="button" onclick="closeModals()" class="px-4 py-2 border border-slate-300 rounded text-slate-600 font-bold text-xs uppercase">Cancel</button>
-          <button type="submit" class="px-5 py-2 bg-[#800020] hover:bg-[#5c0d1b] text-white font-bold text-xs uppercase rounded shadow">Save Faculty Member</button>
-        </div>
-      </form>
+      <div class="flex items-center gap-3">
+        <button type="button" onclick="closeModals()" class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/25 text-white font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition">
+          <span class="text-base leading-none">&times;</span> Close Form
+        </button>
+      </div>
     </div>
+
+    <!-- Full-Screen Scrollable Form Body -->
+    <form id="staffForm" class="flex-1 flex flex-col overflow-hidden">
+      <input type="hidden" id="staffFormMode" value="create">
+      <div class="flex-1 overflow-y-auto px-4 sm:px-8 lg:px-12 py-6">
+        <div class="max-w-6xl mx-auto space-y-6 text-sm">
+
+          <!-- SECTION 1: Service Identification & Personal Details -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-5">
+              <div class="flex items-center gap-2.5">
+                <span class="w-7 h-7 rounded-lg bg-[#800020] text-white font-extrabold text-xs flex items-center justify-center">01</span>
+                <div>
+                  <h4 class="font-extrabold text-slate-800 text-sm uppercase tracking-wide">Service Identification &amp; Personal Details</h4>
+                  <p class="text-xs text-slate-500">Staff ID, EPF number, NIC, name with initials, and employment status.</p>
+                </div>
+              </div>
+              <span class="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-md">* Mandatory Fields</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Staff Member ID <span class="text-rose-600">*</span></label>
+                <input type="text" id="staffIdInput" required placeholder="e.g. JMV-STF-009" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none font-mono font-semibold">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">EPF / Service No <span class="text-xs font-normal text-slate-400">(Optional)</span></label>
+                <input type="text" id="staffEpfInput" placeholder="e.g. EPF-95123 (Optional)" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">National Identity Card (NIC)</label>
+                <input type="text" id="staffNicInput" placeholder="e.g. 198012345678 or 801234567V" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Name with Initials <span class="text-rose-600">*</span></label>
+                <input type="text" id="staffInitialsInput" required placeholder="e.g. C.K. Jayasinghe" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none font-semibold">
+              </div>
+              <div class="md:col-span-2">
+                <label class="block font-bold text-slate-700 mb-1.5">Full Name <span class="text-xs font-normal text-slate-400">(Optional)</span></label>
+                <input type="text" id="staffFullNameInput" placeholder="e.g. Chandrika Kanthi Jayasinghe (Optional)" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Gender <span class="text-rose-600">*</span></label>
+                <select id="staffGenderInput" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Employment Status</label>
+                <select id="staffStatusInput" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none font-semibold">
+                  <option value="Active">Active</option>
+                  <option value="On Leave">On Leave</option>
+                  <option value="Transferred">Transferred</option>
+                  <option value="Retired">Retired</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Date of Appointment</label>
+                <input type="date" id="staffAppointedDateInput" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 2: Institutional Role, Qualifications & Academic Assignment -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-5">
+              <div class="flex items-center gap-2.5">
+                <span class="w-7 h-7 rounded-lg bg-[#800020] text-white font-extrabold text-xs flex items-center justify-center">02</span>
+                <div>
+                  <h4 class="font-extrabold text-slate-800 text-sm uppercase tracking-wide">Role, Qualifications &amp; Teaching Portfolio</h4>
+                  <p class="text-xs text-slate-500">Designation, optional department, academic qualifications, subjects taught, and assigned classes.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Role / Designation <span class="text-rose-600">*</span></label>
+                <input type="text" id="staffRoleInput" required placeholder="e.g. Principal, Sectional Head, Senior Teacher" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none font-semibold">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Department / Division <span class="text-xs font-normal text-slate-400">(Optional)</span></label>
+                <select id="staffDeptInput" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
+                  <option value="">-- Not Specified (Optional) --</option>
+                  <option value="Executive & Academic Administration">Executive &amp; Academic Administration</option>
+                  <option value="Commerce & Management">Commerce &amp; Management</option>
+                  <option value="Science & Mathematics">Science &amp; Mathematics</option>
+                  <option value="Languages & Humanities">Languages &amp; Humanities</option>
+                  <option value="Information Technology">Information Technology</option>
+                  <option value="Aesthetic & Cultural Studies">Aesthetic &amp; Cultural Studies</option>
+                  <option value="Primary Section">Primary Section (Grades 1–5)</option>
+                  <option value="Physical Education & Sports">Physical Education &amp; Sports</option>
+                  <option value="Non-Academic & Operational Staff">Non-Academic &amp; Operational Staff</option>
+                  <option value="Other">Other / Specialized Duties</option>
+                </select>
+              </div>
+              <div class="md:col-span-2">
+                <label class="block font-bold text-slate-700 mb-1.5">Academic &amp; Professional Qualifications</label>
+                <input type="text" id="staffQualInput" placeholder="e.g. B.Com (Hons), PGDE (NIE), M.Ed" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Subjects Taught</label>
+                <input type="text" id="staffSubjectsInput" placeholder="e.g. Business Studies, Accounting" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Assigned Classes</label>
+                <input type="text" id="staffClassesInput" placeholder="e.g. 12-Com, 13-Com" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 3: Contact Details & Administrative Remarks -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-5">
+              <div class="flex items-center gap-2.5">
+                <span class="w-7 h-7 rounded-lg bg-[#800020] text-white font-extrabold text-xs flex items-center justify-center">03</span>
+                <div>
+                  <h4 class="font-extrabold text-slate-800 text-sm uppercase tracking-wide">Contact Information &amp; Administrative Remarks</h4>
+                  <p class="text-xs text-slate-500">Direct phone, official email, profile photo URL, and special responsibilities.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Phone Number</label>
+                <input type="text" id="staffContactInput" placeholder="e.g. 071 234 5678" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Email Address</label>
+                <input type="email" id="staffEmailInput" placeholder="e.g. teacher@jayakodymv.edu.lk" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Photo URL <span class="text-xs font-normal text-slate-400">(Optional)</span></label>
+                <input type="url" id="staffPhotoInput" placeholder="https://... (Leave blank for official avatar)" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
+              </div>
+              <div class="md:col-span-3">
+                <label class="block font-bold text-slate-700 mb-1.5">Administrative Notes / Special Duties &amp; Remarks</label>
+                <textarea id="staffNotesInput" rows="2" placeholder="Special duties, extracurricular master-in-charge, committee roles, remarks..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none"></textarea>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Full-Screen Sticky Bottom Action Bar -->
+      <div class="bg-white border-t border-slate-200 px-6 sm:px-10 py-4 flex items-center justify-between shrink-0 shadow-lg">
+        <span class="text-xs text-slate-500 hidden sm:inline">All changes are saved directly to the JMV Institutional Database.</span>
+        <div class="flex items-center gap-3 ml-auto">
+          <button type="button" onclick="closeModals()" class="px-5 py-2.5 border border-slate-300 hover:bg-slate-100 rounded-lg text-slate-700 font-bold text-xs uppercase tracking-wider transition">Cancel</button>
+          <button type="submit" class="px-6 py-2.5 bg-[#800020] hover:bg-[#5c0d1b] text-white font-bold text-xs uppercase tracking-wider rounded-lg shadow-md transition">Save Faculty Member</button>
+        </div>
+      </div>
+    </form>
   </div>
 
   <!-- Login Modal (Role-based Authentication: Teacher & Admin) -->
