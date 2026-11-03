@@ -167,10 +167,18 @@ def student(user, student_id):
     if request.method == "DELETE":
         if not db.get_student_by_id(student_id):
             return jsonify(error="Student not found"), 404
-        db.delete_student(student_id)
+        db.delete_student(student_id, actor=user)
         return jsonify(success=True)
-    record = db.update_student(student_id, request.get_json(silent=True) or {})
+    record = db.update_student(student_id, request.get_json(silent=True) or {}, actor=user)
     return jsonify(record)
+
+
+@app.get("/api/audit")
+@requires_roles("admin")
+def audit_log(_user):
+    return jsonify(db.get_audit_log(entity_type=request.args.get("entity_type"),
+                                    entity_id=request.args.get("entity_id"),
+                                    limit=request.args.get("limit", 200)))
 
 
 @app.get("/api/subjects")
@@ -227,7 +235,7 @@ def bulk_upload_students(_user):
         file_bytes, filename, mode = _extract_flask_spreadsheet()
         rows_2d = excel_utils.parse_spreadsheet_bytes(file_bytes, filename)
         mapped = excel_utils.map_rows_to_student_dicts(rows_2d)
-        summary = db.bulk_upsert_students(mapped, mode=mode)
+        summary = db.bulk_upsert_students(mapped, mode=mode, actor=_user)
         return jsonify(success=True, **summary)
     except ValueError as ve:
         return jsonify(error=str(ve)), 400
@@ -242,7 +250,7 @@ def bulk_upload_staff(_user):
         file_bytes, filename, mode = _extract_flask_spreadsheet()
         rows_2d = excel_utils.parse_spreadsheet_bytes(file_bytes, filename)
         mapped = excel_utils.map_rows_to_staff_dicts(rows_2d)
-        summary = db.bulk_upsert_staff(mapped, mode=mode)
+        summary = db.bulk_upsert_staff(mapped, mode=mode, actor=_user)
         return jsonify(success=True, **summary)
     except ValueError as ve:
         return jsonify(error=str(ve)), 400
@@ -258,7 +266,7 @@ def create_student(_user):
         return jsonify(error="Missing required fields (admission_no, name_with_initials)"), 400
     if db.get_student_by_id(data["admission_no"]):
         return jsonify(error="Admission number already exists"), 409
-    return jsonify(db.create_student(data)), 201
+    return jsonify(db.create_student(data, actor=_user)), 201
 
 
 @app.get("/api/staff")
@@ -276,19 +284,19 @@ def create_staff(_user):
         return jsonify(error="Missing required fields (id, name_with_initials)"), 400
     if db.get_staff_by_id(data["id"]):
         return jsonify(error="Staff ID already exists"), 409
-    return jsonify(db.create_staff(data)), 201
+    return jsonify(db.create_staff(data, actor=_user)), 201
 
 
 @app.route("/api/staff/<staff_id>", methods=["GET", "PUT", "DELETE"])
 @requires_roles("admin")
-def staff_record(_user, staff_id):
+def staff_record(user, staff_id):
     if request.method == "GET":
         record = db.get_staff_by_id(staff_id)
         return jsonify(record) if record else (jsonify(error="Staff member not found"), 404)
     if request.method == "DELETE":
-        db.delete_staff(staff_id)
+        db.delete_staff(staff_id, actor=user)
         return jsonify(success=True)
-    return jsonify(db.update_staff(staff_id, request.get_json(silent=True) or {}))
+    return jsonify(db.update_staff(staff_id, request.get_json(silent=True) or {}, actor=user))
 
 
 @app.get("/api/marks")

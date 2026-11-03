@@ -1037,12 +1037,91 @@ function renderDossier(item, type) {
       <!-- Main Dossier Content -->
       <div class="md:col-span-8 space-y-6">
         ${detailsHtml}
+        ${AppState.currentUser && AppState.currentUser.role === 'admin' ? `
+        <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-3">
+          <h4 class="font-extrabold text-[#800020] text-sm uppercase border-b border-slate-200 pb-2 flex items-center gap-2">
+            ${icon('clipboard')} Record History &amp; Audit Trail
+          </h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div>
+              <span class="block uppercase font-bold text-slate-400">Created By</span>
+              <span class="font-bold text-slate-800">${escapeHtml(item.created_by || '—')}</span>
+            </div>
+            <div>
+              <span class="block uppercase font-bold text-slate-400">Last Updated By</span>
+              <span class="font-bold text-slate-800">${escapeHtml(item.updated_by || '—')}</span>
+              <span class="block text-[11px] text-slate-500">${escapeHtml(formatAuditTime(item.last_updated_at))}</span>
+            </div>
+          </div>
+          <div id="auditHistoryContent" class="text-xs space-y-2 max-h-96 overflow-y-auto">
+            <p class="text-slate-400 italic">Loading change history...</p>
+          </div>
+        </div>` : ''}
       </div>
     </div>
   `;
 
+  if (AppState.currentUser && AppState.currentUser.role === 'admin') {
+    loadAuditHistory(recordKey, isStudent ? 'student' : 'staff');
+  }
   if (isStudent) {
     loadStudentDossierMarks(item.id);
+  }
+}
+
+function formatAuditTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? String(iso) : d.toLocaleString();
+}
+
+const AUDIT_FIELD_LABELS = {
+  admission_no: 'Admission No', name_with_initials: 'Name with Initials', full_name: 'Full Name',
+  gender: 'Gender', dob: 'Date of Birth', grade: 'Grade / Class', stream: 'Stream', medium: 'Medium',
+  house: 'House', guardian_name: 'Guardian Name', guardian_contact: 'Guardian Phone', address: 'Address',
+  enrollment_date: 'Enrollment Date', status: 'Status', extracurricular: 'Extracurricular',
+  photo_url: 'Photo URL', notes: 'Notes', health_issues: 'Health Issues', academic_level: 'Education Level',
+  subjects: 'Subjects', ol_bucket_1: 'O/L Bucket 1', ol_bucket_2: 'O/L Bucket 2', ol_bucket_3: 'O/L Bucket 3',
+  epf_no: 'EPF No', role: 'Role', department: 'Department', subjects_taught: 'Subjects Taught',
+  qualifications: 'Qualifications', appointed_date: 'Appointed Date', contact_no: 'Phone', email: 'Email',
+  nic: 'NIC', assigned_classes: 'Assigned Classes'
+};
+
+async function loadAuditHistory(entityId, entityType) {
+  const box = document.getElementById('auditHistoryContent');
+  if (!box) return;
+  try {
+    const res = await fetch(`/api/audit?entity_type=${entityType}&entity_id=${encodeURIComponent(entityId)}`, { headers: getAuthHeaders() });
+    const rows = await res.json();
+    if (!res.ok || !Array.isArray(rows) || rows.length === 0) {
+      box.innerHTML = '<p class="text-slate-400 italic">No changes recorded yet.</p>';
+      return;
+    }
+    const actionStyles = {
+      create: 'bg-emerald-100 text-emerald-800',
+      update: 'bg-blue-100 text-blue-800',
+      delete: 'bg-rose-100 text-rose-800'
+    };
+    box.innerHTML = rows.map(r => {
+      const entries = Object.entries(r.changes || {});
+      const changeHtml = r.action === 'update' && entries.length
+        ? `<ul class="mt-1.5 space-y-0.5">${entries.map(([k, v]) => `
+            <li><span class="font-bold text-slate-700">${escapeHtml(AUDIT_FIELD_LABELS[k] || k)}:</span>
+              <span class="text-rose-700 line-through">${escapeHtml(v.old || '(empty)')}</span> →
+              <span class="text-emerald-700 font-semibold">${escapeHtml(v.new || '(empty)')}</span></li>`).join('')}</ul>`
+        : (r.action === 'create' ? '<div class="mt-1 text-slate-500">Record created.</div>' : '');
+      return `
+        <div class="bg-white border border-slate-200 rounded-lg p-2.5">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="px-2 py-0.5 rounded font-extrabold uppercase text-[10px] ${actionStyles[r.action] || 'bg-slate-100 text-slate-700'}">${escapeHtml(r.action)}</span>
+            <span class="text-slate-500">${escapeHtml(formatAuditTime(r.changed_at))}</span>
+          </div>
+          <div class="mt-1 text-slate-700">by <strong>${escapeHtml(r.changed_by)}</strong>${r.changed_by_role ? ` (${escapeHtml(r.changed_by_role)})` : ''}</div>
+          ${changeHtml}
+        </div>`;
+    }).join('');
+  } catch (e) {
+    box.innerHTML = '<p class="text-rose-600">Could not load change history.</p>';
   }
 }
 
