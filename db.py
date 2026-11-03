@@ -151,7 +151,7 @@ def init_mariadb_schema(conn):
             name_with_initials VARCHAR(150) NOT NULL,
             gender VARCHAR(16) NOT NULL,
             role VARCHAR(150) NOT NULL,
-            department VARCHAR(150) NOT NULL,
+            department VARCHAR(150) NOT NULL DEFAULT '',
             subjects_taught VARCHAR(255),
             qualifications VARCHAR(500) NOT NULL DEFAULT '',
             appointed_date VARCHAR(32) NULL,
@@ -401,6 +401,10 @@ def _migrate_existing_mariadb_schema(cur):
         cur.execute("ALTER TABLE staff MODIFY COLUMN `full_name` VARCHAR(255) NOT NULL DEFAULT ''")
     except Exception:
         pass
+    try:
+        cur.execute("ALTER TABLE staff MODIFY COLUMN `department` VARCHAR(150) NOT NULL DEFAULT ''")
+    except Exception:
+        pass
 
 def init_sqlite_schema(conn):
     cur = conn.cursor()
@@ -452,7 +456,7 @@ def init_sqlite_schema(conn):
         name_with_initials TEXT NOT NULL,
         gender TEXT NOT NULL,
         role TEXT NOT NULL,
-        department TEXT NOT NULL,
+        department TEXT NOT NULL DEFAULT '',
         subjects_taught TEXT,
         qualifications TEXT NOT NULL DEFAULT '',
         appointed_date TEXT,
