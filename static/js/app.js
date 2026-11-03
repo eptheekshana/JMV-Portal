@@ -998,11 +998,15 @@ function renderDossier(item, type) {
         </div>
         <div>
           <span class="block uppercase font-bold text-slate-400">Official School Email</span>
-          <span class="font-bold text-slate-800">${escapeHtml(item.email)}</span>
+          <span class="font-bold text-slate-800">${escapeHtml(item.email || '—')}</span>
         </div>
         <div>
           <span class="block uppercase font-bold text-slate-400">Direct Phone</span>
-          <span class="font-bold text-slate-800">${escapeHtml(item.contact_no)}</span>
+          <span class="font-bold text-slate-800">${escapeHtml(item.contact_no || '—')}</span>
+        </div>
+        <div class="sm:col-span-2">
+          <span class="block uppercase font-bold text-slate-400">Residential Address</span>
+          <span class="font-bold text-slate-800">${escapeHtml(item.address || '—')}</span>
         </div>
       </div>
     </div>
@@ -1241,7 +1245,7 @@ function renderStaffTable(staff) {
   if (!staff || staff.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="7" class="text-center p-8 text-slate-400">
+        <td colspan="8" class="text-center p-8 text-slate-400">
           No faculty members matching criteria.
         </td>
       </tr>
@@ -1267,6 +1271,7 @@ function renderStaffTable(staff) {
       </td>
       <td class="p-3.5 text-xs text-slate-700">${escapeHtml(st.department || '—')}</td>
       <td class="p-3.5 text-xs text-slate-600">${escapeHtml(st.subjects_taught || 'General Administration')}</td>
+      <td class="p-3.5 text-xs text-slate-600">${escapeHtml(st.address || '—')}</td>
       <td class="p-3.5 font-mono text-xs text-slate-600">${escapeHtml(st.epf_no || '—')}</td>
       <td class="p-3.5">
         <span class="text-xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
@@ -1426,6 +1431,7 @@ function openAddStaffModal() {
   if (document.getElementById('staffGenderInput')) document.getElementById('staffGenderInput').value = 'Male';
   if (document.getElementById('staffStatusInput')) document.getElementById('staffStatusInput').value = 'Active';
   if (document.getElementById('staffDeptInput')) document.getElementById('staffDeptInput').value = '';
+  if (document.getElementById('staffAddressInput')) document.getElementById('staffAddressInput').value = '';
   document.body.style.overflow = 'hidden';
   modal.classList.remove('hidden');
 }
@@ -1655,6 +1661,7 @@ function initModals() {
         qualifications: document.getElementById('staffQualInput').value.trim(),
         contact_no: document.getElementById('staffContactInput').value.trim(),
         email: document.getElementById('staffEmailInput').value.trim(),
+        address: document.getElementById('staffAddressInput') ? document.getElementById('staffAddressInput').value.trim() : '',
         notes: document.getElementById('staffNotesInput') ? document.getElementById('staffNotesInput').value.trim() : '',
         photo_url: customPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(initials || staffId)}&background=5c0d1b&color=fff`
       };
@@ -2020,6 +2027,7 @@ async function openEditModal(id, type) {
     document.getElementById('staffQualInput').value = st.qualifications || '';
     document.getElementById('staffContactInput').value = st.contact_no || '';
     document.getElementById('staffEmailInput').value = st.email || '';
+    if (document.getElementById('staffAddressInput')) document.getElementById('staffAddressInput').value = st.address || '';
     if (document.getElementById('staffPhotoInput')) document.getElementById('staffPhotoInput').value = st.photo_url || '';
     if (document.getElementById('staffNotesInput')) document.getElementById('staffNotesInput').value = st.notes || '';
 

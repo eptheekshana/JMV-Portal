@@ -159,6 +159,7 @@ def init_mariadb_schema(conn):
             appointed_date VARCHAR(32) NULL,
             contact_no VARCHAR(32) NOT NULL DEFAULT '',
             email VARCHAR(150) NOT NULL DEFAULT '',
+            address VARCHAR(255) NOT NULL DEFAULT '',
             nic VARCHAR(20) NOT NULL DEFAULT '',
             status VARCHAR(20) NOT NULL DEFAULT 'Active',
             assigned_classes VARCHAR(255),
@@ -404,6 +405,17 @@ def _migrate_existing_mariadb_schema(cur):
         )
 
     try:
+        cur.execute("SHOW COLUMNS FROM staff")
+        raw_staff_cols = cur.fetchall()
+        staff_columns = {
+            (row["Field"] if isinstance(row, dict) else row[0])
+            for row in raw_staff_cols
+        }
+        if "address" not in staff_columns:
+            cur.execute("ALTER TABLE staff ADD COLUMN `address` VARCHAR(255) NOT NULL DEFAULT '' AFTER `email`")
+    except Exception:
+        pass
+    try:
         cur.execute("ALTER TABLE staff MODIFY COLUMN `epf_no` VARCHAR(32) NULL DEFAULT NULL")
     except Exception:
         pass
@@ -490,6 +502,7 @@ def init_sqlite_schema(conn):
         appointed_date TEXT,
         contact_no TEXT NOT NULL DEFAULT '',
         email TEXT NOT NULL DEFAULT '',
+        address TEXT NOT NULL DEFAULT '',
         nic TEXT NOT NULL DEFAULT '',
         status TEXT NOT NULL DEFAULT 'Active',
         assigned_classes TEXT,
@@ -498,6 +511,10 @@ def init_sqlite_schema(conn):
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     """)
+    cur.execute("PRAGMA table_info(staff)")
+    sqlite_staff_cols = {row[1] for row in cur.fetchall()}
+    if "address" not in sqlite_staff_cols:
+        cur.execute("ALTER TABLE staff ADD COLUMN address TEXT NOT NULL DEFAULT ''")
 
     cur.execute("""
     CREATE TABLE IF NOT EXISTS users (
