@@ -33,7 +33,7 @@ const AppState = {
 };
 
 // DOM Ready
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
   initLiveClock();
   initNavigation();
   initUniversalSearch();
@@ -44,15 +44,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   initQuickPills();
   initAuth();
 
-  // Load initial data
-  await ensureTimetableDataLoaded();
+  // Non-blocking background preload of timetable data
+  ensureTimetableDataLoaded();
+
+  // Parallel initial data queries
   checkDbHealth();
   loadStats();
-  const authenticated = await checkAuth();
-  if (authenticated && ['admin', 'teacher'].includes(AppState.currentUser.role)) {
-    loadStudents();
-    loadStaff();
-  }
+  checkAuth().then(authenticated => {
+    if (authenticated && ['admin', 'teacher'].includes(AppState.currentUser?.role)) {
+      loadStudents();
+      if (AppState.currentUser.role === 'admin') {
+        loadStaff();
+      }
+    }
+  });
 
   // Check URL params for direct ID lookup e.g. ?id=JMV-STU-1001
   const urlParams = new URLSearchParams(window.location.search);
@@ -246,10 +251,10 @@ function switchTab(tabId) {
     targetPane.classList.add('active');
   }
 
-  // Refresh data if needed
-  if (tabId === 'students') loadStudents();
-  if (tabId === 'marks') loadAllMarksLedger();
-  if (tabId === 'timetable') loadTimetable();
+  // Refresh data if needed (only if not already loaded)
+  if (tabId === 'students' && (!AppState.studentsList || AppState.studentsList.length === 0)) loadStudents();
+  if (tabId === 'marks' && (!AppState.marksList || AppState.marksList.length === 0)) loadAllMarksLedger();
+  if (tabId === 'timetable' && (!AppState.timetableList || AppState.timetableList.length === 0)) loadTimetable();
   if (tabId === 'staff') {
     if (AppState.currentUser && AppState.currentUser.role === 'teacher') {
       const banner = document.getElementById('staffTeacherRestrictedBanner');
@@ -257,7 +262,7 @@ function switchTab(tabId) {
       if (banner) banner.classList.remove('hidden');
       if (container) container.classList.add('hidden');
     } else {
-      loadStaff();
+      if (!AppState.staffList || AppState.staffList.length === 0) loadStaff();
     }
   }
 }
@@ -271,17 +276,22 @@ function initTimetable() {
   if (cancel) cancel.addEventListener('click', resetTimetableForm);
 }
 
+let timetablePreloadPromise = null;
 async function ensureTimetableDataLoaded() {
   if (AppState.timetableData) return AppState.timetableData;
-  try {
-    const res = await fetch('/static/data/timetable_2026.json');
-    if (res.ok) {
-      AppState.timetableData = await res.json();
+  if (timetablePreloadPromise) return timetablePreloadPromise;
+  timetablePreloadPromise = (async () => {
+    try {
+      const res = await fetch('/static/data/timetable_2026.json');
+      if (res.ok) {
+        AppState.timetableData = await res.json();
+      }
+    } catch (e) {
+      console.warn("Could not preload timetable_2026.json:", e);
     }
-  } catch (e) {
-    console.warn("Could not preload timetable_2026.json:", e);
-  }
-  return AppState.timetableData;
+    return AppState.timetableData;
+  })();
+  return timetablePreloadPromise;
 }
 
 function normalizePersonName(s) {

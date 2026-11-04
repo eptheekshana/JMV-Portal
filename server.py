@@ -27,6 +27,7 @@ def json_response(data, status=200, cookie_token=None, clear_cookie=False):
             "Access-Control-Allow-Origin": "*"
         }
     )
+    resp.enable_compression()
     if cookie_token:
         resp.set_cookie(
             "jmv_session",
@@ -41,7 +42,9 @@ def json_response(data, status=200, cookie_token=None, clear_cookie=False):
     return resp
 
 def get_current_user(request):
-    """Extract and validate session from Authorization header or cookie."""
+    """Extract and validate session from Authorization header or cookie (cached per request)."""
+    if "user" in request:
+        return request["user"]
     token = ""
     auth_header = request.headers.get("Authorization", "")
     if auth_header.startswith("Bearer "):
@@ -49,8 +52,11 @@ def get_current_user(request):
     if not token:
         token = request.cookies.get("jmv_session", "")
     if not token:
+        request["user"] = None
         return None
-    return db.validate_session(token)
+    user = db.validate_session(token)
+    request["user"] = user
+    return user
 
 def require_role(request, allowed_roles):
     """Returns (user, None) if authorized, or (None, error_response) if not."""
@@ -73,7 +79,7 @@ async def handle_index(request):
     if os.path.exists(index_path):
         with open(index_path, "r", encoding="utf-8") as f:
             content = f.read()
-        return web.Response(
+        resp = web.Response(
             text=content,
             content_type="text/html",
             headers={
@@ -81,6 +87,8 @@ async def handle_index(request):
                 "Pragma": "no-cache"
             }
         )
+        resp.enable_compression()
+        return resp
     return web.Response(text="Index file not found", status=404)
 
 async def handle_stats(request):
@@ -524,6 +532,16 @@ async def db_error_middleware(request, handler):
         raise
 
 
+@web.middleware
+async def static_cache_and_compression_middleware(request, handler):
+    resp = await handler(request)
+    if hasattr(resp, "enable_compression"):
+        resp.enable_compression()
+    if request.path.startswith("/static/"):
+        resp.headers["Cache-Control"] = "public, max-age=86400"
+        resp.headers["Vary"] = "Accept-Encoding"
+    return resp
+
 def init_app():
     try:
         db.init_db()
@@ -534,7 +552,11 @@ def init_app():
     DB_STATE.update(ok=ok, message=message)
     print(("[DB] " if ok else "[DB NOTE] ") + message)
 
-    app = web.Application(middlewares=[account_required_middleware, db_error_middleware])
+    app = web.Application(middlewares=[
+        static_cache_and_compression_middleware,
+        account_required_middleware,
+        db_error_middleware
+    ])
 
     # API Routes
     app.router.add_get("/", handle_index)
