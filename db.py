@@ -16,6 +16,9 @@ import hashlib
 import binascii
 import secrets
 import uuid
+import time
+import queue
+import threading
 from datetime import datetime, date, timedelta
 from contextlib import contextmanager
 
@@ -87,7 +90,6 @@ def _get_mariadb_config():
     return cfg
 
 def _connect_mariadb(retries=3, delay=0.25):
-    import time
     cfg = _get_mariadb_config()
     last_err = None
     for attempt in range(retries):
@@ -99,19 +101,112 @@ def _connect_mariadb(retries=3, delay=0.25):
                 time.sleep(delay * (attempt + 1))
     raise last_err
 
+class MariaDBConnectionPool:
+    """Thread-safe connection pool for remote MariaDB with automatic keepalive."""
+    def __init__(self, max_connections=10, max_idle_time=45.0):
+        self._pool = queue.Queue(maxsize=max_connections)
+        self._lock = threading.Lock()
+        self._created = 0
+        self._max = max_connections
+        self._max_idle_time = max_idle_time
+
+    def get_connection(self):
+        now = time.time()
+        while not self._pool.empty():
+            try:
+                conn, last_used = self._pool.get_nowait()
+                if now - last_used > self._max_idle_time:
+                    try:
+                        conn.ping(reconnect=True)
+                    except Exception:
+                        try:
+                            conn.close()
+                        except Exception:
+                            pass
+                        with self._lock:
+                            self._created = max(0, self._created - 1)
+                        continue
+                return conn
+            except queue.Empty:
+                break
+
+        with self._lock:
+            if self._created < self._max:
+                try:
+                    conn = _connect_mariadb()
+                    self._created += 1
+                    return conn
+                except Exception:
+                    pass
+
+        try:
+            conn, last_used = self._pool.get(timeout=3.0)
+            if time.time() - last_used > self._max_idle_time:
+                try:
+                    conn.ping(reconnect=True)
+                except Exception:
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
+                    with self._lock:
+                        self._created = max(0, self._created - 1)
+                    return _connect_mariadb()
+            return conn
+        except Exception:
+            return _connect_mariadb()
+
+    def release_connection(self, conn, discard=False):
+        if not conn:
+            return
+        if discard:
+            try:
+                conn.close()
+            except Exception:
+                pass
+            with self._lock:
+                self._created = max(0, self._created - 1)
+            return
+        try:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            self._pool.put_nowait((conn, time.time()))
+        except queue.Full:
+            try:
+                conn.close()
+            except Exception:
+                pass
+            with self._lock:
+                self._created = max(0, self._created - 1)
+
+_mariadb_pool = MariaDBConnectionPool(max_connections=10)
+
+_LAST_HEALTH_STATUS = None
+_LAST_HEALTH_TIME = 0.0
+
 def test_mariadb():
+    global _LAST_HEALTH_STATUS, _LAST_HEALTH_TIME
     if not pymysql:
         return False, "PyMySQL driver not available"
+    now = time.time()
+    if _LAST_HEALTH_STATUS and (now - _LAST_HEALTH_TIME) < 15.0:
+        return _LAST_HEALTH_STATUS
     try:
         cfg = _get_mariadb_config()
-        conn = _connect_mariadb()
+        conn = _mariadb_pool.get_connection()
         with conn.cursor() as cur:
             cur.execute("SELECT VERSION()")
             ver = cur.fetchone()
-        conn.close()
-        return True, f"Connected to MariaDB ({cfg['host']})"
+        _mariadb_pool.release_connection(conn)
+        _LAST_HEALTH_STATUS = (True, f"Connected to MariaDB ({cfg['host']})")
+        _LAST_HEALTH_TIME = now
+        return _LAST_HEALTH_STATUS
     except Exception as e:
-        return False, str(e)
+        _LAST_HEALTH_STATUS = (False, str(e))
+        _LAST_HEALTH_TIME = now
+        return _LAST_HEALTH_STATUS
 
 def determine_engine():
     global ACTIVE_ENGINE, ENGINE_STATUS_MSG
@@ -902,25 +997,29 @@ def execute_query(sql, params=(), fetchone=False, fetchall=False, commit=False):
         engine = determine_engine()
 
     if engine == "mariadb":
-        try:
-            conn = _connect_mariadb()
-            with conn.cursor() as cur:
-                cur.execute(sql, params)
-                if commit:
-                    conn.commit()
-                if fetchone:
-                    res = cur.fetchone()
-                    conn.close()
-                    return _clean_dict(res)
-                if fetchall:
-                    res = cur.fetchall()
-                    conn.close()
-                    return [_clean_dict(r) for r in res]
-            conn.close()
-            return True
-        except Exception as e:
-            # If MariaDB failed, try switching to SQLite
-            pass
+        for attempt in range(2):
+            conn = None
+            try:
+                conn = _mariadb_pool.get_connection()
+                with conn.cursor() as cur:
+                    cur.execute(sql, params)
+                    if commit:
+                        conn.commit()
+                    if fetchone:
+                        res = cur.fetchone()
+                        _mariadb_pool.release_connection(conn)
+                        return _clean_dict(res)
+                    if fetchall:
+                        res = cur.fetchall()
+                        _mariadb_pool.release_connection(conn)
+                        return [_clean_dict(r) for r in res]
+                _mariadb_pool.release_connection(conn)
+                return True
+            except Exception as e:
+                if conn:
+                    _mariadb_pool.release_connection(conn, discard=True)
+                if attempt == 1:
+                    break
 
     # SQLite fallback execution
     conn = sqlite3.connect(SQLITE_PATH)
@@ -946,19 +1045,21 @@ def execute_query(sql, params=(), fetchone=False, fetchall=False, commit=False):
 # ---------------------------------------------------------------------------
 def check_connection():
     ok, msg = test_mariadb()
-    host = os.environ.get("DB_HOST", "jmvportal-sa-final-project.e.aivencloud.com")
-    db_name = os.environ.get("DB_NAME", "defaultdb")
+    cfg = _get_mariadb_config()
+    host = cfg.get("host", "sg-mariadb01.offloadsql.com")
+    db_name = cfg.get("database", "sql23659_providerid10315")
     if ok:
         return True, f"Connected to MariaDB: {host} (Database: {db_name})"
     else:
         return False, f"Remote MariaDB ({host}): {msg}"
 
 def get_engine_status():
+    cfg = _get_mariadb_config()
     return {
         "engine": ACTIVE_ENGINE,
         "message": ENGINE_STATUS_MSG,
-        "mariadb_host": os.environ.get("DB_HOST", "jmvportal-sa-final-project.e.aivencloud.com"),
-        "mariadb_db": os.environ.get("DB_NAME", "defaultdb")
+        "mariadb_host": cfg.get("host", "sg-mariadb01.offloadsql.com"),
+        "mariadb_db": cfg.get("database", "sql23659_providerid10315")
     }
 
 def get_all_students(search=None, grade=None, house=None):
@@ -1079,7 +1180,23 @@ def quick_suggestions(prefix, limit=6, include_staff=True):
     ]
     return results[:limit]
 
+_STATS_CACHE = None
+_STATS_CACHE_TIME = 0.0
+_STATS_CACHE_LOCK = threading.Lock()
+_STATS_TTL = 30.0
+
+def invalidate_stats_cache():
+    global _STATS_CACHE_TIME
+    with _STATS_CACHE_LOCK:
+        _STATS_CACHE_TIME = 0.0
+
 def get_system_stats():
+    global _STATS_CACHE, _STATS_CACHE_TIME
+    now = time.time()
+    with _STATS_CACHE_LOCK:
+        if _STATS_CACHE and (now - _STATS_CACHE_TIME) < _STATS_TTL:
+            return dict(_STATS_CACHE)
+
     engine = ACTIVE_ENGINE
     if engine == "unknown":
         engine = determine_engine()
@@ -1101,28 +1218,24 @@ def get_system_stats():
     """
 
     if engine == "mariadb":
+        conn = None
         try:
-            conn = _connect_mariadb()
-            try:
-                with conn.cursor() as cur:
-                    cur.execute(f"""
-                        SELECT
-                            (SELECT COUNT(*) FROM students WHERE {active_cond}) AS active_students,
-                            (SELECT COUNT(*) FROM staff WHERE {active_cond}) AS active_staff,
-                            (SELECT COUNT(*) FROM staff WHERE {non_acad_cond}) AS non_academic_staff
-                    """)
-                    summary = cur.fetchone() or {}
-                    cur.execute(f"SELECT grade, COUNT(*) as count FROM students WHERE {active_cond} GROUP BY grade ORDER BY grade")
-                    grades = cur.fetchall() or []
-                    cur.execute(f"SELECT department, COUNT(*) as count FROM staff WHERE {active_cond} GROUP BY department ORDER BY department")
-                    depts = cur.fetchall() or []
-                    cur.execute(f"SELECT house, COUNT(*) as count FROM students WHERE {active_cond} GROUP BY house ORDER BY house")
-                    houses = cur.fetchall() or []
-            finally:
-                try:
-                    conn.close()
-                except Exception:
-                    pass
+            conn = _mariadb_pool.get_connection()
+            with conn.cursor() as cur:
+                cur.execute(f"""
+                    SELECT
+                        (SELECT COUNT(*) FROM students WHERE {active_cond}) AS active_students,
+                        (SELECT COUNT(*) FROM staff WHERE {active_cond}) AS active_staff,
+                        (SELECT COUNT(*) FROM staff WHERE {non_acad_cond}) AS non_academic_staff
+                """)
+                summary = cur.fetchone() or {}
+                cur.execute(f"SELECT grade, COUNT(*) as count FROM students WHERE {active_cond} GROUP BY grade ORDER BY grade")
+                grades = cur.fetchall() or []
+                cur.execute(f"SELECT department, COUNT(*) as count FROM staff WHERE {active_cond} GROUP BY department ORDER BY department")
+                depts = cur.fetchall() or []
+                cur.execute(f"SELECT house, COUNT(*) as count FROM students WHERE {active_cond} GROUP BY house ORDER BY house")
+                houses = cur.fetchall() or []
+            _mariadb_pool.release_connection(conn)
 
             def _sval(row, key, idx):
                 if not row:
@@ -1136,7 +1249,7 @@ def get_system_stats():
             active_non_academic = _sval(summary, "non_academic_staff", 2)
             active_academic = max(0, total_active_stf - active_non_academic)
 
-            return {
+            result = {
                 "total_students": total_active_stu,
                 "total_staff": active_academic,
                 "non_academic_staff": active_non_academic,
@@ -1148,7 +1261,13 @@ def get_system_stats():
                 "houses": [_clean_dict(h) if isinstance(h, dict) else {"house": h[0], "count": h[1]} for h in houses],
                 "engine": "mariadb"
             }
+            with _STATS_CACHE_LOCK:
+                _STATS_CACHE = result
+                _STATS_CACHE_TIME = now
+            return result
         except Exception as e:
+            if conn:
+                _mariadb_pool.release_connection(conn, discard=True)
             print(f"[STATS MARIADB ERROR] {e}")
 
     # SQLite fallback execution
@@ -1305,6 +1424,7 @@ def _stamp(table, key, actor, created=False):
 
 
 def create_student(data, actor=None):
+    invalidate_stats_cache()
     cols = ", ".join([f"`{f}`" for f in STUDENT_FIELDS])
     placeholders = ", ".join(["%s"] * len(STUDENT_FIELDS))
     sanitized = dict(data)
@@ -1323,6 +1443,7 @@ def create_student(data, actor=None):
     return get_student_by_id(sanitized.get("id"))
 
 def update_student(student_id, data, actor=None):
+    invalidate_stats_cache()
     current = get_student_by_id(student_id) or {}
     merged = {**current, **{k: v for k, v in data.items() if v is not None}}
     if "admission_no" in merged and not merged.get("house"):
@@ -1342,12 +1463,14 @@ def update_student(student_id, data, actor=None):
     return get_student_by_id(student_id)
 
 def delete_student(student_id, actor=None):
+    invalidate_stats_cache()
     current = get_student_by_id(student_id) or {}
     execute_query("DELETE FROM students WHERE id=%s", (student_id,), commit=True)
     record_audit("student", student_id, current.get("name_with_initials"), "delete", actor)
     return True
 
 def create_staff(data, actor=None):
+    invalidate_stats_cache()
     cols = ", ".join([f"`{f}`" for f in STAFF_FIELDS])
     placeholders = ", ".join(["%s"] * len(STAFF_FIELDS))
     sanitized = dict(data)
@@ -1367,6 +1490,7 @@ def create_staff(data, actor=None):
     return get_staff_by_id(sanitized.get("id"))
 
 def update_staff(staff_id, data, actor=None):
+    invalidate_stats_cache()
     current = get_staff_by_id(staff_id) or {}
     sanitized = dict(data)
     if "epf_no" in sanitized:
@@ -1390,6 +1514,7 @@ def update_staff(staff_id, data, actor=None):
     return get_staff_by_id(staff_id)
 
 def delete_staff(staff_id, actor=None):
+    invalidate_stats_cache()
     current = get_staff_by_id(staff_id) or {}
     execute_query("DELETE FROM staff WHERE id=%s", (staff_id,), commit=True)
     record_audit("staff", staff_id, current.get("name_with_initials"), "delete", actor)
@@ -1397,6 +1522,7 @@ def delete_staff(staff_id, actor=None):
 
 
 def bulk_upsert_students(mapped_records, mode="upsert", actor=None):
+    invalidate_stats_cache()
     """
     Bulk create or update students from [(row_number, student_dict), ...].
     mode: 'upsert' (create new + update existing) or 'skip' (create new, skip existing).
@@ -1446,6 +1572,7 @@ def bulk_upsert_students(mapped_records, mode="upsert", actor=None):
 
 
 def bulk_upsert_staff(mapped_records, mode="upsert", actor=None):
+    invalidate_stats_cache()
     """
     Bulk create or update teachers/staff from [(row_number, staff_dict), ...].
     mode: 'upsert' (create new + update existing) or 'skip' (create new, skip existing).
@@ -1504,6 +1631,7 @@ def bulk_upsert_staff(mapped_records, mode="upsert", actor=None):
     }
 
 def reset_to_demo_data():
+    invalidate_stats_cache()
     execute_query("DELETE FROM students", commit=True)
     execute_query("DELETE FROM staff", commit=True)
     execute_query("DELETE FROM users", commit=True)
@@ -1580,9 +1708,18 @@ def create_session(user_id, role, hours=24):
     )
     return token
 
+_SESSION_CACHE = {}  # {token: (session_dict, expire_timestamp)}
+_SESSION_CACHE_LOCK = threading.Lock()
+
 def validate_session(token):
     if not token:
         return None
+    now = time.time()
+    with _SESSION_CACHE_LOCK:
+        cached = _SESSION_CACHE.get(token)
+        if cached and cached[1] > now:
+            return cached[0]
+
     session = execute_query(
         """
         SELECT s.token, s.user_id, s.role, s.expires_at,
@@ -1602,11 +1739,17 @@ def validate_session(token):
             if datetime.now() > exp:
                 delete_session(token)
                 return None
+            exp_ts = exp.timestamp()
+            cache_ttl = min(60.0, max(1.0, exp_ts - now))
+            with _SESSION_CACHE_LOCK:
+                _SESSION_CACHE[token] = (session, now + cache_ttl)
         except Exception:
             pass
     return session
 
 def delete_session(token):
+    with _SESSION_CACHE_LOCK:
+        _SESSION_CACHE.pop(token, None)
     execute_query("DELETE FROM sessions WHERE token = %s", (token,), commit=True)
     return True
 

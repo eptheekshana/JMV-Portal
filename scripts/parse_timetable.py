@@ -599,7 +599,7 @@ def parse_pdf():
 
     out_file = os.path.join(BASE_DIR, "static", "data", "timetable_2026.json")
     with open(out_file, "w", encoding="utf-8") as f:
-        json.dump(output_data, f, ensure_ascii=False, indent=2)
+        json.dump(output_data, f, ensure_ascii=False, separators=(',', ':'))
 
     print(
         f"Generated {out_file}: {len(classes_data)} classes, "
