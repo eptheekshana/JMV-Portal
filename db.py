@@ -721,44 +721,7 @@ def init_sqlite_schema(conn):
         subject TEXT NOT NULL,
         teacher_id TEXT NOT NULL,
         teacher_name TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE (class_name, day_of_week, period_no)
-    );
-    """)
-
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS subjects (
-        subject_code TEXT NOT NULL,
-        subject_name TEXT NOT NULL,
-        category TEXT NOT NULL DEFAULT 'Core',
-        grade_level TEXT NOT NULL DEFAULT '',
-        medium TEXT NOT NULL DEFAULT 'Sinhala',
-        is_active INTEGER NOT NULL DEFAULT 1,
-        description TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (subject_code, grade_level)
-    );
-    """)
-
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS teachers (
-        teacher_id TEXT PRIMARY KEY,
-        name_with_initials TEXT NOT NULL,
-        full_name TEXT NOT NULL,
-        email TEXT UNIQUE,
-        primary_phone_no TEXT,
-        secondary_phone_no TEXT,
-        date_of_birth TEXT,
-        age INTEGER,
-        address TEXT NOT NULL DEFAULT '',
-        nic TEXT UNIQUE,
-        date_of_arrival TEXT,
-        education_level TEXT NOT NULL DEFAULT '',
-        current_role TEXT NOT NULL DEFAULT '',
-        assigned_subject TEXT,
-        current_subject TEXT,
+bject TEXT,
         other_subject TEXT,
         notes TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
