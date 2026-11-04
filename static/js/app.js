@@ -274,6 +274,11 @@ function initTimetable() {
   if (refresh) refresh.addEventListener('click', loadTimetable);
   const cancel = document.getElementById('timetableCancelBtn');
   if (cancel) cancel.addEventListener('click', resetTimetableForm);
+
+  const assignForm = document.getElementById('assignTeacherForm');
+  if (assignForm) assignForm.addEventListener('submit', handleAssignTeacherSubmit);
+  const teacherSelect = document.getElementById('assignSlotTeacherSelect');
+  if (teacherSelect) teacherSelect.addEventListener('change', onAssignTeacherSelectChange);
 }
 
 let timetablePreloadPromise = null;
@@ -425,6 +430,12 @@ async function loadTimetable() {
     if (apiEntries) {
       AppState.timetableList = apiEntries;
     }
+    if (jsonData && apiEntries && apiEntries.length) {
+      applyDbTimetableToClasses(AppState.timetableData, apiEntries);
+    }
+    if (staffList && staffList.length) {
+      AppState.staffList = staffList;
+    }
 
     if (isAdmin && staffList && staffList.length) {
       const teacherSelect = document.getElementById('timetableTeacher');
@@ -527,6 +538,7 @@ function renderTimetableGrid() {
   const table = document.getElementById('ttGridTable');
   if (!table) return;
 
+  const isAdmin = AppState.currentUser && AppState.currentUser.role === 'admin';
   const mode = AppState.currentTimetableMode || 'class';
   const data = AppState.timetableData;
   if (!data) {
@@ -602,6 +614,15 @@ function renderTimetableGrid() {
         html += `<td class="tt-grid-cell border-r border-slate-200 p-2.5">`;
         if (isFree) {
           html += `<span class="tt-free-pill">— Free Period —</span>`;
+          if (isAdmin) {
+            html += `
+              <div class="mt-1.5 pt-1 border-t border-dashed border-slate-200">
+                <button type="button" onclick="openAssignTeacherModal('${escapeHtml(clsKey)}', '${escapeHtml(d)}', ${p})" class="w-full text-center px-1.5 py-0.5 text-[10px] font-extrabold text-[#800020] hover:text-white hover:bg-[#800020] border border-[#800020]/30 hover:border-[#800020] rounded transition-all cursor-pointer flex items-center justify-center gap-1 shadow-2xs" title="Assign Teacher to Period">
+                  ${icon('plus')} <span>Assign</span>
+                </button>
+              </div>
+            `;
+          }
         } else {
           const badgeClass = getSubjectBadgeClass(slot.subject);
           const hasValidStaffId = slot.teacher_id && slot.teacher_id.startsWith('JMV-STF-');
@@ -619,6 +640,15 @@ function renderTimetableGrid() {
               </div>
             ` : ''}
           `;
+          if (isAdmin) {
+            html += `
+              <div class="mt-1.5 pt-1 border-t border-slate-200/60 flex justify-end">
+                <button type="button" onclick="openAssignTeacherModal('${escapeHtml(clsKey)}', '${escapeHtml(d)}', ${p})" class="text-[10px] font-bold text-slate-500 hover:text-[#800020] hover:bg-slate-100 px-1.5 py-0.5 rounded transition-colors cursor-pointer flex items-center gap-1" title="Change Assigned Teacher or Subject">
+                  ${icon('pencil')} <span>Change</span>
+                </button>
+              </div>
+            `;
+          }
         }
         html += `</td>`;
       }
@@ -705,6 +735,15 @@ function renderTimetableGrid() {
               ${escapeHtml(slot.subject)}
             </div>
           `;
+          if (isAdmin && slot.class_name) {
+            html += `
+              <div class="mt-1.5 pt-1 border-t border-slate-200/60 flex justify-end">
+                <button type="button" onclick="openAssignTeacherModal('${escapeHtml(slot.class_name)}', '${escapeHtml(d)}', ${p})" class="text-[10px] font-bold text-slate-500 hover:text-[#800020] hover:bg-slate-100 px-1.5 py-0.5 rounded transition-colors cursor-pointer flex items-center gap-1" title="Change Assigned Teacher or Subject">
+                  ${icon('pencil')} <span>Change</span>
+                </button>
+              </div>
+            `;
+          }
         }
         html += `</td>`;
       }
@@ -881,24 +920,16 @@ async function saveTimetableEntry(event) {
 }
 
 function editTimetableEntry(entry) {
-  if (!AppState.currentUser || AppState.currentUser.role !== 'admin') {
-    showToast("Only school administrators can edit timetable entries.", "error");
-    return;
+  if (entry) {
+    openAssignTeacherModal(entry.class_name, entry.day_of_week, entry.period_no);
   }
-  const form = document.getElementById('timetableForm');
-  if (form) form.classList.remove('hidden');
-  document.getElementById('timetableEntryId').value = entry.id;
-  document.getElementById('timetableClass').value = entry.class_name;
-  document.getElementById('timetableDay').value = entry.day_of_week;
-  document.getElementById('timetablePeriod').value = entry.period_no;
-  document.getElementById('timetableSubject').value = entry.subject;
-  document.getElementById('timetableTeacher').value = entry.teacher_id;
-  document.getElementById('timetableClass').focus();
 }
 
 function editTimetableEntryById(id) {
   const entry = AppState.timetableList.find(item => String(item.id) === String(id));
-  if (entry) editTimetableEntry(entry);
+  if (entry) {
+    openAssignTeacherModal(entry.class_name, entry.day_of_week, entry.period_no);
+  }
 }
 
 async function deleteTimetableEntry(id) {
@@ -923,6 +954,441 @@ async function deleteTimetableEntry(id) {
 
 function resetTimetableForm() {
   cancelTimetableForm();
+}
+
+/* --------------------------------------------------------------------------
+   Timetable Dynamic Database Sync & Period Teacher Assignment
+   -------------------------------------------------------------------------- */
+
+function applyDbTimetableToClasses(timetableData, dbEntries) {
+  if (!timetableData || !Array.isArray(dbEntries) || !dbEntries.length) return;
+  if (!timetableData.classes) timetableData.classes = {};
+  if (!timetableData.teachers) timetableData.teachers = {};
+
+  dbEntries.forEach(entry => {
+    const clsKey = entry.class_name;
+    const day = entry.day_of_week;
+    const p = parseInt(entry.period_no, 10);
+    const subject = entry.subject || '';
+    const tId = entry.teacher_id || '';
+    const tName = entry.teacher_name || '';
+    const isFree = (!tId || tId === 'FREE' || !subject || subject.toLowerCase() === 'free period');
+
+    // 1. Update Class Schedule
+    if (!timetableData.classes[clsKey]) {
+      timetableData.classes[clsKey] = { schedule: {} };
+    }
+    if (!timetableData.classes[clsKey].schedule) {
+      timetableData.classes[clsKey].schedule = {};
+    }
+    if (!timetableData.classes[clsKey].schedule[day]) {
+      timetableData.classes[clsKey].schedule[day] = [];
+    }
+
+    const classDaySlots = timetableData.classes[clsKey].schedule[day];
+    let slot = classDaySlots.find(s => s.period === p);
+    if (!slot) {
+      slot = { period: p };
+      classDaySlots.push(slot);
+      classDaySlots.sort((a, b) => a.period - b.period);
+    }
+    slot.id = entry.id;
+    slot.subject = isFree ? 'Free Period' : subject;
+    slot.teacher = isFree ? '' : tName;
+    slot.teacher_id = isFree ? '' : tId;
+
+    // 2. Synchronize Teacher Schedules
+    Object.values(timetableData.teachers).forEach(tObj => {
+      if (tObj && tObj.schedule && tObj.schedule[day]) {
+        const tSlot = tObj.schedule[day].find(s => s.period === p);
+        if (tSlot && tSlot.class_name === clsKey) {
+          tSlot.is_free = true;
+          tSlot.subject = '';
+          tSlot.class_name = '';
+        }
+      }
+    });
+
+    if (!isFree && (tName || tId)) {
+      let tObj = timetableData.teachers[tName];
+      if (!tObj) {
+        for (const k of Object.keys(timetableData.teachers)) {
+          if (timetableData.teachers[k].staff_id && timetableData.teachers[k].staff_id === tId) {
+            tObj = timetableData.teachers[k];
+            break;
+          }
+        }
+      }
+
+      if (tObj) {
+        if (!tObj.schedule) tObj.schedule = {};
+        if (!tObj.schedule[day]) tObj.schedule[day] = [];
+        let tSlot = tObj.schedule[day].find(s => s.period === p);
+        if (!tSlot) {
+          tSlot = { period: p };
+          tObj.schedule[day].push(tSlot);
+          tObj.schedule[day].sort((a, b) => a.period - b.period);
+        }
+        tSlot.is_free = false;
+        tSlot.subject = subject;
+        tSlot.class_name = clsKey;
+        tSlot.id = entry.id;
+      }
+    }
+  });
+
+  // 3. Recalculate teaching load for all teachers
+  Object.values(timetableData.teachers).forEach(tObj => {
+    if (tObj && tObj.schedule) {
+      let count = 0;
+      for (const d of Object.keys(tObj.schedule)) {
+        const slots = tObj.schedule[d] || [];
+        count += slots.filter(s => !s.is_free && s.subject && s.subject !== 'Free Period').length;
+      }
+      tObj.teaching_load = count;
+    }
+  });
+}
+
+function openAssignTeacherModal(className, dayName, periodNo) {
+  if (!AppState.currentUser || AppState.currentUser.role !== 'admin') {
+    showToast("Only school administrators can assign or reassign teachers.", "error");
+    return;
+  }
+
+  const modal = document.getElementById('assignTeacherModal');
+  if (!modal) return;
+
+  const idInput = document.getElementById('assignSlotId');
+  const classInput = document.getElementById('assignSlotClass');
+  const dayInput = document.getElementById('assignSlotDay');
+  const periodInput = document.getElementById('assignSlotPeriod');
+  const contextText = document.getElementById('assignSlotContextText');
+  const timeBadge = document.getElementById('assignSlotTimeBadge');
+  const subjectInput = document.getElementById('assignSlotSubjectInput');
+  const overlapCheck = document.getElementById('assignAllowOverlapCheckbox');
+  const conflictBanner = document.getElementById('assignTeacherConflictBanner');
+
+  const pNum = parseInt(periodNo, 10);
+  const clsObj = AppState.timetableData?.classes?.[className];
+  const daySlots = clsObj?.schedule?.[dayName] || [];
+  const slot = daySlots.find(s => s.period === pNum) || {};
+
+  const currentSubject = slot.subject || '';
+  const currentTeacherId = slot.teacher_id || '';
+  const currentTeacherName = slot.teacher || '';
+  const slotId = slot.id || '';
+
+  if (idInput) idInput.value = slotId;
+  if (classInput) classInput.value = className;
+  if (dayInput) dayInput.value = dayName;
+  if (periodInput) periodInput.value = pNum;
+
+  if (contextText) {
+    contextText.textContent = `Grade ${className} • ${dayName} • Period ${pNum}`;
+  }
+
+  const times = AppState.timetableData?.period_times || [
+    "07:50 - 08:30", "08:30 - 09:10", "09:10 - 09:50", "09:50 - 10:30",
+    "10:50 - 11:30", "11:30 - 12:10", "12:10 - 12:50", "12:50 - 13:30"
+  ];
+  if (timeBadge) {
+    timeBadge.textContent = times[pNum - 1] || `Period ${pNum}`;
+  }
+
+  const isFree = (!currentSubject || currentSubject === 'Free Period');
+  if (subjectInput) {
+    subjectInput.value = isFree ? '' : currentSubject;
+  }
+
+  if (overlapCheck) overlapCheck.checked = false;
+  if (conflictBanner) conflictBanner.classList.add('hidden');
+
+  populateAssignModalTeacherSelect(currentTeacherId, currentTeacherName);
+
+  document.body.style.overflow = 'hidden';
+  modal.classList.remove('hidden');
+
+  checkPeriodConflict();
+}
+
+function populateAssignModalTeacherSelect(selectedId, selectedName) {
+  const select = document.getElementById('assignSlotTeacherSelect');
+  if (!select) return;
+
+  const staffMap = new Map();
+
+  // Add from timetable data teachers
+  const ttTeachers = AppState.timetableData?.teachers || {};
+  Object.keys(ttTeachers).forEach(name => {
+    const t = ttTeachers[name];
+    const sId = t.staff_id || name;
+    staffMap.set(sId, {
+      id: sId,
+      name: name,
+      load: t.teaching_load || 0,
+      dept: t.department || ''
+    });
+  });
+
+  // Add from AppState.staffList (active database staff)
+  if (Array.isArray(AppState.staffList)) {
+    AppState.staffList.forEach(s => {
+      if (s.id) {
+        const existing = staffMap.get(s.id);
+        const name = s.name_with_initials || s.full_name || s.id;
+        staffMap.set(s.id, {
+          id: s.id,
+          name: name,
+          load: existing ? existing.load : 0,
+          dept: s.department || (existing ? existing.dept : '')
+        });
+      }
+    });
+  }
+
+  const sortedStaff = Array.from(staffMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+
+  let html = `
+    <option value="">-- Select Teacher --</option>
+    <option value="FREE">— Free Period (No Teacher Assigned) —</option>
+  `;
+
+  sortedStaff.forEach(s => {
+    const sidLabel = (s.id && s.id.startsWith('JMV-STF-')) ? `${s.id} — ` : '';
+    const loadLabel = s.load !== undefined ? ` (${s.load}p/wk)` : '';
+    html += `<option value="${escapeHtml(s.id)}" data-teacher-name="${escapeHtml(s.name)}">${escapeHtml(sidLabel + s.name)}${loadLabel}</option>`;
+  });
+
+  select.innerHTML = html;
+
+  if (!selectedId || selectedId === 'FREE' || selectedName === 'Free Period') {
+    select.value = 'FREE';
+  } else {
+    select.value = selectedId;
+    if (!select.value && selectedName) {
+      for (let i = 0; i < select.options.length; i++) {
+        const opt = select.options[i];
+        if (opt.getAttribute('data-teacher-name') === selectedName || opt.text.includes(selectedName)) {
+          select.selectedIndex = i;
+          break;
+        }
+      }
+    }
+  }
+}
+
+function onAssignTeacherSelectChange() {
+  const select = document.getElementById('assignSlotTeacherSelect');
+  const subjectInput = document.getElementById('assignSlotSubjectInput');
+  if (!select) return;
+
+  if (select.value === 'FREE') {
+    if (subjectInput && !subjectInput.value) {
+      subjectInput.value = 'Free Period';
+    }
+  } else if (subjectInput && subjectInput.value === 'Free Period') {
+    subjectInput.value = '';
+  }
+
+  checkPeriodConflict();
+}
+
+function checkPeriodConflict() {
+  const teacherSelect = document.getElementById('assignSlotTeacherSelect');
+  const className = document.getElementById('assignSlotClass')?.value;
+  const dayName = document.getElementById('assignSlotDay')?.value;
+  const periodNo = parseInt(document.getElementById('assignSlotPeriod')?.value, 10);
+  const banner = document.getElementById('assignTeacherConflictBanner');
+  const msgEl = document.getElementById('assignTeacherConflictMsg');
+
+  if (!banner || !msgEl) return;
+
+  if (!teacherSelect || !teacherSelect.value || teacherSelect.value === 'FREE') {
+    banner.classList.add('hidden');
+    return;
+  }
+
+  const selectedTeacherId = teacherSelect.value;
+  const selectedTeacherOpt = teacherSelect.options[teacherSelect.selectedIndex];
+  const selectedTeacherName = selectedTeacherOpt?.getAttribute('data-teacher-name') || selectedTeacherOpt?.text || selectedTeacherId;
+
+  const data = AppState.timetableData;
+  if (!data) {
+    banner.classList.add('hidden');
+    return;
+  }
+
+  let teacherObj = data.teachers ? data.teachers[selectedTeacherName] : null;
+  if (!teacherObj && data.teachers) {
+    for (const k of Object.keys(data.teachers)) {
+      if (data.teachers[k].staff_id && data.teachers[k].staff_id === selectedTeacherId) {
+        teacherObj = data.teachers[k];
+        break;
+      }
+    }
+  }
+
+  let conflictingClass = '';
+  let conflictingSubject = '';
+
+  if (teacherObj && teacherObj.schedule && teacherObj.schedule[dayName]) {
+    const slot = teacherObj.schedule[dayName].find(s => s.period === periodNo);
+    if (slot && !slot.is_free && slot.class_name && slot.class_name !== className) {
+      conflictingClass = slot.class_name;
+      conflictingSubject = slot.subject || 'Class';
+    }
+  }
+
+  if (conflictingClass) {
+    msgEl.innerHTML = `<strong>${escapeHtml(selectedTeacherName)}</strong> is already assigned to <strong>Grade ${escapeHtml(conflictingClass)}</strong> (${escapeHtml(conflictingSubject)}) on ${escapeHtml(dayName)} Period ${periodNo}.`;
+    banner.classList.remove('hidden');
+  } else {
+    banner.classList.add('hidden');
+  }
+}
+
+function setSlotAsFreePeriod() {
+  const subjectInput = document.getElementById('assignSlotSubjectInput');
+  const teacherSelect = document.getElementById('assignSlotTeacherSelect');
+  if (subjectInput) subjectInput.value = 'Free Period';
+  if (teacherSelect) teacherSelect.value = 'FREE';
+  const conflictBanner = document.getElementById('assignTeacherConflictBanner');
+  if (conflictBanner) conflictBanner.classList.add('hidden');
+
+  const form = document.getElementById('assignTeacherForm');
+  if (form) {
+    if (typeof form.requestSubmit === 'function') {
+      form.requestSubmit();
+    } else {
+      form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+    }
+  }
+}
+
+async function handleAssignTeacherSubmit(e) {
+  e.preventDefault();
+
+  if (!AppState.currentUser || AppState.currentUser.role !== 'admin') {
+    showToast("Only school administrators can assign or reassign teachers.", "error");
+    return;
+  }
+
+  const slotId = document.getElementById('assignSlotId')?.value || '';
+  const className = document.getElementById('assignSlotClass')?.value || '';
+  const dayName = document.getElementById('assignSlotDay')?.value || '';
+  const periodNo = parseInt(document.getElementById('assignSlotPeriod')?.value || '0', 10);
+  const subjectInput = document.getElementById('assignSlotSubjectInput');
+  const teacherSelect = document.getElementById('assignSlotTeacherSelect');
+  const overlapCheck = document.getElementById('assignAllowOverlapCheckbox');
+  const submitBtn = document.getElementById('assignTeacherSubmitBtn');
+
+  let subject = subjectInput ? subjectInput.value.trim() : '';
+  let teacherId = teacherSelect ? teacherSelect.value : '';
+  const isFree = (teacherId === 'FREE' || !teacherId || subject.toLowerCase() === 'free' || subject.toLowerCase() === 'free period');
+
+  let teacherName = '';
+  if (isFree) {
+    subject = 'Free Period';
+    teacherId = 'FREE';
+    teacherName = 'Free Period';
+  } else {
+    if (!subject) {
+      showToast("Please enter a subject for this period.", "error");
+      if (subjectInput) subjectInput.focus();
+      return;
+    }
+    if (!teacherId) {
+      showToast("Please select a teacher from the dropdown.", "error");
+      if (teacherSelect) teacherSelect.focus();
+      return;
+    }
+    const opt = teacherSelect.options[teacherSelect.selectedIndex];
+    teacherName = opt?.getAttribute('data-teacher-name') || opt?.text || teacherId;
+    if (teacherName.includes('—')) {
+      teacherName = teacherName.split('—')[1].trim();
+    }
+    if (teacherName.includes('(')) {
+      teacherName = teacherName.split('(')[0].trim();
+    }
+  }
+
+  const allowOverlap = overlapCheck ? overlapCheck.checked : false;
+
+  const conflictBanner = document.getElementById('assignTeacherConflictBanner');
+  if (conflictBanner && !conflictBanner.classList.contains('hidden') && !allowOverlap && !isFree) {
+    showToast("Schedule conflict detected! Check 'Allow overlapping assignment' to proceed.", "warning");
+    if (overlapCheck) overlapCheck.focus();
+    return;
+  }
+
+  const payload = {
+    id: slotId || undefined,
+    class_name: className,
+    day_of_week: dayName,
+    period_no: periodNo,
+    subject: subject,
+    teacher_id: teacherId,
+    teacher_name: teacherName,
+    allow_overlap: allowOverlap,
+    force: allowOverlap
+  };
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `${icon('spinner')} <span>Saving...</span>`;
+  }
+
+  try {
+    const res = await fetch('/api/timetable', {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      throw new Error(result.error || 'Failed to update timetable assignment.');
+    }
+
+    if (AppState.timetableData) {
+      applyDbTimetableToClasses(AppState.timetableData, [result]);
+    }
+
+    if (Array.isArray(AppState.timetableList)) {
+      const existingIdx = AppState.timetableList.findIndex(entry =>
+        String(entry.id) === String(result.id) ||
+        (entry.class_name === result.class_name && entry.day_of_week === result.day_of_week && Number(entry.period_no) === Number(result.period_no))
+      );
+      if (existingIdx >= 0) {
+        AppState.timetableList[existingIdx] = result;
+      } else {
+        AppState.timetableList.push(result);
+      }
+    }
+
+    closeModals();
+    populateTimetableTeacherSelect();
+
+    if (AppState.currentTimetableMode === 'table') {
+      renderTimetableTable(AppState.timetableList);
+    } else {
+      renderTimetableGrid();
+    }
+
+    const toastMsg = isFree
+      ? `Grade ${className} • ${dayName} Period ${periodNo} set as Free Period.`
+      : `Assigned ${teacherName} for Grade ${className} (${subject}) on ${dayName} Period ${periodNo}!`;
+    showToast(toastMsg, "success");
+
+  } catch (err) {
+    console.error("Save timetable error:", err);
+    showToast(err.message, "error");
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<svg class="ui-icon text-amber-300" aria-hidden="true"><use href="#icon-check"></use></svg> <span>Save Assignment</span>`;
+    }
+  }
 }
 
 /* --------------------------------------------------------------------------
@@ -2441,11 +2907,13 @@ function closeModals() {
   const loginModal = document.getElementById('loginModal');
   const marksModal = document.getElementById('marksModal');
   const bulkUploadModal = document.getElementById('bulkUploadModal');
+  const assignModal = document.getElementById('assignTeacherModal');
   if (studentModal) studentModal.classList.add('hidden');
   if (staffModal) staffModal.classList.add('hidden');
   if (loginModal) loginModal.classList.add('hidden');
   if (marksModal) marksModal.classList.add('hidden');
   if (bulkUploadModal) bulkUploadModal.classList.add('hidden');
+  if (assignModal) assignModal.classList.add('hidden');
   document.body.style.overflow = '';
 }
 
