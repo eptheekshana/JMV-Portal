@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initAuth();
 
   // Load initial data
+  await ensureTimetableDataLoaded();
   checkDbHealth();
   loadStats();
   const authenticated = await checkAuth();
@@ -270,6 +271,93 @@ function initTimetable() {
   if (cancel) cancel.addEventListener('click', resetTimetableForm);
 }
 
+async function ensureTimetableDataLoaded() {
+  if (AppState.timetableData) return AppState.timetableData;
+  try {
+    const res = await fetch('/static/data/timetable_2026.json');
+    if (res.ok) {
+      AppState.timetableData = await res.json();
+    }
+  } catch (e) {
+    console.warn("Could not preload timetable_2026.json:", e);
+  }
+  return AppState.timetableData;
+}
+
+function normalizePersonName(s) {
+  return String(s || '')
+    .toUpperCase()
+    .replace(/^(MR\.|MRS\.|MISS\.|MS\.)\s*/g, '')
+    .replace(/[^A-Z]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function findStaffTimetableProfile(staffItem) {
+  const data = AppState.timetableData;
+  if (!data || !staffItem) return null;
+
+  const staffId = String(staffItem.id || '').trim();
+  if (staffId && data.staff_timetables && data.staff_timetables[staffId]) {
+    return data.staff_timetables[staffId];
+  }
+
+  const teachers = data.teachers || {};
+  const initName = String(staffItem.name_with_initials || '').trim();
+  const fullName = String(staffItem.full_name || '').trim();
+
+  if (initName && teachers[initName]) return teachers[initName];
+  if (fullName && teachers[fullName]) return teachers[fullName];
+
+  const targetNorm = normalizePersonName(initName || fullName);
+  if (!targetNorm) return null;
+  const targetTokens = targetNorm.split(' ');
+  const targetSurname = targetTokens[targetTokens.length - 1];
+
+  for (const prof of Object.values(teachers)) {
+    if (prof.staff_id && prof.staff_id === staffId) return prof;
+    const pNorm = normalizePersonName(prof.official_name || prof.timetable_name);
+    if (pNorm === targetNorm) return prof;
+    const pTokens = pNorm.split(' ');
+    const pSurname = pTokens[pTokens.length - 1];
+    if (pSurname && pSurname === targetSurname && pTokens[0] === targetTokens[0]) {
+      return prof;
+    }
+  }
+  return null;
+}
+
+function openStaffInTimetableTab(staffId, teacherKey) {
+  switchTab('timetable');
+  const data = AppState.timetableData;
+  if (data) {
+    let targetTeacher = teacherKey;
+    if (!targetTeacher && staffId && data.staff_timetables && data.staff_timetables[staffId]) {
+      targetTeacher = data.staff_timetables[staffId].official_name;
+    }
+    if (targetTeacher && data.teachers && data.teachers[targetTeacher]) {
+      AppState.selectedTeacher = targetTeacher;
+      AppState.userHasManuallySelectedTimetable = true;
+      const select = document.getElementById('ttTeacherSelect');
+      if (select) select.value = targetTeacher;
+    }
+  }
+  switchTimetableMode('teacher');
+}
+
+function openClassInTimetableTab(className) {
+  const cleanCls = String(className || '').split('/')[0].trim();
+  if (!cleanCls) return;
+  switchTab('timetable');
+  if (AppState.timetableData?.classes?.[cleanCls]) {
+    AppState.selectedClass = cleanCls;
+    AppState.userHasManuallySelectedTimetable = true;
+    const select = document.getElementById('ttClassSelect');
+    if (select) select.value = cleanCls;
+  }
+  switchTimetableMode('class');
+}
+
 function getSubjectBadgeClass(subject) {
   const s = (subject || '').toLowerCase();
   if (s.includes('math')) return 'bg-blue-100 text-blue-900 border-blue-300';
@@ -313,7 +401,7 @@ async function loadTimetable() {
 
   try {
     const promises = [
-      fetch('/static/data/timetable_2026.json').then(r => r.ok ? r.json() : null).catch(() => null),
+      ensureTimetableDataLoaded(),
       fetch('/api/timetable', { credentials: 'include', headers: getAuthHeaders() }).then(r => r.ok ? r.json() : []).catch(() => [])
     ];
     if (isAdmin) {
@@ -332,7 +420,7 @@ async function loadTimetable() {
       const teacherSelect = document.getElementById('timetableTeacher');
       if (teacherSelect) {
         teacherSelect.innerHTML = '<option value="">Select teacher</option>' +
-          staffList.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name_with_initials || t.full_name)}</option>`).join('');
+          staffList.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name_with_initials || t.full_name)} (${escapeHtml(t.id)})</option>`).join('');
       }
     }
 
@@ -342,15 +430,15 @@ async function loadTimetable() {
 
     // Auto-select logged-in teacher if applicable
     if (isTeacher && u && !AppState.userHasManuallySelectedTimetable) {
-      const myName = (u.full_name || '').toLowerCase();
-      const myInit = (u.name_with_initials || '').toLowerCase();
-      const teachers = Object.keys(AppState.timetableData?.teachers || {});
-      const matched = teachers.find(t => {
-        const tl = t.toLowerCase();
-        return (myName && tl.includes(myName)) || (myName && myName.includes(tl)) || (myInit && tl.includes(myInit));
+      const matchedProf = findStaffTimetableProfile({
+        id: u.staff_id || '',
+        name_with_initials: u.name_with_initials || '',
+        full_name: u.full_name || ''
       });
-      if (matched) {
-        AppState.selectedTeacher = matched;
+      if (matchedProf && matchedProf.official_name) {
+        AppState.selectedTeacher = matchedProf.official_name;
+        const select = document.getElementById('ttTeacherSelect');
+        if (select) select.value = matchedProf.official_name;
         switchTimetableMode('teacher');
       } else {
         switchTimetableMode('class');
@@ -402,12 +490,19 @@ function populateTimetableTeacherSelect() {
   const select = document.getElementById('ttTeacherSelect');
   if (!select) return;
   const teachers = AppState.timetableData?.teachers || {};
-  const teacherNames = Object.keys(teachers).sort();
+  const teacherNames = Object.keys(teachers).sort((a, b) => {
+    const idA = teachers[a]?.staff_id || 'ZZZ';
+    const idB = teachers[b]?.staff_id || 'ZZZ';
+    return idA.localeCompare(idB);
+  });
   if (!teacherNames.length) return;
 
   select.innerHTML = teacherNames.map(t => {
-    const load = teachers[t]?.teaching_load || 0;
-    return `<option value="${escapeHtml(t)}">${escapeHtml(t)} (${load} Periods / Week)</option>`;
+    const tObj = teachers[t] || {};
+    const load = tObj.teaching_load || 0;
+    const sid = tObj.staff_id ? `${tObj.staff_id} — ` : '';
+    const formTag = tObj.form_class ? ` [Form: ${tObj.form_class}]` : '';
+    return `<option value="${escapeHtml(t)}">${escapeHtml(sid + t)}${escapeHtml(formTag)} (${load}p/wk)</option>`;
   }).join('');
 
   if (AppState.selectedTeacher && teacherNames.includes(AppState.selectedTeacher)) {
@@ -439,6 +534,7 @@ function renderTimetableGrid() {
     const clsKey = AppState.selectedClass || '6-A';
     const clsObj = (data.classes && data.classes[clsKey]) ? data.classes[clsKey] : {};
     const formTeacher = clsObj.form_teacher || 'Not assigned';
+    const formTeacherId = clsObj.form_teacher_id || '';
     const schedule = clsObj.schedule || {};
 
     // Update sheet header & badges
@@ -446,8 +542,16 @@ function renderTimetableGrid() {
     const subtitleEl = document.getElementById('ttSheetSubtitle');
     const teacherBadge = document.getElementById('ttClassFormTeacherText');
     if (titleEl) titleEl.textContent = `Grade ${clsKey} Weekly Timetable`;
-    if (subtitleEl) subtitleEl.textContent = `Form Teacher: ${formTeacher}`;
-    if (teacherBadge) teacherBadge.textContent = `Class Teacher: ${formTeacher}`;
+    if (subtitleEl) {
+      subtitleEl.innerHTML = formTeacherId
+        ? `Form Teacher: <button onclick="lookupFromTable('${escapeHtml(formTeacherId)}')" class="underline hover:text-[#800020] font-extrabold cursor-pointer" title="View Form Teacher Profile">${escapeHtml(formTeacher)} (${escapeHtml(formTeacherId)})</button>`
+        : `Form Teacher: ${escapeHtml(formTeacher)}`;
+    }
+    if (teacherBadge) {
+      teacherBadge.innerHTML = formTeacherId
+        ? `Class Teacher: <button onclick="lookupFromTable('${escapeHtml(formTeacherId)}')" class="underline hover:text-[#5c0d1b] font-extrabold cursor-pointer" title="Open Staff Profile">${escapeHtml(formTeacher)} (${escapeHtml(formTeacherId)})</button>`
+        : `Class Teacher: ${escapeHtml(formTeacher)}`;
+    }
 
     let html = `
       <thead>
@@ -490,6 +594,7 @@ function renderTimetableGrid() {
           html += `<span class="tt-free-pill">— Free Period —</span>`;
         } else {
           const badgeClass = getSubjectBadgeClass(slot.subject);
+          const hasValidStaffId = slot.teacher_id && slot.teacher_id.startsWith('JMV-STF-');
           html += `
             <div class="tt-subject-badge ${badgeClass} shadow-xs">
               ${escapeHtml(slot.subject)}
@@ -497,7 +602,10 @@ function renderTimetableGrid() {
             ${slot.teacher ? `
               <div class="tt-teacher-pill">
                 ${icon('users')}
-                <span>${escapeHtml(slot.teacher)}</span>
+                ${hasValidStaffId
+                  ? `<button onclick="lookupFromTable('${escapeHtml(slot.teacher_id)}')" class="hover:text-[#800020] hover:underline text-left cursor-pointer" title="View Staff Profile (${escapeHtml(slot.teacher_id)})">${escapeHtml(slot.teacher)}</button>`
+                  : `<span>${escapeHtml(slot.teacher)}</span>`
+                }
               </div>
             ` : ''}
           `;
@@ -516,14 +624,29 @@ function renderTimetableGrid() {
     const tObj = (data.teachers && data.teachers[tKey]) ? data.teachers[tKey] : {};
     const schedule = tObj.schedule || {};
     const load = tObj.teaching_load || 0;
+    const staffId = tObj.staff_id || '';
+    const formClass = tObj.form_class || '';
+    const subjectsList = (tObj.subjects_taught || []).join(', ');
 
     // Update sheet header & badges
     const titleEl = document.getElementById('ttSheetTitle');
     const subtitleEl = document.getElementById('ttSheetSubtitle');
     const loadBadge = document.getElementById('ttTeacherLoadText');
-    if (titleEl) titleEl.textContent = `${tKey} — Teaching Timetable`;
-    if (subtitleEl) subtitleEl.textContent = `Weekly Load: ${load} Teaching Periods`;
-    if (loadBadge) loadBadge.textContent = `Teaching Load: ${load} Periods / Week`;
+    if (titleEl) {
+      titleEl.textContent = `${tKey}${staffId ? ` (${staffId})` : ''} — Teaching Timetable`;
+    }
+    if (subtitleEl) {
+      const parts = [`Weekly Load: ${load} / 40 Periods`];
+      if (formClass) parts.push(`Form Teacher: Grade ${formClass}`);
+      if (subjectsList) parts.push(`Subjects: ${subjectsList}`);
+      subtitleEl.textContent = parts.join(' • ');
+    }
+    if (loadBadge) {
+      loadBadge.innerHTML = `
+        <span>Teaching Load: ${load} Periods/Wk</span>
+        ${staffId ? `<button onclick="lookupFromTable('${escapeHtml(staffId)}')" class="ml-2 px-2 py-0.5 bg-[#800020] text-white rounded text-[10px] font-extrabold uppercase hover:bg-[#5c0d1b] cursor-pointer" title="Open Full Staff Profile">View Staff Profile</button>` : ''}
+      `;
+    }
 
     let html = `
       <thead>
@@ -566,7 +689,7 @@ function renderTimetableGrid() {
           const badgeClass = getSubjectBadgeClass(slot.subject);
           html += `
             <div class="mb-1">
-              <span class="tt-class-pill shadow-xs">${escapeHtml(slot.class_name)}</span>
+              <button onclick="openClassInTimetableTab('${escapeHtml(slot.class_name)}')" class="tt-class-pill shadow-xs hover:bg-[#5c0d1b] cursor-pointer" title="View Class Timetable">Grade ${escapeHtml(slot.class_name)}</button>
             </div>
             <div class="tt-subject-badge ${badgeClass}">
               ${escapeHtml(slot.subject)}
@@ -934,7 +1057,10 @@ async function executeLookup(queryId) {
   }
 
   try {
-    const res = await fetch(`/api/lookup?id=${encodeURIComponent(queryId)}`, { headers: getAuthHeaders() });
+    const [, res] = await Promise.all([
+      ensureTimetableDataLoaded(),
+      fetch(`/api/lookup?id=${encodeURIComponent(queryId)}`, { headers: getAuthHeaders() })
+    ]);
     const data = await res.json();
 
     if (loadingEl) loadingEl.classList.add('hidden');
@@ -1221,6 +1347,131 @@ function renderDossierSubjects(item) {
   }
 }
 
+function renderStaffDossierTimetable(item, ttProfile) {
+  if (!ttProfile || !ttProfile.schedule) {
+    return `
+      <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-2">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+          <h4 class="font-extrabold text-[#800020] text-sm uppercase flex items-center gap-2">
+            ${icon('calendar')} Personal Teaching Timetable (2026)
+          </h4>
+          <button onclick="switchTab('timetable')" class="px-3 py-1 bg-white border border-slate-300 hover:border-[#800020] text-slate-700 hover:text-[#800020] text-xs font-bold uppercase rounded shadow-xs cursor-pointer">
+            View School Timetable
+          </button>
+        </div>
+        <p class="text-xs text-slate-500 py-2">
+          No individual Secondary Section (Grades 6–13) timetable grid is assigned to this profile (${escapeHtml(item.role || 'Staff')}).
+        </p>
+      </div>
+    `;
+  }
+
+  const days = AppState.timetableData?.days || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+  const times = AppState.timetableData?.period_times || [
+    "07:50 - 08:30", "08:30 - 09:10", "09:10 - 09:50", "09:50 - 10:30",
+    "10:50 - 11:30", "11:30 - 12:10", "12:10 - 12:50", "12:50 - 13:30"
+  ];
+  const load = ttProfile.teaching_load || 0;
+  const freeCount = Math.max(0, 40 - load);
+  const formClass = ttProfile.form_class || '';
+  const tKey = ttProfile.official_name || item.name_with_initials;
+
+  let rowsHtml = '';
+  for (let p = 1; p <= 8; p++) {
+    if (p === 5) {
+      rowsHtml += `
+        <tr class="bg-amber-100/80 border-y border-[#d4af37] text-[#5c0d1b]">
+          <td colspan="6" class="py-1.5 px-3 text-center font-extrabold uppercase tracking-wide text-[11px]">
+            ☕ Morning Interval (10:30 AM – 10:50 AM) • උදෑසන විවේක කාලය
+          </td>
+        </tr>
+      `;
+    }
+    const pTime = times[p - 1] || '';
+    rowsHtml += `
+      <tr class="hover:bg-slate-50/80 transition-colors">
+        <td class="p-2 text-center font-mono bg-slate-50 border-r border-slate-200 whitespace-nowrap">
+          <div class="font-extrabold text-slate-800 text-[11px]">Period ${p}</div>
+          <div class="text-[10px] text-slate-500">${pTime}</div>
+        </td>
+    `;
+    for (const d of days) {
+      const daySlots = ttProfile.schedule[d] || [];
+      const slot = daySlots.find(s => s.period === p) || { is_free: true };
+      if (slot.is_free) {
+        rowsHtml += `
+          <td class="p-2 border-r border-slate-200 text-center align-middle">
+            <span class="text-[10px] text-slate-300 font-semibold italic">— Free —</span>
+          </td>
+        `;
+      } else {
+        const badgeClass = getSubjectBadgeClass(slot.subject);
+        rowsHtml += `
+          <td class="p-2 border-r border-slate-200 align-top">
+            <div class="mb-1">
+              <button onclick="openClassInTimetableTab('${escapeHtml(slot.class_name)}')" class="tt-class-pill shadow-xs hover:bg-[#5c0d1b] cursor-pointer text-[10px]" title="Open Grade ${escapeHtml(slot.class_name)} Timetable">
+                Grade ${escapeHtml(slot.class_name)}
+              </button>
+            </div>
+            <div class="tt-subject-badge ${badgeClass} text-[11px]">
+              ${escapeHtml(slot.subject)}
+            </div>
+          </td>
+        `;
+      }
+    }
+    rowsHtml += `</tr>`;
+  }
+
+  return `
+    <div class="bg-white p-5 rounded-xl border-2 border-[#d4af37]/60 shadow-sm space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+        <div>
+          <h4 class="font-extrabold text-[#800020] text-sm uppercase flex items-center gap-2">
+            ${icon('calendar')} Personal Teaching Timetable (2026 Official Schedule)
+          </h4>
+          <p class="text-xs text-slate-500 mt-0.5">
+            Identified from WP/KE/Jayakody Maha Vidyalaya 2026 Master Timetable (${escapeHtml(ttProfile.timetable_name || tKey)})
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          ${formClass ? `
+            <button onclick="openClassInTimetableTab('${escapeHtml(formClass)}')" class="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-amber-100 text-[#5c0d1b] border border-[#d4af37] hover:bg-amber-200 cursor-pointer">
+              Form Teacher: Grade ${escapeHtml(formClass)}
+            </button>
+          ` : ''}
+          <span class="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-[#fdf2f4] text-[#800020] border border-rose-200">
+            ${load} / 40 Periods/Wk (${freeCount} Free)
+          </span>
+          <button onclick="openStaffInTimetableTab('${escapeHtml(item.id)}', '${escapeHtml(tKey)}')" class="px-3 py-1 bg-[#800020] hover:bg-[#5c0d1b] text-white text-xs font-bold uppercase rounded-lg shadow cursor-pointer flex items-center gap-1">
+            ${icon('calendar')} Full Timetable &amp; Print
+          </button>
+        </div>
+      </div>
+
+      ${load > 0 ? `
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-[#fdf2f4] text-[#38050b] font-extrabold uppercase text-[11px] border-b-2 border-[#d4af37]">
+                <th class="p-2.5 w-28 border-r border-slate-200 text-center">Period</th>
+                ${days.map(d => `<th class="p-2.5 border-r border-slate-200 text-[#800020]">${d}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              ${rowsHtml}
+            </tbody>
+          </table>
+        </div>
+      ` : `
+        <div class="bg-amber-50/70 border border-amber-200 rounded-lg p-4 text-xs text-amber-900">
+          This faculty member is listed in the 2026 Timetable Registry (${escapeHtml(ttProfile.timetable_name || tKey)}) with administrative/special duties and 0 regular classroom periods currently assigned.
+        </div>
+      `}
+    </div>
+  `;
+}
+
 function renderDossier(item, type) {
   const dossierArea = document.getElementById('idCardDossierView');
   if (!dossierArea) return;
@@ -1228,6 +1479,23 @@ function renderDossier(item, type) {
   const isStudent = type === 'student';
   const recordKey = isStudent ? item.admission_no : item.id;
   const avatarUrl = item.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name_with_initials)}&background=5c0d1b&color=fff&size=200`;
+  const ttProfile = !isStudent ? findStaffTimetableProfile(item) : null;
+
+  const staffDept = !isStudent ? (item.department && item.department !== 'None' ? item.department : (ttProfile?.department || 'General Academic Faculty')) : '';
+  const staffSubjectsArr = !isStudent
+    ? (item.subjects_taught && item.subjects_taught !== 'None'
+        ? item.subjects_taught.split(',').map(s => s.trim()).filter(Boolean)
+        : (ttProfile?.subjects_taught || []))
+    : [];
+  const staffClassesArr = !isStudent
+    ? (ttProfile?.assigned_classes?.length
+        ? ttProfile.assigned_classes
+        : (item.assigned_classes && item.assigned_classes !== 'None'
+            ? item.assigned_classes.split(',').map(c => c.trim()).filter(Boolean)
+            : []))
+    : [];
+  const staffFormClass = ttProfile?.form_class || '';
+  const staffTeachingLoad = ttProfile ? ttProfile.teaching_load : null;
 
   const editBtn = document.getElementById('editResultBtn');
   const u = AppState.currentUser;
@@ -1384,9 +1652,23 @@ function renderDossier(item, type) {
   ` : `
     <!-- Staff Service Details -->
     <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-3">
-      <h4 class="font-extrabold text-[#800020] text-sm uppercase border-b border-slate-200 pb-2 flex items-center gap-2">
-        ${icon('building')} Executive &amp; Institutional Service Details
-      </h4>
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
+        <h4 class="font-extrabold text-[#800020] text-sm uppercase flex items-center gap-2">
+          ${icon('building')} Executive &amp; Institutional Service Details
+        </h4>
+        <div class="flex flex-wrap items-center gap-1.5">
+          ${staffFormClass ? `
+            <span class="px-2.5 py-0.5 rounded text-[11px] font-extrabold bg-amber-100 text-[#5c0d1b] border border-[#d4af37]">
+              Form Teacher: Grade ${escapeHtml(staffFormClass)}
+            </span>
+          ` : ''}
+          ${staffTeachingLoad !== null ? `
+            <span class="px-2.5 py-0.5 rounded text-[11px] font-extrabold bg-[#fdf2f4] text-[#800020] border border-rose-200">
+              ${staffTeachingLoad} / 40 Periods/Wk
+            </span>
+          ` : ''}
+        </div>
+      </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
         <div>
           <span class="block uppercase font-bold text-slate-400">Faculty Member ID</span>
@@ -1402,19 +1684,34 @@ function renderDossier(item, type) {
         </div>
         <div>
           <span class="block uppercase font-bold text-slate-400">Department</span>
-          <span class="font-bold text-slate-800">${escapeHtml(item.department || '—')}</span>
+          <span class="font-bold text-slate-800">${escapeHtml(staffDept || '—')}</span>
         </div>
-        <div>
-          <span class="block uppercase font-bold text-slate-400">Subjects Taught</span>
-          <span class="font-bold text-slate-800">${escapeHtml(item.subjects_taught || 'General Administration')}</span>
+        <div class="sm:col-span-2">
+          <span class="block uppercase font-bold text-slate-400 mb-1">Subjects Taught</span>
+          <div class="flex flex-wrap gap-1.5">
+            ${staffSubjectsArr.length
+              ? staffSubjectsArr.map(subj => `<span class="px-2 py-0.5 rounded border text-[11px] font-extrabold ${getSubjectBadgeClass(subj)}">${escapeHtml(subj)}</span>`).join('')
+              : `<span class="font-bold text-slate-700">${escapeHtml(item.subjects_taught || 'General Administration')}</span>`
+            }
+          </div>
         </div>
-        <div>
-          <span class="block uppercase font-bold text-slate-400">Assigned Classes</span>
-          <span class="font-bold text-slate-800">${escapeHtml(item.assigned_classes || 'N/A')}</span>
+        <div class="sm:col-span-2">
+          <span class="block uppercase font-bold text-slate-400 mb-1">Assigned Classes</span>
+          <div class="flex flex-wrap gap-1.5">
+            ${staffFormClass ? `
+              <button onclick="openClassInTimetableTab('${escapeHtml(staffFormClass)}')" class="px-2 py-0.5 rounded text-[11px] font-extrabold bg-amber-100 text-[#5c0d1b] border border-[#d4af37] hover:bg-amber-200 cursor-pointer" title="View Grade ${escapeHtml(staffFormClass)} Timetable">
+                ★ Class Teacher (${escapeHtml(staffFormClass)})
+              </button>
+            ` : ''}
+            ${staffClassesArr.length
+              ? staffClassesArr.map(cls => `<button onclick="openClassInTimetableTab('${escapeHtml(cls)}')" class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-200 hover:bg-[#800020] hover:text-white text-slate-800 transition-colors cursor-pointer" title="View Grade ${escapeHtml(cls)} Timetable">Grade ${escapeHtml(cls)}</button>`).join('')
+              : `<span class="font-bold text-slate-700">${escapeHtml(item.assigned_classes || 'N/A')}</span>`
+            }
+          </div>
         </div>
         <div>
           <span class="block uppercase font-bold text-slate-400">Appointment Date</span>
-          <span class="font-bold text-slate-800">${escapeHtml(item.appointed_date)}</span>
+          <span class="font-bold text-slate-800">${escapeHtml(item.appointed_date || '—')}</span>
         </div>
         <div>
           <span class="block uppercase font-bold text-slate-400">Status</span>
@@ -1422,6 +1719,9 @@ function renderDossier(item, type) {
         </div>
       </div>
     </div>
+
+    <!-- Personal Weekly Teaching Timetable (2026) -->
+    ${renderStaffDossierTimetable(item, ttProfile)}
 
     <!-- Credentials -->
     <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-3">
@@ -1431,7 +1731,7 @@ function renderDossier(item, type) {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
         <div>
           <span class="block uppercase font-bold text-slate-400">Qualifications</span>
-          <span class="font-bold text-slate-800">${escapeHtml(item.qualifications)}</span>
+          <span class="font-bold text-slate-800">${escapeHtml(item.qualifications || '—')}</span>
         </div>
         <div>
           <span class="block uppercase font-bold text-slate-400">National ID (NIC)</span>
@@ -1472,13 +1772,26 @@ function renderDossier(item, type) {
         <div class="bg-[#fdf2f4] text-[#800020] font-mono font-extrabold py-1 px-3 rounded text-sm inline-block">
           ${escapeHtml(recordKey)}
         </div>
+        ${!isStudent && ttProfile ? `
+          <div class="flex flex-wrap justify-center gap-1.5 pt-1">
+            ${staffFormClass ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-100 text-[#5c0d1b] border border-[#d4af37]">Class Teacher: ${escapeHtml(staffFormClass)}</span>` : ''}
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-blue-100 text-blue-900 border border-blue-200">${ttProfile.teaching_load} Periods/Wk</span>
+          </div>
+        ` : ''}
         <div class="space-y-2 pt-2">
-          <button onclick="copyIdToClipboard('${recordKey}')" class="w-full py-2 px-3 border border-slate-300 rounded-lg text-xs font-bold text-slate-700 hover:bg-white shadow-sm transition-all">
+          <button onclick="copyIdToClipboard('${recordKey}')" class="w-full py-2 px-3 border border-slate-300 rounded-lg text-xs font-bold text-slate-700 hover:bg-white shadow-sm transition-all cursor-pointer">
             ${icon('clipboard')} ${isStudent ? 'Copy Admission No' : 'Copy ID'}
           </button>
-          <button onclick="openEditModal('${recordKey}', '${type}')" class="w-full py-2 px-3 bg-[#800020] hover:bg-[#5c0d1b] text-white rounded-lg text-xs font-bold uppercase shadow transition-all">
-            ${icon('edit')} Edit Record
-          </button>
+          ${!isStudent && ttProfile ? `
+            <button onclick="openStaffInTimetableTab('${escapeHtml(item.id)}', '${escapeHtml(ttProfile.official_name || item.name_with_initials)}')" class="w-full py-2 px-3 bg-amber-50 hover:bg-amber-100 text-[#5c0d1b] border border-[#d4af37] rounded-lg text-xs font-extrabold uppercase shadow-xs transition-all cursor-pointer">
+              ${icon('calendar')} Open Full Timetable
+            </button>
+          ` : ''}
+          ${!isTeacher ? `
+            <button onclick="openEditModal('${recordKey}', '${type}')" class="w-full py-2 px-3 bg-[#800020] hover:bg-[#5c0d1b] text-white rounded-lg text-xs font-bold uppercase shadow transition-all cursor-pointer">
+              ${icon('edit')} Edit Record
+            </button>
+          ` : ''}
         </div>
       </div>
 
@@ -1764,7 +2077,10 @@ async function loadStaff() {
   if (dept) params.append('department', dept);
 
   try {
-    const res = await fetch(`/api/staff?${params.toString()}`, { headers: getAuthHeaders() });
+    const [, res] = await Promise.all([
+      ensureTimetableDataLoaded(),
+      fetch(`/api/staff?${params.toString()}`, { headers: getAuthHeaders() })
+    ]);
     if (res.status === 403) {
       if (banner) banner.classList.remove('hidden');
       if (container) container.classList.add('hidden');
@@ -1859,10 +2175,20 @@ function renderStaffTable(staff) {
     return;
   }
 
-  tbody.innerHTML = staff.map(st => `
+  tbody.innerHTML = staff.map(st => {
+    const ttProf = findStaffTimetableProfile(st);
+    const deptText = (st.department && st.department !== 'None') ? st.department : (ttProf?.department || '—');
+    const subjText = (st.subjects_taught && st.subjects_taught !== 'None')
+      ? st.subjects_taught
+      : (ttProf?.subjects_taught?.length ? ttProf.subjects_taught.join(', ') : 'General Administration');
+    const formCls = ttProf?.form_class || '';
+    const loadVal = ttProf ? ttProf.teaching_load : null;
+    const tKey = ttProf?.official_name || st.name_with_initials;
+
+    return `
     <tr class="hover:bg-slate-50 transition-colors">
       <td class="p-3.5 font-mono font-bold text-[#800020]">
-        <button onclick="lookupFromTable('${st.id}')" class="bg-slate-100 hover:bg-[#800020] hover:text-white px-2 py-0.5 rounded transition-colors cursor-pointer" title="View profile">
+        <button onclick="lookupFromTable('${st.id}')" class="bg-slate-100 hover:bg-[#800020] hover:text-white px-2 py-0.5 rounded transition-colors cursor-pointer" title="View profile &amp; timetable">
           ${escapeHtml(st.id)}
         </button>
       </td>
@@ -1871,12 +2197,18 @@ function renderStaffTable(staff) {
           <img src="${st.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(st.name_with_initials)}&background=5c0d1b&color=fff`}" class="w-8 h-8 rounded-full object-cover border border-[#d4af37]" alt="${st.name_with_initials}">
           <div>
             <div class="font-bold text-slate-800">${escapeHtml(st.name_with_initials)}</div>
-            <div class="text-[11px] text-[#800020] font-semibold">${escapeHtml(st.role)}</div>
+            <div class="text-[11px] text-[#800020] font-semibold flex flex-wrap items-center gap-1.5">
+              <span>${escapeHtml(st.role)}</span>
+              ${formCls ? `<span class="px-1.5 py-0.2 bg-amber-100 text-[#5c0d1b] border border-[#d4af37] rounded text-[10px] font-extrabold">Form: ${escapeHtml(formCls)}</span>` : ''}
+            </div>
           </div>
         </div>
       </td>
-      <td class="p-3.5 text-xs text-slate-700">${escapeHtml(st.department || '—')}</td>
-      <td class="p-3.5 text-xs text-slate-600">${escapeHtml(st.subjects_taught || 'General Administration')}</td>
+      <td class="p-3.5 text-xs text-slate-700">${escapeHtml(deptText)}</td>
+      <td class="p-3.5 text-xs text-slate-600">
+        <div class="font-semibold text-slate-800">${escapeHtml(subjText)}</div>
+        ${loadVal !== null ? `<div class="text-[10px] text-[#800020] font-bold mt-0.5">${loadVal} periods/wk</div>` : ''}
+      </td>
       <td class="p-3.5 text-xs whitespace-nowrap">
         ${st.dob ? `
           <div class="font-bold text-slate-800">${escapeHtml(st.dob)}</div>
@@ -1894,9 +2226,14 @@ function renderStaffTable(staff) {
       </td>
       <td class="p-3.5">
         <div class="flex items-center gap-1.5">
-          <button class="p-1.5 bg-slate-100 hover:bg-[#800020] hover:text-white rounded transition-colors cursor-pointer" title="View Profile" onclick="lookupFromTable('${st.id}')">
+          <button class="p-1.5 bg-slate-100 hover:bg-[#800020] hover:text-white rounded transition-colors cursor-pointer" title="View Staff Profile &amp; Timetable" onclick="lookupFromTable('${st.id}')">
             ${icon('search')}
           </button>
+          ${ttProf ? `
+          <button class="p-1.5 bg-amber-50 hover:bg-[#800020] hover:text-white text-[#800020] border border-amber-300 rounded transition-colors cursor-pointer" title="Open Teacher Schedule in Timetable Tab" onclick="openStaffInTimetableTab('${escapeHtml(st.id)}', '${escapeHtml(tKey)}')">
+            ${icon('calendar')}
+          </button>
+          ` : ''}
           <button class="p-1.5 bg-slate-100 hover:bg-[#800020] hover:text-white rounded transition-colors cursor-pointer" title="Edit Staff" onclick="openEditModal('${st.id}', 'staff')">
             ${icon('edit')}
           </button>
@@ -1906,7 +2243,7 @@ function renderStaffTable(staff) {
         </div>
       </td>
     </tr>
-  `).join('');
+  `}).join('');
 }
 
 function lookupFromTable(id) {
@@ -2651,9 +2988,13 @@ async function openEditModal(id, type) {
       return;
     }
 
-    const res = await fetch(`/api/staff/${encodeURIComponent(id)}`, { headers: getAuthHeaders() });
+    const [, res] = await Promise.all([
+      ensureTimetableDataLoaded(),
+      fetch(`/api/staff/${encodeURIComponent(id)}`, { headers: getAuthHeaders() })
+    ]);
     const st = await res.json();
     if (!res.ok) return showToast("Could not retrieve staff details", "error");
+    const ttProf = findStaffTimetableProfile(st);
 
     document.getElementById('staffModalTitle').textContent = `Edit Faculty Member: ${st.id}`;
     document.getElementById('staffFormMode').value = 'edit';
@@ -2669,11 +3010,11 @@ async function openEditModal(id, type) {
     }
     if (document.getElementById('staffNicInput')) document.getElementById('staffNicInput').value = st.nic || '';
     document.getElementById('staffRoleInput').value = st.role || '';
-    document.getElementById('staffDeptInput').value = st.department || '';
+    document.getElementById('staffDeptInput').value = (st.department && st.department !== 'None') ? st.department : (ttProf?.department || '');
     if (document.getElementById('staffAppointedDateInput')) document.getElementById('staffAppointedDateInput').value = st.appointed_date || '';
     if (document.getElementById('staffStatusInput')) document.getElementById('staffStatusInput').value = st.status || 'Active';
-    document.getElementById('staffSubjectsInput').value = st.subjects_taught || '';
-    document.getElementById('staffClassesInput').value = st.assigned_classes || '';
+    document.getElementById('staffSubjectsInput').value = (st.subjects_taught && st.subjects_taught !== 'None') ? st.subjects_taught : (ttProf?.subjects_taught?.join(', ') || '');
+    document.getElementById('staffClassesInput').value = (st.assigned_classes && st.assigned_classes !== 'None') ? st.assigned_classes : (ttProf?.assigned_classes?.join(', ') || '');
     document.getElementById('staffQualInput').value = st.qualifications || '';
     document.getElementById('staffContactInput').value = st.contact_no || '';
     document.getElementById('staffEmailInput').value = st.email || '';

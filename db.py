@@ -228,7 +228,7 @@ def init_mariadb_schema(conn):
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             UNIQUE KEY uq_class_slot (class_name, day_of_week, period_no),
-            UNIQUE KEY uq_teacher_slot (teacher_id, day_of_week, period_no)
+            INDEX idx_teacher_slot (teacher_id, day_of_week, period_no)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         """)
 
@@ -429,11 +429,11 @@ def _migrate_existing_mariadb_schema(cur):
             "ALTER TABLE school_timetable ADD UNIQUE KEY "
             "uq_class_slot (class_name, day_of_week, period_no)"
         )
-    if "uq_teacher_slot" not in timetable_indexes:
-        cur.execute(
-            "ALTER TABLE school_timetable ADD UNIQUE KEY "
-            "uq_teacher_slot (teacher_id, day_of_week, period_no)"
-        )
+    if "uq_teacher_slot" in timetable_indexes:
+        try:
+            cur.execute("ALTER TABLE school_timetable DROP INDEX uq_teacher_slot")
+        except Exception:
+            pass
 
     try:
         cur.execute("SHOW COLUMNS FROM staff")
@@ -477,39 +477,94 @@ def _migrate_existing_mariadb_schema(cur):
     except Exception:
         pass
 
-    # Seed timetable if empty in MariaDB
+    # Seed timetable and enrich staff profiles in MariaDB from timetable_2026.json
     try:
-        cur.execute("SELECT COUNT(*) as n FROM school_timetable")
-        tt_cnt = cur.fetchone()
-        cnt = (tt_cnt["n"] if isinstance(tt_cnt, dict) else tt_cnt[0]) if tt_cnt else 0
-        if cnt < 50:
-            json_path = os.path.join(BASE_DIR, "static", "data", "timetable_2026.json")
-            if os.path.exists(json_path):
-                import json
-                with open(json_path, "r", encoding="utf-8") as f:
-                    tt_data = json.load(f)
+        json_path = os.path.join(BASE_DIR, "static", "data", "timetable_2026.json")
+        if os.path.exists(json_path):
+            import json
+            with open(json_path, "r", encoding="utf-8") as f:
+                tt_data = json.load(f)
+
+            # Enrich matched staff members with subjects_taught, assigned_classes, department, and form_class
+            staff_tt = tt_data.get("staff_timetables", {})
+            cur.execute("SELECT COUNT(*) as n FROM staff WHERE subjects_taught IS NOT NULL AND subjects_taught != '' AND subjects_taught != 'None'")
+            enriched_row = cur.fetchone()
+            enriched_cnt = (enriched_row["n"] if isinstance(enriched_row, dict) else enriched_row[0]) if enriched_row else 0
+            if enriched_cnt < 40:
+                staff_dir = tt_data.get("all_staff_directory", [])
+                if staff_dir:
+                    cur.executemany(
+                        """
+                        INSERT IGNORE INTO staff
+                        (id, epf_no, full_name, name_with_initials, gender, dob, role, department,
+                         subjects_taught, qualifications, appointed_date, contact_no, email, address,
+                         nic, status, assigned_classes, photo_url, notes)
+                        VALUES (%s, NULL, %s, %s, %s, '', %s, '', '', '', NULL, '', '', '', '', 'Active', '', '', '')
+                        """,
+                        [
+                            (s_entry["id"], s_entry["name"], s_entry["name"], s_entry.get("gender", "Female"), s_entry.get("role", "Graduate Teacher"))
+                            for s_entry in staff_dir
+                        ]
+                    )
+                update_params = []
+                for sid, prof in staff_tt.items():
+                    subjects_str = ", ".join(prof.get("subjects_taught", []))
+                    classes_list = list(prof.get("assigned_classes", []))
+                    if prof.get("form_class"):
+                        fc = f"Form Teacher ({prof['form_class']})"
+                        if fc not in classes_list:
+                            classes_list.insert(0, fc)
+                    classes_str = ", ".join(classes_list)
+                    dept_str = prof.get("department", "")
+                    load_note = (
+                        f"2026 Timetable: {prof.get('teaching_load', 0)} periods/week."
+                        + (f" Form Teacher of Grade {prof['form_class']}." if prof.get("form_class") else "")
+                    )
+                    update_params.append((subjects_str, classes_str, dept_str, load_note, sid))
+                if update_params:
+                    cur.executemany(
+                        """
+                        UPDATE staff
+                        SET subjects_taught = CASE WHEN subjects_taught IS NULL OR subjects_taught = '' OR subjects_taught = 'None' THEN %s ELSE subjects_taught END,
+                            assigned_classes = CASE WHEN assigned_classes IS NULL OR assigned_classes = '' OR assigned_classes = 'None' THEN %s ELSE assigned_classes END,
+                            department = CASE WHEN department IS NULL OR department = '' OR department = 'None' THEN %s ELSE department END,
+                            notes = CASE WHEN notes IS NULL OR notes = '' OR notes = 'None' THEN %s ELSE notes END
+                        WHERE id = %s
+                        """,
+                        update_params
+                    )
+
+            cur.execute("SELECT COUNT(*) as n FROM school_timetable")
+            tt_cnt = cur.fetchone()
+            cnt = (tt_cnt["n"] if isinstance(tt_cnt, dict) else tt_cnt[0]) if tt_cnt else 0
+            if cnt < 850:
                 classes = tt_data.get("classes", {})
+                tt_params = []
                 for cls_name, cls_obj in classes.items():
                     for day_name, p_slots in cls_obj.get("schedule", {}).items():
                         for slot in p_slots:
                             if slot.get("subject") and slot["subject"] != "Free Period":
                                 slot_id = f"TT-{cls_name.replace(' ', '')}-{day_name[:3].upper()}-P{slot['period']}"
-                                cur.execute("""
-                                    INSERT INTO school_timetable
-                                    (id, class_name, day_of_week, period_no, subject, teacher_id, teacher_name)
-                                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                                    ON DUPLICATE KEY UPDATE
-                                    subject=VALUES(subject), teacher_id=VALUES(teacher_id), teacher_name=VALUES(teacher_name)
-                                """, (
+                                t_id = (slot.get("teacher_id") or slot.get("teacher") or "FACULTY")[:32]
+                                t_name = (slot.get("teacher") or "Faculty Member")[:150]
+                                tt_params.append((
                                     slot_id,
                                     cls_name,
                                     day_name,
                                     slot["period"],
-                                    slot["subject"],
-                                    slot.get("teacher", "Faculty Member"),
-                                    slot.get("teacher", "Faculty Member")
+                                    slot["subject"][:100],
+                                    t_id,
+                                    t_name
                                 ))
-                conn.commit()
+                if tt_params:
+                    cur.executemany("""
+                        INSERT INTO school_timetable
+                        (id, class_name, day_of_week, period_no, subject, teacher_id, teacher_name)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)
+                        ON DUPLICATE KEY UPDATE
+                        subject=VALUES(subject), teacher_id=VALUES(teacher_id), teacher_name=VALUES(teacher_name)
+                    """, tt_params)
+            conn.commit()
     except Exception as e:
         print(f"[MARIADB TIMETABLE SEED ERROR] {e}")
 
@@ -632,8 +687,7 @@ def init_sqlite_schema(conn):
         teacher_name TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE (class_name, day_of_week, period_no),
-        UNIQUE (teacher_id, day_of_week, period_no)
+        UNIQUE (class_name, day_of_week, period_no)
     );
     """)
 
@@ -723,23 +777,66 @@ def init_sqlite_schema(conn):
             s_row
         )
 
-    # Seed timetable if empty
+    # Seed timetable and enrich staff profiles if needed
     try:
-        cur.execute("SELECT COUNT(*) as n FROM school_timetable")
-        tt_cnt = cur.fetchone()
-        cnt = tt_cnt[0] if tt_cnt else 0
-        if cnt < 50:
-            json_path = os.path.join(BASE_DIR, "static", "data", "timetable_2026.json")
-            if os.path.exists(json_path):
-                import json
-                with open(json_path, "r", encoding="utf-8") as f:
-                    tt_data = json.load(f)
+        json_path = os.path.join(BASE_DIR, "static", "data", "timetable_2026.json")
+        if os.path.exists(json_path):
+            import json
+            with open(json_path, "r", encoding="utf-8") as f:
+                tt_data = json.load(f)
+
+            staff_tt = tt_data.get("staff_timetables", {})
+            cur.execute("SELECT COUNT(*) FROM staff")
+            stf_cnt = cur.fetchone()[0]
+            if stf_cnt == 0:
+                for s_entry in tt_data.get("all_staff_directory", []):
+                    cur.execute(
+                        """
+                        INSERT OR IGNORE INTO staff
+                        (id, epf_no, full_name, name_with_initials, gender, dob, role, department,
+                         subjects_taught, qualifications, appointed_date, contact_no, email, address,
+                         nic, status, assigned_classes, photo_url, notes)
+                        VALUES (?, NULL, ?, ?, ?, '', ?, '', '', '', NULL, '', '', '', '', 'Active', '', '', '')
+                        """,
+                        (s_entry["id"], s_entry["name"], s_entry["name"], s_entry.get("gender", "Female"), s_entry.get("role", "Graduate Teacher"))
+                    )
+            for sid, prof in staff_tt.items():
+                subjects_str = ", ".join(prof.get("subjects_taught", []))
+                classes_list = list(prof.get("assigned_classes", []))
+                if prof.get("form_class"):
+                    fc = f"Form Teacher ({prof['form_class']})"
+                    if fc not in classes_list:
+                        classes_list.insert(0, fc)
+                classes_str = ", ".join(classes_list)
+                dept_str = prof.get("department", "")
+                load_note = (
+                    f"2026 Timetable: {prof.get('teaching_load', 0)} periods/week."
+                    + (f" Form Teacher of Grade {prof['form_class']}." if prof.get("form_class") else "")
+                )
+                cur.execute(
+                    """
+                    UPDATE staff
+                    SET subjects_taught = CASE WHEN subjects_taught IS NULL OR subjects_taught = '' OR subjects_taught = 'None' THEN ? ELSE subjects_taught END,
+                        assigned_classes = CASE WHEN assigned_classes IS NULL OR assigned_classes = '' OR assigned_classes = 'None' THEN ? ELSE assigned_classes END,
+                        department = CASE WHEN department IS NULL OR department = '' OR department = 'None' THEN ? ELSE department END,
+                        notes = CASE WHEN notes IS NULL OR notes = '' OR notes = 'None' THEN ? ELSE notes END
+                    WHERE id = ?
+                    """,
+                    (subjects_str, classes_str, dept_str, load_note, sid)
+                )
+
+            cur.execute("SELECT COUNT(*) as n FROM school_timetable")
+            tt_cnt = cur.fetchone()
+            cnt = tt_cnt[0] if tt_cnt else 0
+            if cnt < 850:
                 classes = tt_data.get("classes", {})
                 for cls_name, cls_obj in classes.items():
                     for day_name, p_slots in cls_obj.get("schedule", {}).items():
                         for slot in p_slots:
                             if slot.get("subject") and slot["subject"] != "Free Period":
                                 slot_id = f"TT-{cls_name.replace(' ', '')}-{day_name[:3].upper()}-P{slot['period']}"
+                                t_id = (slot.get("teacher_id") or slot.get("teacher") or "FACULTY")[:32]
+                                t_name = (slot.get("teacher") or "Faculty Member")[:150]
                                 cur.execute("""
                                     INSERT OR REPLACE INTO school_timetable
                                     (id, class_name, day_of_week, period_no, subject, teacher_id, teacher_name)
@@ -749,9 +846,9 @@ def init_sqlite_schema(conn):
                                     cls_name,
                                     day_name,
                                     slot["period"],
-                                    slot["subject"],
-                                    slot.get("teacher", "Faculty Member"),
-                                    slot.get("teacher", "Faculty Member")
+                                    slot["subject"][:100],
+                                    t_id,
+                                    t_name
                                 ))
     except Exception as e:
         print(f"[TIMETABLE SEED ERROR] {e}")
