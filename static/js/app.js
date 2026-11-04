@@ -1957,9 +1957,17 @@ async function loadStudents() {
 
   try {
     const res = await fetch(`/api/students?${params.toString()}`, { headers: getAuthHeaders() });
+    if (!res.ok) return;
     const students = await res.json();
-    AppState.studentsList = students;
-    renderStudentsTable(students);
+    if (Array.isArray(students)) {
+      AppState.studentsList = students;
+      renderStudentsTable(students);
+      if (!search && !grade && !house) {
+        const activeStuCount = students.filter(s => ((s.status || 'Active').trim().toLowerCase() === 'active')).length;
+        const stripStu = document.getElementById('stripStudents');
+        if (stripStu) stripStu.textContent = String(activeStuCount);
+      }
+    }
   } catch (err) {
     console.error("Failed to load students:", err);
   }
@@ -2090,8 +2098,27 @@ async function loadStaff() {
     if (container) container.classList.remove('hidden');
 
     const staff = await res.json();
-    AppState.staffList = staff;
-    renderStaffTable(staff);
+    if (Array.isArray(staff)) {
+      AppState.staffList = staff;
+      renderStaffTable(staff);
+      if (!search && !dept) {
+        const activeStaff = staff.filter(st => ((st.status || 'Active').trim().toLowerCase() === 'active'));
+        const nonAcadCount = activeStaff.filter(st => {
+          const r = (st.role || '').toLowerCase();
+          const d = (st.department || '').toLowerCase();
+          return r.includes('clerk') || r.includes('attendant') || r.includes('driver') ||
+                 r.includes('security') || r.includes('librarian') || r.includes('laboratory assistant') ||
+                 r.includes('lab assistant') || r.includes('non-academic') || r.includes('watcher') ||
+                 r.includes('office assistant') ||
+                 (d.includes('non-academic') && !r.includes('teacher') && !r.includes('principal'));
+        }).length;
+        const acadCount = Math.max(0, activeStaff.length - nonAcadCount);
+        const stripStf = document.getElementById('stripStaff');
+        const stripNonAcad = document.getElementById('stripNonAcademicStaff');
+        if (stripStf) stripStf.textContent = String(acadCount);
+        if (stripNonAcad) stripNonAcad.textContent = String(nonAcadCount);
+      }
+    }
   } catch (err) {
     console.error("Failed to load staff:", err);
   }
@@ -2270,14 +2297,21 @@ function initDirectoryFilters() {
 /* --------------------------------------------------------------------------
    Analytics / Overview Tab with JMV-Web Houses (Thisara, Mayura, Paravi)
    -------------------------------------------------------------------------- */
-async function loadStats() {
+async function loadStats(retryCount = 2) {
   try {
     const res = await fetch('/api/stats', { headers: getAuthHeaders() });
     if (!res.ok) {
       console.warn("Stats API returned status:", res.status);
+      if (retryCount > 0) {
+        setTimeout(() => loadStats(retryCount - 1), 600);
+      }
       return;
     }
     const stats = await res.json();
+    if (stats.error && retryCount > 0) {
+      setTimeout(() => loadStats(retryCount - 1), 600);
+      return;
+    }
     AppState.stats = stats;
 
     const stripStu = document.getElementById('stripStudents');
