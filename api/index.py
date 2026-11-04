@@ -13,13 +13,6 @@ app = Flask(__name__)
 DB_ERROR = None
 try:
     db.init_db()
-    if os.environ.get("VERCEL"):
-        connected, connection_message = db.check_connection()
-        if not connected:
-            DB_ERROR = (
-                "Vercel requires a reachable MariaDB/MySQL database. "
-                f"Database connection failed: {connection_message}"
-            )
 except Exception as error:
     DB_ERROR = f"Database initialization failed: {error}"
 
@@ -50,9 +43,16 @@ def requires_roles(*roles):
 
 @app.before_request
 def protect_data_routes():
+    global DB_ERROR
     if not request.path.startswith("/api/"):
         return None
-    if DB_ERROR and request.path != "/api/health":
+    if DB_ERROR:
+        try:
+            db.init_db()
+            DB_ERROR = None
+        except Exception as err:
+            DB_ERROR = f"Database initialization failed: {err}"
+    if DB_ERROR and request.path not in {"/api/health", "/api/stats"}:
         return jsonify(error=DB_ERROR, code="DATABASE_UNAVAILABLE"), 503
     public = {"/api/health", "/api/auth/login", "/api/auth/logout", "/api/auth/me", "/api/stats"}
     if request.path in public:
@@ -69,7 +69,10 @@ def protect_data_routes():
 
 @app.get("/api/health")
 def health():
+    global DB_ERROR
     ok, message = db.check_connection()
+    if ok:
+        DB_ERROR = None
     status = db.get_engine_status()
     return jsonify(status="ok" if not DB_ERROR else "error",
                    active_engine=status.get("engine", "sqlite"),

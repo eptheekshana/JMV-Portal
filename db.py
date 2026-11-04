@@ -86,12 +86,25 @@ def _get_mariadb_config():
     }
     return cfg
 
+def _connect_mariadb(retries=3, delay=0.25):
+    import time
+    cfg = _get_mariadb_config()
+    last_err = None
+    for attempt in range(retries):
+        try:
+            return pymysql.connect(**cfg)
+        except Exception as e:
+            last_err = e
+            if attempt < retries - 1:
+                time.sleep(delay * (attempt + 1))
+    raise last_err
+
 def test_mariadb():
     if not pymysql:
         return False, "PyMySQL driver not available"
     try:
         cfg = _get_mariadb_config()
-        conn = pymysql.connect(**cfg)
+        conn = _connect_mariadb()
         with conn.cursor() as cur:
             cur.execute("SELECT VERSION()")
             ver = cur.fetchone()
@@ -117,6 +130,26 @@ def determine_engine():
 # ---------------------------------------------------------------------------
 def init_mariadb_schema(conn):
     with conn.cursor() as cur:
+        # Fast-path check: if all tables, required columns, timetable slots, and staff enrichments already exist, skip heavy DDL
+        try:
+            cur.execute("""
+                SELECT
+                    (SELECT COUNT(*) FROM information_schema.tables
+                     WHERE table_schema = DATABASE()
+                       AND table_name IN ('students','staff','users','student_marks','sessions','school_timetable','subjects','audit_log')) AS tbl_cnt,
+                    (SELECT COUNT(*) FROM information_schema.columns
+                     WHERE table_schema = DATABASE()
+                       AND table_name = 'staff'
+                       AND column_name IN ('dob','address','created_by')) AS stf_cols,
+                    (SELECT COUNT(*) FROM school_timetable) AS tt_cnt,
+                    (SELECT COUNT(*) FROM staff WHERE subjects_taught IS NOT NULL AND subjects_taught != '' AND subjects_taught != 'None') AS stf_tt_cnt
+            """)
+            chk = cur.fetchone()
+            if chk and chk.get("tbl_cnt") == 8 and chk.get("stf_cols") == 3 and chk.get("tt_cnt", 0) >= 850 and chk.get("stf_tt_cnt", 0) >= 45:
+                return
+        except Exception:
+            pass
+
         cur.execute("""
         CREATE TABLE IF NOT EXISTS students (
             id VARCHAR(32) PRIMARY KEY,
@@ -160,6 +193,7 @@ def init_mariadb_schema(conn):
             full_name VARCHAR(255) NOT NULL DEFAULT '',
             name_with_initials VARCHAR(150) NOT NULL,
             gender VARCHAR(16) NOT NULL,
+            dob VARCHAR(32) NOT NULL DEFAULT '',
             role VARCHAR(150) NOT NULL,
             department VARCHAR(150) NOT NULL DEFAULT '',
             subjects_taught VARCHAR(255),
@@ -319,11 +353,11 @@ def init_mariadb_schema(conn):
         subj_cols = ", ".join([f"`{c}`" for c in SUBJECT_FIELDS])
         subj_placeholders = ", ".join(["%s"] * len(SUBJECT_FIELDS))
         subj_updates = ", ".join([f"`{c}`=VALUES(`{c}`)" for c in SUBJECT_FIELDS if c != "subject_code"])
-        for s_row in SAMPLE_SUBJECTS:
-            cur.execute(
+        if SAMPLE_SUBJECTS:
+            cur.executemany(
                 f"INSERT INTO subjects ({subj_cols}) VALUES ({subj_placeholders}) "
                 f"ON DUPLICATE KEY UPDATE {subj_updates}",
-                s_row
+                SAMPLE_SUBJECTS
             )
     conn.commit()
 
@@ -442,6 +476,8 @@ def _migrate_existing_mariadb_schema(cur):
             (row["Field"] if isinstance(row, dict) else row[0])
             for row in raw_staff_cols
         }
+        if "dob" not in staff_columns:
+            cur.execute("ALTER TABLE staff ADD COLUMN `dob` VARCHAR(32) NOT NULL DEFAULT '' AFTER `gender`")
         if "address" not in staff_columns:
             cur.execute("ALTER TABLE staff ADD COLUMN `address` VARCHAR(255) NOT NULL DEFAULT '' AFTER `email`")
     except Exception:
@@ -490,7 +526,7 @@ def _migrate_existing_mariadb_schema(cur):
             cur.execute("SELECT COUNT(*) as n FROM staff WHERE subjects_taught IS NOT NULL AND subjects_taught != '' AND subjects_taught != 'None'")
             enriched_row = cur.fetchone()
             enriched_cnt = (enriched_row["n"] if isinstance(enriched_row, dict) else enriched_row[0]) if enriched_row else 0
-            if enriched_cnt < 40:
+            if enriched_cnt < 45:
                 staff_dir = tt_data.get("all_staff_directory", [])
                 if staff_dir:
                     cur.executemany(
@@ -564,7 +600,7 @@ def _migrate_existing_mariadb_schema(cur):
                         ON DUPLICATE KEY UPDATE
                         subject=VALUES(subject), teacher_id=VALUES(teacher_id), teacher_name=VALUES(teacher_name)
                     """, tt_params)
-            conn.commit()
+            cur.connection.commit()
     except Exception as e:
         print(f"[MARIADB TIMETABLE SEED ERROR] {e}")
 
@@ -859,10 +895,16 @@ def init_db():
     engine = determine_engine()
     if engine == "mariadb":
         try:
-            cfg = _get_mariadb_config()
-            conn = pymysql.connect(**cfg)
+            conn = _connect_mariadb()
             init_mariadb_schema(conn)
             conn.close()
+            if not os.path.exists(SQLITE_PATH):
+                try:
+                    sconn = sqlite3.connect(SQLITE_PATH)
+                    init_sqlite_schema(sconn)
+                    sconn.close()
+                except Exception:
+                    pass
             return
         except Exception as e:
             if os.environ.get("VERCEL"):
@@ -898,8 +940,7 @@ def execute_query(sql, params=(), fetchone=False, fetchall=False, commit=False):
 
     if engine == "mariadb":
         try:
-            cfg = _get_mariadb_config()
-            conn = pymysql.connect(**cfg)
+            conn = _connect_mariadb()
             with conn.cursor() as cur:
                 cur.execute(sql, params)
                 if commit:
@@ -1080,34 +1121,39 @@ def get_system_stats():
     if engine == "unknown":
         engine = determine_engine()
 
+    active_cond = "LOWER(TRIM(COALESCE(NULLIF(status, ''), 'active'))) = 'active'"
+    non_acad_cond = f"""
+        {active_cond}
+        AND (LOWER(role) LIKE '%clerk%'
+         OR LOWER(role) LIKE '%attendant%'
+         OR LOWER(role) LIKE '%driver%'
+         OR LOWER(role) LIKE '%security%'
+         OR LOWER(role) LIKE '%librarian%'
+         OR LOWER(role) LIKE '%laboratory assistant%'
+         OR LOWER(role) LIKE '%lab assistant%'
+         OR LOWER(role) LIKE '%non-academic%'
+         OR LOWER(role) LIKE '%watcher%'
+         OR LOWER(role) LIKE '%office assistant%'
+         OR (LOWER(department) LIKE '%non-academic%' AND LOWER(role) NOT LIKE '%teacher%' AND LOWER(role) NOT LIKE '%principal%'))
+    """
+
     if engine == "mariadb":
         try:
-            cfg = _get_mariadb_config()
-            conn = pymysql.connect(**cfg)
+            conn = _connect_mariadb()
             try:
                 with conn.cursor() as cur:
-                    cur.execute("SELECT COUNT(*) as n FROM students WHERE LOWER(status) = 'active'")
-                    stus = cur.fetchone()
-                    cur.execute("SELECT COUNT(*) as n FROM staff WHERE LOWER(status) = 'active'")
-                    stfs = cur.fetchone()
-                    cur.execute("""
-                        SELECT COUNT(*) as n FROM staff
-                        WHERE LOWER(status) = 'active'
-                          AND (LOWER(role) LIKE '%clerk%'
-                           OR LOWER(role) LIKE '%attendant%'
-                           OR LOWER(role) LIKE '%driver%'
-                           OR LOWER(role) LIKE '%security%'
-                           OR LOWER(role) LIKE '%librarian%'
-                           OR LOWER(role) LIKE '%laboratory assistant%'
-                           OR LOWER(role) LIKE '%lab assistant%'
-                           OR LOWER(role) LIKE '%non-academic%')
+                    cur.execute(f"""
+                        SELECT
+                            (SELECT COUNT(*) FROM students WHERE {active_cond}) AS active_students,
+                            (SELECT COUNT(*) FROM staff WHERE {active_cond}) AS active_staff,
+                            (SELECT COUNT(*) FROM staff WHERE {non_acad_cond}) AS non_academic_staff
                     """)
-                    non_academic = cur.fetchone()
-                    cur.execute("SELECT grade, COUNT(*) as count FROM students WHERE LOWER(status) = 'active' GROUP BY grade ORDER BY grade")
+                    summary = cur.fetchone() or {}
+                    cur.execute(f"SELECT grade, COUNT(*) as count FROM students WHERE {active_cond} GROUP BY grade ORDER BY grade")
                     grades = cur.fetchall() or []
-                    cur.execute("SELECT department, COUNT(*) as count FROM staff WHERE LOWER(status) = 'active' GROUP BY department ORDER BY department")
+                    cur.execute(f"SELECT department, COUNT(*) as count FROM staff WHERE {active_cond} GROUP BY department ORDER BY department")
                     depts = cur.fetchall() or []
-                    cur.execute("SELECT house, COUNT(*) as count FROM students WHERE LOWER(status) = 'active' GROUP BY house ORDER BY house")
+                    cur.execute(f"SELECT house, COUNT(*) as count FROM students WHERE {active_cond} GROUP BY house ORDER BY house")
                     houses = cur.fetchall() or []
             finally:
                 try:
@@ -1115,19 +1161,20 @@ def get_system_stats():
                 except Exception:
                     pass
 
-            def _val(row, key):
+            def _sval(row, key, idx):
                 if not row:
                     return 0
                 if isinstance(row, dict):
-                    return row.get(key, 0)
-                return row[0] if len(row) > 0 else 0
+                    return int(row.get(key) or 0)
+                return int(row[idx] or 0) if len(row) > idx else 0
 
-            total_active_stf = _val(stfs, "n")
-            active_non_academic = _val(non_academic, "n")
+            total_active_stu = _sval(summary, "active_students", 0)
+            total_active_stf = _sval(summary, "active_staff", 1)
+            active_non_academic = _sval(summary, "non_academic_staff", 2)
             active_academic = max(0, total_active_stf - active_non_academic)
 
             return {
-                "total_students": _val(stus, "n"),
+                "total_students": total_active_stu,
                 "total_staff": active_academic,
                 "non_academic_staff": active_non_academic,
                 "active_total_staff": total_active_stf,
@@ -1138,45 +1185,38 @@ def get_system_stats():
                 "houses": [_clean_dict(h) if isinstance(h, dict) else {"house": h[0], "count": h[1]} for h in houses],
                 "engine": "mariadb"
             }
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[STATS MARIADB ERROR] {e}")
 
     # SQLite fallback execution
     try:
+        if not os.path.exists(SQLITE_PATH):
+            sconn = sqlite3.connect(SQLITE_PATH)
+            init_sqlite_schema(sconn)
+            sconn.close()
         conn = sqlite3.connect(SQLITE_PATH)
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
-        cur.execute("SELECT COUNT(*) as n FROM students WHERE LOWER(status) = 'active'")
+        cur.execute(f"SELECT COUNT(*) as n FROM students WHERE {active_cond}")
         stus = cur.fetchone()
-        cur.execute("SELECT COUNT(*) as n FROM staff WHERE LOWER(status) = 'active'")
+        cur.execute(f"SELECT COUNT(*) as n FROM staff WHERE {active_cond}")
         stfs = cur.fetchone()
-        cur.execute("""
-            SELECT COUNT(*) as n FROM staff
-            WHERE LOWER(status) = 'active'
-              AND (LOWER(role) LIKE '%clerk%'
-               OR LOWER(role) LIKE '%attendant%'
-               OR LOWER(role) LIKE '%driver%'
-               OR LOWER(role) LIKE '%security%'
-               OR LOWER(role) LIKE '%librarian%'
-               OR LOWER(role) LIKE '%laboratory assistant%'
-               OR LOWER(role) LIKE '%lab assistant%'
-               OR LOWER(role) LIKE '%non-academic%')
-        """)
+        cur.execute(f"SELECT COUNT(*) as n FROM staff WHERE {non_acad_cond}")
         non_academic = cur.fetchone()
-        cur.execute("SELECT grade, COUNT(*) as count FROM students WHERE LOWER(status) = 'active' GROUP BY grade ORDER BY grade")
+        cur.execute(f"SELECT grade, COUNT(*) as count FROM students WHERE {active_cond} GROUP BY grade ORDER BY grade")
         grades = [dict(r) for r in cur.fetchall()]
-        cur.execute("SELECT department, COUNT(*) as count FROM staff WHERE LOWER(status) = 'active' GROUP BY department ORDER BY department")
+        cur.execute(f"SELECT department, COUNT(*) as count FROM staff WHERE {active_cond} GROUP BY department ORDER BY department")
         depts = [dict(r) for r in cur.fetchall()]
-        cur.execute("SELECT house, COUNT(*) as count FROM students WHERE LOWER(status) = 'active' GROUP BY house ORDER BY house")
+        cur.execute(f"SELECT house, COUNT(*) as count FROM students WHERE {active_cond} GROUP BY house ORDER BY house")
         houses = [dict(r) for r in cur.fetchall()]
         conn.close()
 
-        total_active_stf = stfs["n"] if stfs else 0
-        active_non_academic = non_academic["n"] if non_academic else 0
+        total_active_stf = int(stfs["n"]) if stfs else 0
+        active_non_academic = int(non_academic["n"]) if non_academic else 0
         active_academic = max(0, total_active_stf - active_non_academic)
 
         return {
-            "total_students": stus["n"] if stus else 0,
+            "total_students": int(stus["n"]) if stus else 0,
             "total_staff": active_academic,
             "non_academic_staff": active_non_academic,
             "active_total_staff": total_active_stf,
