@@ -340,11 +340,25 @@ def save_timetable(user, entry_id=None):
     data = request.get_json(silent=True) or {}
     if entry_id:
         data["id"] = entry_id
-    teacher = db.get_staff_by_id(str(data.get("teacher_id", "")).strip())
-    if not teacher:
-        return jsonify(error="Selected teacher was not found."), 400
-    data["teacher_id"] = teacher["id"]
-    data["teacher_name"] = teacher.get("name_with_initials") or teacher["full_name"]
+    teacher_id = str(data.get("teacher_id", "")).strip()
+    is_free = (not teacher_id or teacher_id.upper() in ("FREE", "NONE") or str(data.get("subject", "")).lower() in ("free", "free period"))
+    if is_free:
+        data["subject"] = "Free Period"
+        data["teacher_id"] = "FREE"
+        data["teacher_name"] = "Free Period"
+    else:
+        teacher = db.get_staff_by_id(teacher_id)
+        if not teacher:
+            for s in (db.get_all_staff() or []):
+                if (s.get("name_with_initials") and s["name_with_initials"].strip().lower() == teacher_id.lower()) or \
+                   (s.get("full_name") and s["full_name"].strip().lower() == teacher_id.lower()):
+                    teacher = s
+                    break
+        if teacher:
+            data["teacher_id"] = teacher["id"]
+            data["teacher_name"] = teacher.get("name_with_initials") or teacher["full_name"]
+        elif not data.get("teacher_name"):
+            return jsonify(error=f"Selected teacher ID '{teacher_id}' was not found."), 400
     try:
         return jsonify(db.save_timetable_entry(data))
     except (ValueError, TypeError) as error:

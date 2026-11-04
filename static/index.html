@@ -1762,6 +1762,115 @@
     </div>
   </div>
 
+  <!-- ======================================================================
+       Period Teacher Assignment Modal (Admin only)
+       ====================================================================== -->
+  <div id="assignTeacherModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl border-2 border-[#d4af37] overflow-hidden">
+      <!-- Modal Header -->
+      <div class="bg-gradient-to-r from-[#38050b] via-[#5c0d1b] to-[#38050b] text-white px-6 py-4 flex items-center justify-between border-b-2 border-[#d4af37]">
+        <div>
+          <h3 class="text-sm font-extrabold uppercase tracking-wide flex items-center gap-2">
+            <svg class="ui-icon text-[#fde047]" aria-hidden="true"><use href="#icon-users"></use></svg>
+            <span>Assign / Change Period Teacher</span>
+          </h3>
+          <p class="text-[11px] text-[#fde047]">Official Master Timetable Allocation (Admin Workspace)</p>
+        </div>
+        <button type="button" onclick="closeModals()" class="text-white hover:text-[#fde047] text-2xl leading-none cursor-pointer">&times;</button>
+      </div>
+
+      <form id="assignTeacherForm" class="flex-1 overflow-y-auto p-6 space-y-4 text-xs">
+        <input type="hidden" id="assignSlotId" value="">
+        <input type="hidden" id="assignSlotClass" value="">
+        <input type="hidden" id="assignSlotDay" value="">
+        <input type="hidden" id="assignSlotPeriod" value="">
+
+        <!-- Period Context Badge -->
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Target Class &amp; Slot</div>
+            <div id="assignSlotContextText" class="text-sm font-black text-[#800020]">Grade 6-A • Monday • Period 1</div>
+          </div>
+          <span id="assignSlotTimeBadge" class="bg-white border border-slate-300 text-slate-700 font-mono font-bold text-xs px-2.5 py-1 rounded-md shadow-xs">07:50 - 08:30</span>
+        </div>
+
+        <!-- Subject Field -->
+        <div>
+          <label class="block font-bold text-slate-700 uppercase mb-1">Subject *</label>
+          <div class="relative">
+            <input type="text" id="assignSlotSubjectInput" required list="schoolSubjectSuggestions" placeholder="e.g. Mathematics, Science, English, Sinhala" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#800020] focus:border-[#800020] focus:outline-none bg-white">
+            <datalist id="schoolSubjectSuggestions">
+              <option value="Mathematics">
+              <option value="Science">
+              <option value="English Language">
+              <option value="Sinhala Language">
+              <option value="Buddhism">
+              <option value="History">
+              <option value="Geography">
+              <option value="Civic Education">
+              <option value="Information &amp; Communication Technology">
+              <option value="Business &amp; Accounting Studies">
+              <option value="Oriental Music">
+              <option value="Art">
+              <option value="Dancing">
+              <option value="Drama &amp; Theatre">
+              <option value="Health &amp; Physical Education">
+              <option value="Tamil (Second Language)">
+              <option value="Media Education">
+              <option value="Home Economics">
+              <option value="Design &amp; Technology">
+              <option value="Buddhist Civilization">
+              <option value="Political Science">
+              <option value="Free Period">
+            </datalist>
+          </div>
+        </div>
+
+        <!-- Assigned Teacher Dropdown -->
+        <div>
+          <label class="block font-bold text-slate-700 uppercase mb-1">Assigned Teacher *</label>
+          <select id="assignSlotTeacherSelect" required class="w-full border border-slate-300 rounded-lg p-2.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#800020] focus:border-[#800020] focus:outline-none bg-white">
+            <option value="">-- Select Teacher --</option>
+            <option value="FREE">— Free Period (No Teacher Assigned) —</option>
+            <!-- Dynamically populated via JS -->
+          </select>
+          <p class="text-[10px] text-slate-500 mt-1">Select an active faculty member to assign to this classroom period slot.</p>
+        </div>
+
+        <!-- Dynamic Conflict Detection Warning -->
+        <div id="assignTeacherConflictBanner" class="hidden bg-amber-50 border border-amber-300 rounded-xl p-3.5 space-y-2 text-amber-900">
+          <div class="flex items-start gap-2">
+            <span class="text-amber-700 font-black text-sm">⚠️</span>
+            <div class="flex-1">
+              <div class="font-extrabold text-[11px] uppercase tracking-wide">Schedule Overlap Notice</div>
+              <div id="assignTeacherConflictMsg" class="text-[11px] text-amber-800 mt-0.5">Teacher is already assigned to another class during this period.</div>
+            </div>
+          </div>
+          <label class="flex items-center gap-2 pt-1 border-t border-amber-200 text-[11px] font-bold text-amber-900 cursor-pointer">
+            <input type="checkbox" id="assignAllowOverlapCheckbox" class="rounded text-[#800020] focus:ring-[#800020]">
+            <span>Allow overlapping assignment (e.g. multi-class combined elective bucket)</span>
+          </label>
+        </div>
+
+        <!-- Actions -->
+        <div class="pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+          <button type="button" onclick="setSlotAsFreePeriod()" class="px-3 py-2 border border-rose-300 hover:bg-rose-50 text-rose-800 font-bold rounded-lg cursor-pointer flex items-center gap-1.5 transition-colors">
+            <svg class="ui-icon text-rose-700" aria-hidden="true"><use href="#icon-trash"></use></svg>
+            <span>Set as Free Period</span>
+          </button>
+
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="closeModals()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 font-bold uppercase hover:bg-slate-100 cursor-pointer">Cancel</button>
+            <button type="submit" id="assignTeacherSubmitBtn" class="px-5 py-2 bg-[#800020] hover:bg-[#5c0d1b] text-white font-extrabold uppercase rounded-lg shadow cursor-pointer flex items-center gap-1.5 transition-all">
+              <svg class="ui-icon text-amber-300" aria-hidden="true"><use href="#icon-check"></use></svg>
+              <span>Save Assignment</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Toast Container -->
   <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2"></div>
 

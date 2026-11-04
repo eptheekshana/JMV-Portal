@@ -1898,34 +1898,61 @@ def get_timetable(class_name=None, teacher_id=None):
     return execute_query(sql, params, fetchall=True) or []
 
 def save_timetable_entry(data):
-    entry_id = data.get("id") or f"TT-{uuid.uuid4().hex[:10].upper()}"
     class_name = str(data.get("class_name", "")).strip()
     day = str(data.get("day_of_week", "")).strip()
     period = int(data.get("period_no", 0))
     subject = str(data.get("subject", "")).strip()
     teacher_id = str(data.get("teacher_id", "")).strip()
     teacher_name = str(data.get("teacher_name", "")).strip()
+    entry_id = str(data.get("id", "")).strip()
+
     if not class_name or day not in TIMETABLE_DAYS or not 1 <= period <= 8:
         raise ValueError("Class, weekday, and a period from 1 to 8 are required.")
-    if not subject or not teacher_id or not teacher_name:
+
+    is_free = (not teacher_id or teacher_id.upper() in ("FREE", "NONE") or subject.lower() in ("free", "free period"))
+    if is_free:
+        subject = "Free Period"
+        teacher_id = "FREE"
+        teacher_name = "Free Period"
+    elif not subject or not teacher_id or not teacher_name:
         raise ValueError("Subject and teacher are required.")
 
-    conflict = execute_query(
-        """
-        SELECT id FROM school_timetable
-        WHERE ((class_name = %s AND day_of_week = %s AND period_no = %s)
-           OR (teacher_id = %s AND day_of_week = %s AND period_no = %s))
-          AND id <> %s LIMIT 1
-        """,
-        (class_name, day, period, teacher_id, day, period, entry_id),
-        fetchone=True
-    )
-    if conflict:
-        raise ValueError("This class or teacher already has a timetable entry in that period.")
+    # Find existing slot for this class and period if ID wasn't explicitly supplied
+    canonical_id = f"TT-{class_name.replace(' ', '')}-{day[:3].upper()}-P{period}"
+    existing = None
+    if entry_id:
+        existing = execute_query("SELECT * FROM school_timetable WHERE id = %s", (entry_id,), fetchone=True)
+    if not existing:
+        existing = execute_query(
+            "SELECT * FROM school_timetable WHERE class_name = %s AND day_of_week = %s AND period_no = %s LIMIT 1",
+            (class_name, day, period),
+            fetchone=True
+        )
+    if not existing:
+        existing = execute_query("SELECT * FROM school_timetable WHERE id = %s", (canonical_id,), fetchone=True)
 
-    existing = execute_query(
-        "SELECT id FROM school_timetable WHERE id = %s", (entry_id,), fetchone=True
-    )
+    if existing:
+        entry_id = existing["id"]
+    elif not entry_id:
+        entry_id = canonical_id
+
+    # If assigning a teacher (and not Free Period), check if teacher is assigned to another class during this period
+    if not is_free:
+        force = bool(data.get("force") or data.get("allow_overlap"))
+        if not force:
+            conflict = execute_query(
+                """
+                SELECT id, class_name, subject FROM school_timetable
+                WHERE teacher_id = %s AND day_of_week = %s AND period_no = %s AND class_name <> %s LIMIT 1
+                """,
+                (teacher_id, day, period, class_name),
+                fetchone=True
+            )
+            if conflict:
+                raise ValueError(
+                    f"Teacher '{teacher_name}' is already assigned to {conflict['class_name']} ({conflict['subject']}) on {day} Period {period}. Enable 'Allow overlapping assignment' to override."
+                )
+
     if existing:
         execute_query(
             """
@@ -1943,13 +1970,23 @@ def save_timetable_entry(data):
             INSERT INTO school_timetable
             (id, class_name, day_of_week, period_no, subject, teacher_id, teacher_name)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+            subject=VALUES(subject), teacher_id=VALUES(teacher_id), teacher_name=VALUES(teacher_name)
             """,
             (entry_id, class_name, day, period, subject, teacher_id, teacher_name),
             commit=True
         )
     return execute_query(
         "SELECT * FROM school_timetable WHERE id = %s", (entry_id,), fetchone=True
-    )
+    ) or {
+        "id": entry_id,
+        "class_name": class_name,
+        "day_of_week": day,
+        "period_no": period,
+        "subject": subject,
+        "teacher_id": teacher_id,
+        "teacher_name": teacher_name
+    }
 
 def delete_timetable_entry(entry_id):
     execute_query("DELETE FROM school_timetable WHERE id = %s", (entry_id,), commit=True)
