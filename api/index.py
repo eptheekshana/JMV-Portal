@@ -377,6 +377,42 @@ def delete_mark(_user, student_id, mark_id):
     db.delete_student_mark(mark_id)
     return jsonify(success=True)
 
+@app.get("/api/payments")
+@requires_roles("admin")
+def get_payments(_user):
+    search = request.args.get("search")
+    status = request.args.get("status")
+    grade = request.args.get("grade")
+    return jsonify(db.get_all_payments(search=search, status=status, grade=grade))
+
+
+@app.get("/api/payments/stats")
+@requires_roles("admin")
+def get_payment_stats(_user):
+    return jsonify(db.get_payment_stats())
+
+
+@app.post("/api/payments")
+@requires_roles("admin")
+def create_payment(_user):
+    data = request.get_json(silent=True) or {}
+    if not data.get("student_name") or not data.get("amount"):
+        return jsonify(error="Student Name and Amount are required."), 400
+    try:
+        return jsonify(db.create_payment(data, actor=_user)), 201
+    except Exception as exc:
+        return jsonify(error=str(exc)), 500
+
+
+@app.delete("/api/payments/<payment_id>")
+@requires_roles("admin")
+def delete_payment(_user, payment_id):
+    ok = db.delete_payment(payment_id, actor=_user)
+    if not ok:
+        return jsonify(error="Payment record not found"), 404
+    return jsonify(success=True)
+
+
 @app.post("/api/reset-demo")
 @requires_roles("admin")
 def reset_demo(_user):

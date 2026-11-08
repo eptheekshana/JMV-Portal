@@ -43,7 +43,7 @@ except ImportError:
 from seed_data import (
     SAMPLE_STUDENTS, SAMPLE_STAFF, STUDENT_COLUMNS, STAFF_COLUMNS,
     USER_COLUMNS, MARK_COLUMNS, SAMPLE_USERS, SAMPLE_MARKS,
-    SUBJECT_COLUMNS, SAMPLE_SUBJECTS
+    SUBJECT_COLUMNS, SAMPLE_SUBJECTS, PAYMENT_COLUMNS, SAMPLE_PAYMENTS
 )
 
 SQLITE_PATH = (
@@ -56,6 +56,7 @@ STAFF_FIELDS = list(STAFF_COLUMNS)
 USER_FIELDS = list(USER_COLUMNS)
 MARK_FIELDS = list(MARK_COLUMNS)
 SUBJECT_FIELDS = list(SUBJECT_COLUMNS)
+PAYMENT_FIELDS = list(PAYMENT_COLUMNS)
 
 # Audit trail columns added to students and staff (who created / last updated, and when)
 AUDIT_COLUMNS = {
@@ -417,6 +418,29 @@ def init_mariadb_schema(conn):
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         """)
 
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS payments (
+            id VARCHAR(32) PRIMARY KEY,
+            receipt_no VARCHAR(32) NOT NULL,
+            student_id VARCHAR(32) NOT NULL,
+            student_name VARCHAR(150) NOT NULL,
+            grade VARCHAR(16) NOT NULL,
+            fee_type VARCHAR(100) NOT NULL,
+            amount DECIMAL(10, 2) NOT NULL,
+            payment_method VARCHAR(50) NOT NULL DEFAULT 'Cash',
+            payment_date VARCHAR(32) NOT NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'Paid',
+            term VARCHAR(20) NOT NULL DEFAULT 'Term 1',
+            year VARCHAR(10) NOT NULL DEFAULT '2026',
+            remarks TEXT NULL,
+            received_by VARCHAR(150) NOT NULL DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_payments_student (student_id),
+            INDEX idx_payments_date (payment_date),
+            INDEX idx_payments_status (status)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        """)
+
         _migrate_existing_mariadb_schema(cur)
 
         for _tbl in ("students", "staff"):
@@ -426,23 +450,19 @@ def init_mariadb_schema(conn):
                 if _col not in _have:
                     cur.execute(f"ALTER TABLE {_tbl} ADD COLUMN `{_col}` {_def}")
 
-        # Ensure default admin user exists if users table is empty
-        cur.execute("SELECT COUNT(*) as cnt FROM users")
+        # Ensure default admin and teacher users exist
+        cols = ", ".join([f"`{c}`" for c in USER_FIELDS])
+        placeholders = ", ".join(["%s"] * len(USER_FIELDS))
+        for u_row in SAMPLE_USERS:
+            cur.execute(f"INSERT IGNORE INTO users ({cols}) VALUES ({placeholders})", u_row)
+
+        # Ensure payments table is seeded if empty
+        cur.execute("SELECT COUNT(*) as cnt FROM payments")
         if cur.fetchone()["cnt"] == 0:
-            cols = ", ".join(USER_FIELDS)
-            placeholders = ", ".join(["%s"] * len(USER_FIELDS))
-            cur.execute(
-                f"INSERT INTO users ({cols}) VALUES ({placeholders})",
-                (
-                    "USR-ADM-001",
-                    "eptheekshana",
-                    "c712c754aadf926e02cbbdaa7c31ebe0$a0580c6a5bb5b96e475a82b3434434c48824a62a0a46140dd5995ee755de0c3e",
-                    "admin",
-                    "E P Theekshana (Administrator)",
-                    "eptheekshana@gmail.com",
-                    ""
-                )
-            )
+            pay_cols = ", ".join([f"`{c}`" for c in PAYMENT_FIELDS])
+            pay_placeholders = ", ".join(["%s"] * len(PAYMENT_FIELDS))
+            for p_row in SAMPLE_PAYMENTS:
+                cur.execute(f"INSERT IGNORE INTO payments ({pay_cols}) VALUES ({pay_placeholders})", p_row)
 
         # Populate official G.C.E. (O/L) subjects & module codes
         subj_cols = ", ".join([f"`{c}`" for c in SUBJECT_FIELDS])
@@ -748,6 +768,7 @@ def init_sqlite_schema(conn):
         full_name TEXT NOT NULL DEFAULT '',
         name_with_initials TEXT NOT NULL,
         gender TEXT NOT NULL,
+        dob TEXT NOT NULL DEFAULT '',
         role TEXT NOT NULL,
         department TEXT NOT NULL DEFAULT '',
         subjects_taught TEXT,
@@ -768,6 +789,8 @@ def init_sqlite_schema(conn):
     sqlite_staff_cols = {row[1] for row in cur.fetchall()}
     if "address" not in sqlite_staff_cols:
         cur.execute("ALTER TABLE staff ADD COLUMN address TEXT NOT NULL DEFAULT ''")
+    if "dob" not in sqlite_staff_cols:
+        cur.execute("ALTER TABLE staff ADD COLUMN dob TEXT NOT NULL DEFAULT ''")
 
     cur.execute("""
     CREATE TABLE IF NOT EXISTS users (
@@ -816,11 +839,25 @@ def init_sqlite_schema(conn):
         subject TEXT NOT NULL,
         teacher_id TEXT NOT NULL,
         teacher_name TEXT NOT NULL,
-bject TEXT,
         other_subject TEXT,
         notes TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS subjects (
+        subject_code TEXT NOT NULL,
+        subject_name TEXT NOT NULL,
+        category TEXT NOT NULL DEFAULT 'Core',
+        grade_level TEXT NOT NULL DEFAULT '',
+        medium TEXT NOT NULL DEFAULT 'Sinhala',
+        is_active INTEGER NOT NULL DEFAULT 1,
+        description TEXT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (subject_code, grade_level)
     );
     """)
 
@@ -837,6 +874,27 @@ bject TEXT,
         changes TEXT
     );
     """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS payments (
+        id TEXT PRIMARY KEY,
+        receipt_no TEXT NOT NULL,
+        student_id TEXT NOT NULL,
+        student_name TEXT NOT NULL,
+        grade TEXT NOT NULL,
+        fee_type TEXT NOT NULL,
+        amount REAL NOT NULL,
+        payment_method TEXT NOT NULL DEFAULT 'Cash',
+        payment_date TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'Paid',
+        term TEXT NOT NULL DEFAULT 'Term 1',
+        year TEXT NOT NULL DEFAULT '2026',
+        remarks TEXT,
+        received_by TEXT NOT NULL DEFAULT '',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
+
     for _tbl in ("students", "staff"):
         cur.execute(f"PRAGMA table_info({_tbl})")
         _have = {row[1] for row in cur.fetchall()}
@@ -844,23 +902,30 @@ bject TEXT,
             if _col not in _have:
                 cur.execute(f"ALTER TABLE {_tbl} ADD COLUMN {_col} {_def}")
 
-    # Ensure default admin user exists if users table is empty
+    # Ensure default admin and teacher users exist
     cur.execute("SELECT COUNT(*) FROM users")
     if cur.fetchone()[0] == 0:
         cols = ", ".join(USER_FIELDS)
         placeholders = ", ".join(["?"] * len(USER_FIELDS))
-        cur.execute(
-            f"INSERT INTO users ({cols}) VALUES ({placeholders})",
-            (
-                "USR-ADM-001",
-                "eptheekshana",
-                "c712c754aadf926e02cbbdaa7c31ebe0$a0580c6a5bb5b96e475a82b3434434c48824a62a0a46140dd5995ee755de0c3e",
-                "admin",
-                "E P Theekshana (Administrator)",
-                "eptheekshana@gmail.com",
-                ""
-            )
-        )
+        for u_row in SAMPLE_USERS:
+            cur.execute(f"INSERT OR IGNORE INTO users ({cols}) VALUES ({placeholders})", u_row)
+
+    # Ensure payments are seeded if empty
+    cur.execute("SELECT COUNT(*) FROM payments")
+    if cur.fetchone()[0] == 0:
+        pay_cols = ", ".join(PAYMENT_FIELDS)
+        pay_placeholders = ", ".join(["?"] * len(PAYMENT_FIELDS))
+        for p_row in SAMPLE_PAYMENTS:
+            cur.execute(f"INSERT OR IGNORE INTO payments ({pay_cols}) VALUES ({pay_placeholders})", p_row)
+
+    # Ensure sample students exist if empty
+    cur.execute("SELECT COUNT(*) FROM students")
+    if cur.fetchone()[0] == 0:
+        for r in SAMPLE_STUDENTS:
+            fields = STUDENT_FIELDS[:len(r)]
+            cols_stu = ", ".join(fields)
+            placeholders_stu = ", ".join(["?"] * len(fields))
+            cur.execute(f"INSERT OR IGNORE INTO students ({cols_stu}) VALUES ({placeholders_stu})", r)
 
     # Populate official G.C.E. (O/L) subjects & module codes
     subj_cols = ", ".join(SUBJECT_FIELDS)
@@ -1638,17 +1703,19 @@ def reset_to_demo_data():
     execute_query("DELETE FROM student_marks", commit=True)
     execute_query("DELETE FROM sessions", commit=True)
     
-    cols_stu = ", ".join(STUDENT_FIELDS)
-    placeholders_stu = ", ".join(["%s"] * len(STUDENT_FIELDS))
     for r in SAMPLE_STUDENTS:
+        fields = STUDENT_FIELDS[:len(r)]
+        cols_stu = ", ".join(fields)
+        placeholders_stu = ", ".join(["%s"] * len(fields))
         execute_query(
             f"INSERT INTO students ({cols_stu}) VALUES ({placeholders_stu})",
             r, commit=True
         )
 
-    cols_stf = ", ".join(STAFF_FIELDS)
-    placeholders_stf = ", ".join(["%s"] * len(STAFF_FIELDS))
     for r in SAMPLE_STAFF:
+        fields = STAFF_FIELDS[:len(r)]
+        cols_stf = ", ".join(fields)
+        placeholders_stf = ", ".join(["%s"] * len(fields))
         execute_query(
             f"INSERT INTO staff ({cols_stf}) VALUES ({placeholders_stf})",
             r, commit=True
@@ -1666,6 +1733,12 @@ def reset_to_demo_data():
     placeholders_mrk = ", ".join(["%s"] * len(MARK_FIELDS))
     for r in SAMPLE_MARKS:
         execute_query(f"INSERT INTO student_marks ({cols_mrk}) VALUES ({placeholders_mrk})", r, commit=True)
+
+    execute_query("DELETE FROM payments", commit=True)
+    cols_pay = ", ".join(PAYMENT_FIELDS)
+    placeholders_pay = ", ".join(["%s"] * len(PAYMENT_FIELDS))
+    for r in SAMPLE_PAYMENTS:
+        execute_query(f"INSERT INTO payments ({cols_pay}) VALUES ({placeholders_pay})", r, commit=True)
 
 # ---------------------------------------------------------------------------
 # Authentication & User Management (Role-Based: Admin & Teacher)
@@ -2001,6 +2074,83 @@ def get_all_subjects(category=None):
         params.append(category)
     sql += " ORDER BY CAST(subject_code AS UNSIGNED) ASC, subject_code ASC"
     return execute_query(sql, tuple(params), fetchall=True)
+
+
+# ---------------------------------------------------------------------------
+# Student Fees & Payments Management (Role: Admin)
+# ---------------------------------------------------------------------------
+def get_all_payments(search=None, status=None, grade=None):
+    sql = "SELECT id, receipt_no, student_id, student_name, grade, fee_type, amount, payment_method, payment_date, status, term, year, remarks, received_by, created_at FROM payments WHERE 1=1"
+    params = []
+    if search:
+        s = f"%{search.strip()}%"
+        sql += " AND (receipt_no LIKE %s OR student_id LIKE %s OR student_name LIKE %s OR fee_type LIKE %s)"
+        params.extend([s, s, s, s])
+    if status and status.lower() != "all":
+        sql += " AND LOWER(status) = %s"
+        params.append(status.strip().lower())
+    if grade and grade.lower() != "all":
+        sql += " AND grade = %s"
+        params.append(str(grade).strip())
+    sql += " ORDER BY payment_date DESC, id DESC"
+    return execute_query(sql, tuple(params), fetchall=True) or []
+
+def get_payment_stats():
+    payments = get_all_payments()
+    total_collected = sum(float(p.get("amount", 0) or 0) for p in payments if (p.get("status") or "").lower() == "paid")
+    total_pending = sum(float(p.get("amount", 0) or 0) for p in payments if (p.get("status") or "").lower() == "pending")
+    count_paid = sum(1 for p in payments if (p.get("status") or "").lower() == "paid")
+    count_pending = sum(1 for p in payments if (p.get("status") or "").lower() == "pending")
+    return {
+        "total_collected": total_collected,
+        "total_pending": total_pending,
+        "count_paid": count_paid,
+        "count_pending": count_pending,
+        "total_records": len(payments)
+    }
+
+def create_payment(data, actor=None):
+    payment_id = data.get("id") or f"PAY-{datetime.now().strftime('%Y%m%d%H%M%S')}-{secrets.randbelow(1000):03d}"
+    receipt_no = data.get("receipt_no") or f"REC-{datetime.now().strftime('%Y')}-{secrets.randbelow(9000) + 1000}"
+    actor_name = _actor_name(actor) or "Administrator"
+
+    try:
+        amount_val = float(data.get("amount", 0.0))
+    except (ValueError, TypeError):
+        amount_val = 0.0
+
+    vals = (
+        payment_id,
+        receipt_no,
+        data.get("student_id", "").strip(),
+        data.get("student_name", "").strip(),
+        str(data.get("grade", "")).strip(),
+        data.get("fee_type", "School Facilities & Services").strip(),
+        amount_val,
+        data.get("payment_method", "Cash").strip(),
+        data.get("payment_date", datetime.now().strftime("%Y-%m-%d")).strip(),
+        data.get("status", "Paid").strip(),
+        data.get("term", "Term 1").strip(),
+        data.get("year", "2026").strip(),
+        data.get("remarks", "").strip(),
+        actor_name
+    )
+    cols = ", ".join(PAYMENT_FIELDS)
+    placeholders = ", ".join(["%s"] * len(PAYMENT_FIELDS))
+    execute_query(
+        f"INSERT INTO payments ({cols}) VALUES ({placeholders})",
+        vals, commit=True
+    )
+    record_audit("payment", payment_id, f"{data.get('student_name')} ({receipt_no})", "create", actor, changes={"amount": amount_val})
+    return execute_query("SELECT * FROM payments WHERE id = %s", (payment_id,), fetchone=True)
+
+def delete_payment(payment_id, actor=None):
+    rec = execute_query("SELECT * FROM payments WHERE id = %s", (payment_id,), fetchone=True)
+    if not rec:
+        return False
+    execute_query("DELETE FROM payments WHERE id = %s", (payment_id,), commit=True)
+    record_audit("payment", payment_id, rec.get("receipt_no", payment_id), "delete", actor, changes="Payment record deleted")
+    return True
 
 
 if __name__ == "__main__":
