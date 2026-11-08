@@ -404,94 +404,94 @@
       <div id="homeModulesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
 
         <!-- 1. STUDENTS BUTTON -->
-        <button id="homeBtnStudents" onclick="switchTab('students')" class="group relative bg-white border-2 border-slate-200/90 hover:border-[#800020] rounded-3xl p-7 sm:p-9 shadow-md hover:shadow-2xl hover:shadow-[#800020]/15 transition-all duration-300 transform hover:-translate-y-2 cursor-pointer text-left flex flex-col justify-between overflow-hidden">
-          <div class="h-2 w-full bg-gradient-to-r from-[#800020] via-[#d4af37] to-[#800020] absolute top-0 left-0"></div>
+        <button id="homeBtnStudents" onclick="switchTab('students')" class="group relative bg-gradient-to-br from-[#38050b] via-[#5c0d1b] to-[#800020] border-2 border-[#d4af37]/60 hover:border-[#fde047] rounded-3xl p-7 sm:p-9 shadow-xl hover:shadow-2xl hover:shadow-[#38050b]/80 transition-all duration-300 transform hover:-translate-y-2 cursor-pointer text-left flex flex-col justify-between overflow-hidden">
+          <div class="h-2 w-full bg-gradient-to-r from-[#d4af37] via-[#fde047] to-[#d4af37] absolute top-0 left-0 group-hover:h-2.5 transition-all"></div>
           <div>
-            <div class="w-18 h-18 sm:w-22 sm:h-22 rounded-2xl bg-gradient-to-br from-[#38050b] via-[#5c0d1b] to-[#800020] text-[#fde047] border-2 border-[#d4af37]/80 flex items-center justify-center mb-6 group-hover:scale-105 group-hover:border-[#fde047] group-hover:shadow-xl group-hover:shadow-[#800020]/25 transition-all duration-300 shadow-md">
-              <svg class="w-9 h-9 sm:w-11 sm:h-11 transition-transform group-hover:rotate-1" aria-hidden="true"><use href="#icon-pro-students"></use></svg>
+            <div class="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl bg-black/35 border-2 border-[#d4af37] text-[#fde047] flex items-center justify-center mb-6 group-hover:scale-105 group-hover:bg-[#d4af37] group-hover:text-[#38050b] transition-all duration-300 shadow-md">
+              <svg class="w-9 h-9 sm:w-10 sm:h-10 transition-transform group-hover:rotate-1" aria-hidden="true"><use href="#icon-pro-students"></use></svg>
             </div>
-            <h2 class="text-2xl sm:text-3xl font-black text-slate-900 group-hover:text-[#800020] tracking-tight transition-colors">
+            <h2 class="text-2xl sm:text-3xl font-black text-white group-hover:text-[#fde047] tracking-tight transition-colors">
               Students
             </h2>
-            <p class="text-xs text-slate-500 font-semibold mt-1.5" data-en="Student Directory &amp; Records" data-si="ශිෂ්‍ය දත්ත පද්ධතිය">
+            <p class="text-xs text-rose-100 font-semibold mt-1.5" data-en="Student Directory &amp; Records" data-si="ශිෂ්‍ය දත්ත පද්ධතිය">
               Student Directory &amp; Records
             </p>
           </div>
-          <div class="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-extrabold text-[#800020]">
-            <span id="homeStudentsCountBadge" class="bg-[#fdf2f4] text-[#800020] border border-rose-200 px-3 py-1 rounded-full text-[11px] font-bold">Active Students</span>
-            <span class="group-hover:translate-x-1.5 transition-transform inline-flex items-center gap-1.5 font-black uppercase text-xs tracking-wider text-[#800020]">
+          <div class="mt-8 pt-4 border-t border-[#d4af37]/30 flex items-center justify-between text-xs font-extrabold text-[#fde047]">
+            <span id="homeStudentsCountBadge" class="bg-black/30 text-[#fde047] border border-[#d4af37]/50 px-3 py-1 rounded-full text-[11px] font-bold">Active Students</span>
+            <span class="group-hover:translate-x-1.5 transition-transform inline-flex items-center gap-1.5 font-black uppercase text-xs tracking-wider text-[#fde047]">
               Open <svg class="w-4 h-4" aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
             </span>
           </div>
         </button>
 
         <!-- 2. STAFF BUTTON (ADMIN ONLY) -->
-        <button id="homeBtnStaff" onclick="switchTab('staff')" class="group relative bg-white border-2 border-slate-200/90 hover:border-[#800020] rounded-3xl p-7 sm:p-9 shadow-md hover:shadow-2xl hover:shadow-[#800020]/15 transition-all duration-300 transform hover:-translate-y-2 cursor-pointer text-left flex flex-col justify-between overflow-hidden">
-          <div class="h-2 w-full bg-gradient-to-r from-[#d4af37] via-[#800020] to-[#d4af37] absolute top-0 left-0"></div>
+        <button id="homeBtnStaff" onclick="switchTab('staff')" class="group relative bg-gradient-to-br from-[#38050b] via-[#5c0d1b] to-[#800020] border-2 border-[#d4af37]/60 hover:border-[#fde047] rounded-3xl p-7 sm:p-9 shadow-xl hover:shadow-2xl hover:shadow-[#38050b]/80 transition-all duration-300 transform hover:-translate-y-2 cursor-pointer text-left flex flex-col justify-between overflow-hidden">
+          <div class="h-2 w-full bg-gradient-to-r from-[#d4af37] via-[#fde047] to-[#d4af37] absolute top-0 left-0 group-hover:h-2.5 transition-all"></div>
           <div>
-            <div class="w-18 h-18 sm:w-22 sm:h-22 rounded-2xl bg-gradient-to-br from-[#5c0d1b] via-[#800020] to-[#38050b] text-[#fde047] border-2 border-[#d4af37]/80 flex items-center justify-center mb-6 group-hover:scale-105 group-hover:border-[#fde047] group-hover:shadow-xl group-hover:shadow-[#800020]/25 transition-all duration-300 shadow-md">
-              <svg class="w-9 h-9 sm:w-11 sm:h-11 transition-transform group-hover:rotate-1" aria-hidden="true"><use href="#icon-pro-staff"></use></svg>
+            <div class="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl bg-black/35 border-2 border-[#d4af37] text-[#fde047] flex items-center justify-center mb-6 group-hover:scale-105 group-hover:bg-[#d4af37] group-hover:text-[#38050b] transition-all duration-300 shadow-md">
+              <svg class="w-9 h-9 sm:w-10 sm:h-10 transition-transform group-hover:rotate-1" aria-hidden="true"><use href="#icon-pro-staff"></use></svg>
             </div>
             <div class="flex items-center justify-between">
-              <h2 class="text-2xl sm:text-3xl font-black text-slate-900 group-hover:text-[#800020] tracking-tight transition-colors">
+              <h2 class="text-2xl sm:text-3xl font-black text-white group-hover:text-[#fde047] tracking-tight transition-colors">
                 Staff
               </h2>
-              <span class="text-[10px] bg-[#d4af37] text-[#38050b] font-black px-2 py-0.5 rounded shadow-sm border border-[#c59b27]">ADMIN</span>
+              <span class="text-[10px] bg-[#d4af37] text-[#38050b] font-black px-2 py-0.5 rounded shadow-sm border border-[#fde047]">ADMIN</span>
             </div>
-            <p class="text-xs text-slate-500 font-semibold mt-1.5" data-en="Faculty &amp; Staff Directory" data-si="ගුරු හා අනධ්‍යයන මණ්ඩලය">
+            <p class="text-xs text-rose-100 font-semibold mt-1.5" data-en="Faculty &amp; Staff Directory" data-si="ගුරු හා අනධ්‍යයන මණ්ඩලය">
               Faculty &amp; Staff Directory
             </p>
           </div>
-          <div class="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-extrabold text-[#800020]">
-            <span id="homeStaffCountBadge" class="bg-[#fdf2f4] text-[#800020] border border-rose-200 px-3 py-1 rounded-full text-[11px] font-bold">School Faculty</span>
-            <span class="group-hover:translate-x-1.5 transition-transform inline-flex items-center gap-1.5 font-black uppercase text-xs tracking-wider text-[#800020]">
+          <div class="mt-8 pt-4 border-t border-[#d4af37]/30 flex items-center justify-between text-xs font-extrabold text-[#fde047]">
+            <span id="homeStaffCountBadge" class="bg-black/30 text-[#fde047] border border-[#d4af37]/50 px-3 py-1 rounded-full text-[11px] font-bold">School Faculty</span>
+            <span class="group-hover:translate-x-1.5 transition-transform inline-flex items-center gap-1.5 font-black uppercase text-xs tracking-wider text-[#fde047]">
               Open <svg class="w-4 h-4" aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
             </span>
           </div>
         </button>
 
         <!-- 3. TIME TABLES BUTTON -->
-        <button id="homeBtnTimetable" onclick="switchTab('timetable')" class="group relative bg-white border-2 border-slate-200/90 hover:border-[#800020] rounded-3xl p-7 sm:p-9 shadow-md hover:shadow-2xl hover:shadow-[#800020]/15 transition-all duration-300 transform hover:-translate-y-2 cursor-pointer text-left flex flex-col justify-between overflow-hidden">
-          <div class="h-2 w-full bg-gradient-to-r from-[#800020] via-[#d4af37] to-[#800020] absolute top-0 left-0"></div>
+        <button id="homeBtnTimetable" onclick="switchTab('timetable')" class="group relative bg-gradient-to-br from-[#38050b] via-[#5c0d1b] to-[#800020] border-2 border-[#d4af37]/60 hover:border-[#fde047] rounded-3xl p-7 sm:p-9 shadow-xl hover:shadow-2xl hover:shadow-[#38050b]/80 transition-all duration-300 transform hover:-translate-y-2 cursor-pointer text-left flex flex-col justify-between overflow-hidden">
+          <div class="h-2 w-full bg-gradient-to-r from-[#d4af37] via-[#fde047] to-[#d4af37] absolute top-0 left-0 group-hover:h-2.5 transition-all"></div>
           <div>
-            <div class="w-18 h-18 sm:w-22 sm:h-22 rounded-2xl bg-gradient-to-br from-[#38050b] via-[#5c0d1b] to-[#800020] text-[#fde047] border-2 border-[#d4af37]/80 flex items-center justify-center mb-6 group-hover:scale-105 group-hover:border-[#fde047] group-hover:shadow-xl group-hover:shadow-[#800020]/25 transition-all duration-300 shadow-md">
-              <svg class="w-9 h-9 sm:w-11 sm:h-11 transition-transform group-hover:rotate-1" aria-hidden="true"><use href="#icon-pro-timetable"></use></svg>
+            <div class="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl bg-black/35 border-2 border-[#d4af37] text-[#fde047] flex items-center justify-center mb-6 group-hover:scale-105 group-hover:bg-[#d4af37] group-hover:text-[#38050b] transition-all duration-300 shadow-md">
+              <svg class="w-9 h-9 sm:w-10 sm:h-10 transition-transform group-hover:rotate-1" aria-hidden="true"><use href="#icon-pro-timetable"></use></svg>
             </div>
-            <h2 class="text-2xl sm:text-3xl font-black text-slate-900 group-hover:text-[#800020] tracking-tight transition-colors">
+            <h2 class="text-2xl sm:text-3xl font-black text-white group-hover:text-[#fde047] tracking-tight transition-colors">
               Time tables
             </h2>
-            <p class="text-xs text-slate-500 font-semibold mt-1.5" data-en="School Timetables (Grades 6–13)" data-si="පාසල් කාලසටහන">
+            <p class="text-xs text-rose-100 font-semibold mt-1.5" data-en="School Timetables (Grades 6–13)" data-si="පාසල් කාලසටහන">
               School Timetables (Grades 6–13)
             </p>
           </div>
-          <div class="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-extrabold text-[#800020]">
-            <span class="bg-[#fdf2f4] text-[#800020] border border-rose-200 px-3 py-1 rounded-full text-[11px] font-bold">2026 Master Grid</span>
-            <span class="group-hover:translate-x-1.5 transition-transform inline-flex items-center gap-1.5 font-black uppercase text-xs tracking-wider text-[#800020]">
+          <div class="mt-8 pt-4 border-t border-[#d4af37]/30 flex items-center justify-between text-xs font-extrabold text-[#fde047]">
+            <span class="bg-black/30 text-[#fde047] border border-[#d4af37]/50 px-3 py-1 rounded-full text-[11px] font-bold">2026 Master Grid</span>
+            <span class="group-hover:translate-x-1.5 transition-transform inline-flex items-center gap-1.5 font-black uppercase text-xs tracking-wider text-[#fde047]">
               Open <svg class="w-4 h-4" aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
             </span>
           </div>
         </button>
 
         <!-- 4. PAYMENTS BUTTON (ADMIN ONLY) -->
-        <button id="homeBtnPayments" onclick="switchTab('payments')" class="group relative bg-white border-2 border-slate-200/90 hover:border-[#800020] rounded-3xl p-7 sm:p-9 shadow-md hover:shadow-2xl hover:shadow-[#800020]/15 transition-all duration-300 transform hover:-translate-y-2 cursor-pointer text-left flex flex-col justify-between overflow-hidden">
-          <div class="h-2 w-full bg-gradient-to-r from-[#d4af37] via-[#800020] to-[#d4af37] absolute top-0 left-0"></div>
+        <button id="homeBtnPayments" onclick="switchTab('payments')" class="group relative bg-gradient-to-br from-[#38050b] via-[#5c0d1b] to-[#800020] border-2 border-[#d4af37]/60 hover:border-[#fde047] rounded-3xl p-7 sm:p-9 shadow-xl hover:shadow-2xl hover:shadow-[#38050b]/80 transition-all duration-300 transform hover:-translate-y-2 cursor-pointer text-left flex flex-col justify-between overflow-hidden">
+          <div class="h-2 w-full bg-gradient-to-r from-[#d4af37] via-[#fde047] to-[#d4af37] absolute top-0 left-0 group-hover:h-2.5 transition-all"></div>
           <div>
-            <div class="w-18 h-18 sm:w-22 sm:h-22 rounded-2xl bg-gradient-to-br from-[#5c0d1b] via-[#800020] to-[#38050b] text-[#fde047] border-2 border-[#d4af37]/80 flex items-center justify-center mb-6 group-hover:scale-105 group-hover:border-[#fde047] group-hover:shadow-xl group-hover:shadow-[#800020]/25 transition-all duration-300 shadow-md">
-              <svg class="w-9 h-9 sm:w-11 sm:h-11 transition-transform group-hover:rotate-1" aria-hidden="true"><use href="#icon-pro-payments"></use></svg>
+            <div class="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl bg-black/35 border-2 border-[#d4af37] text-[#fde047] flex items-center justify-center mb-6 group-hover:scale-105 group-hover:bg-[#d4af37] group-hover:text-[#38050b] transition-all duration-300 shadow-md">
+              <svg class="w-9 h-9 sm:w-10 sm:h-10 transition-transform group-hover:rotate-1" aria-hidden="true"><use href="#icon-pro-payments"></use></svg>
             </div>
             <div class="flex items-center justify-between">
-              <h2 class="text-2xl sm:text-3xl font-black text-slate-900 group-hover:text-[#800020] tracking-tight transition-colors">
+              <h2 class="text-2xl sm:text-3xl font-black text-white group-hover:text-[#fde047] tracking-tight transition-colors">
                 Payments
               </h2>
-              <span class="text-[10px] bg-[#d4af37] text-[#38050b] font-black px-2 py-0.5 rounded shadow-sm border border-[#c59b27]">ADMIN</span>
+              <span class="text-[10px] bg-[#d4af37] text-[#38050b] font-black px-2 py-0.5 rounded shadow-sm border border-[#fde047]">ADMIN</span>
             </div>
-            <p class="text-xs text-slate-500 font-semibold mt-1.5" data-en="Fees &amp; Financial Ledger" data-si="පාසල් ගාස්තු හා ගෙවීම්">
+            <p class="text-xs text-rose-100 font-semibold mt-1.5" data-en="Fees &amp; Financial Ledger" data-si="පාසල් ගාස්තු හා ගෙවීම්">
               Fees &amp; Financial Ledger
             </p>
           </div>
-          <div class="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-extrabold text-[#800020]">
-            <span id="homePaymentsCountBadge" class="bg-[#fdf2f4] text-[#800020] border border-rose-200 px-3 py-1 rounded-full text-[11px] font-bold">Fee Records</span>
-            <span class="group-hover:translate-x-1.5 transition-transform inline-flex items-center gap-1.5 font-black uppercase text-xs tracking-wider text-[#800020]">
+          <div class="mt-8 pt-4 border-t border-[#d4af37]/30 flex items-center justify-between text-xs font-extrabold text-[#fde047]">
+            <span id="homePaymentsCountBadge" class="bg-black/30 text-[#fde047] border border-[#d4af37]/50 px-3 py-1 rounded-full text-[11px] font-bold">Fee Records</span>
+            <span class="group-hover:translate-x-1.5 transition-transform inline-flex items-center gap-1.5 font-black uppercase text-xs tracking-wider text-[#fde047]">
               Open <svg class="w-4 h-4" aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
             </span>
           </div>
@@ -2332,6 +2332,6 @@
   </footer>
 
   <!-- App Script with cache-busting parameter -->
-  <script src="/static/js/app.js?v=3.8"></script>
+  <script src="/static/js/app.js?v=3.9"></script>
 </body>
 </html>
