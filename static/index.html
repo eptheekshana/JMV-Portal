@@ -304,18 +304,18 @@
   <header class="main-school-header bg-gradient-to-r from-[#5c0d1b] via-[#6b0f1a] to-[#5c0d1b] border-b-4 border-[#d4af37] shadow-xl">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5 flex flex-col md:flex-row items-center justify-between gap-4">
       
-      <!-- Brand Logo + Name -->
-      <div class="flex items-center gap-4 text-left">
-        <img src="/static/img/JMV_Logo.png" alt="WP/KE/Jayakody Maha Vidyalaya Official Crest" class="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-md select-none">
+      <!-- Brand Logo + Name (Click to direct to home screen) -->
+      <a href="javascript:void(0)" onclick="switchTab('home')" class="flex items-center gap-4 text-left cursor-pointer group focus:outline-none transition-all" title="Return to Home Screen">
+        <img src="/static/img/JMV_Logo.png" alt="WP/KE/Jayakody Maha Vidyalaya Official Crest" class="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-md select-none group-hover:scale-105 transition-transform">
         <div>
-          <h1 id="headerSchoolName" class="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-white uppercase leading-none">
+          <h1 id="headerSchoolName" class="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-white uppercase leading-none group-hover:text-[#fde047] transition-colors">
             JAYAKODY MAHA VIDYALAYA
           </h1>
           <p id="headerSubTitle" class="text-xs sm:text-sm font-semibold text-rose-100 mt-1">
             බප / කැල / ජයකොඩි ම.වි - ගණේමුල්ල 
           </p>
         </div>
-      </div>
+      </a>
 
       <!-- Portal context -->
       <div class="flex flex-col md:items-end items-center gap-1.5">
@@ -2242,17 +2242,17 @@
         
         <!-- Col 1: JMV Heritage, Crest & Vision (lg:col-span-4) -->
         <div class="lg:col-span-4 space-y-4">
-          <div class="flex items-center gap-3.5">
-            <img src="/static/img/JMV_Logo.png" alt="Jayakody Maha Vidyalaya Official Crest" class="w-14 h-14 object-contain drop-shadow-md select-none shrink-0">
+          <a href="javascript:void(0)" onclick="switchTab('home'); window.scrollTo({top: 0, behavior: 'smooth'});" class="flex items-center gap-3.5 cursor-pointer group focus:outline-none transition-all" title="Return to Home Screen">
+            <img src="/static/img/JMV_Logo.png" alt="Jayakody Maha Vidyalaya Official Crest" class="w-14 h-14 object-contain drop-shadow-md select-none shrink-0 group-hover:scale-105 transition-transform">
             <div>
-              <h3 class="font-black text-white text-base sm:text-lg uppercase tracking-tight leading-tight">
+              <h3 class="font-black text-white text-base sm:text-lg uppercase tracking-tight leading-tight group-hover:text-[#fde047] transition-colors">
                 Jayakody Maha Vidyalaya
               </h3>
               <p class="text-xs text-[#fde047] font-bold mt-0.5">
                 බප / කැල / ජයකොඩි ම.වි - ගණේමුල්ල
               </p>
             </div>
-          </div>
+          </a>
           
           <p class="text-xs text-rose-100/80 leading-relaxed font-normal">
             To mould a generation of disciplined, intellectually empowered, and virtuous citizens who proudly uphold Sri Lankan values and educational excellence.
@@ -2401,6 +2401,6 @@
   </footer>
 
   <!-- App Script with cache-busting parameter -->
-  <script src="/static/js/app.js?v=4.5"></script>
+  <script src="/static/js/app.js?v=4.6"></script>
 </body>
 </html>
