@@ -1490,7 +1490,7 @@ function renderSuggestions(suggestions, dropdown) {
         <div class="font-bold text-sm text-slate-800 truncate">${escapeHtml(item.title)} <span class="font-mono text-xs text-[#800020] ml-1">(${item.id})</span></div>
         <div class="text-xs text-slate-500 truncate">${escapeHtml(item.subtitle)}</div>
       </div>
-      <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded ${item.type === 'student' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'}">
+      <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded ${item.type === 'student' ? 'bg-[#fdf2f4] text-[#800020] border border-rose-200' : 'bg-[#d4af37]/20 text-[#38050b] border border-[#d4af37]'}">
         ${item.type}
       </span>
     </div>
@@ -1583,8 +1583,8 @@ function renderResult(item, type) {
   if (typeBadge) {
     typeBadge.textContent = isStudent ? 'Student Profile' : 'Faculty Profile';
     typeBadge.className = isStudent 
-      ? 'bg-blue-600 text-white text-xs font-extrabold uppercase px-3 py-1 rounded' 
-      : 'bg-[#d4af37] text-[#38050b] text-xs font-extrabold uppercase px-3 py-1 rounded';
+      ? 'bg-[#5c0d1b] text-white text-xs font-extrabold uppercase px-3 py-1 rounded border border-[#d4af37]/40' 
+      : 'bg-[#d4af37] text-[#38050b] text-xs font-extrabold uppercase px-3 py-1 rounded border border-[#c59b27]';
   }
 
   // Render Dossier View (Comprehensive Record)
@@ -2052,7 +2052,7 @@ function renderDossier(item, type) {
         </div>
         <div>
           <span class="block uppercase font-bold text-slate-400">Status</span>
-          <span class="font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded text-[11px]">${escapeHtml(item.status)}</span>
+          <span class="font-bold text-[#800020] bg-[#fdf2f4] border border-rose-200 px-2 py-0.5 rounded text-[11px]">${escapeHtml(item.status)}</span>
         </div>
       </div>
     </div>
@@ -2082,7 +2082,7 @@ function renderDossier(item, type) {
         <div>
           <span class="block uppercase font-bold text-slate-400">Gender &amp; Date of Birth</span>
           <span class="font-bold text-slate-800">${escapeHtml(item.gender || '—')} • ${escapeHtml(item.dob || '—')}</span>
-          ${calculateAge(item.dob) !== null ? `<span class="inline-block ml-1.5 px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-100 text-blue-900 border border-blue-200">${calculateAge(item.dob)} yrs old</span>` : ''}
+          ${calculateAge(item.dob) !== null ? `<span class="inline-block ml-1.5 px-2 py-0.5 rounded text-[10px] font-extrabold bg-[#fdf2f4] text-[#800020] border border-rose-200">${calculateAge(item.dob)} yrs old</span>` : ''}
         </div>
         <div>
           <span class="block uppercase font-bold text-slate-400">Guardian / Parent</span>
@@ -2209,7 +2209,7 @@ function renderDossier(item, type) {
         </div>
         <div>
           <span class="block uppercase font-bold text-slate-400">Status</span>
-          <span class="font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded text-[11px]">${escapeHtml(item.status)}</span>
+          <span class="font-bold text-[#800020] bg-[#fdf2f4] border border-rose-200 px-2 py-0.5 rounded text-[11px]">${escapeHtml(item.status)}</span>
         </div>
       </div>
     </div>
@@ -2269,7 +2269,7 @@ function renderDossier(item, type) {
         ${!isStudent && ttProfile ? `
           <div class="flex flex-wrap justify-center gap-1.5 pt-1">
             ${staffFormClass ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-100 text-[#5c0d1b] border border-[#d4af37]">Class Teacher: ${escapeHtml(staffFormClass)}</span>` : ''}
-            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-blue-100 text-blue-900 border border-blue-200">${ttProfile.teaching_load} Periods/Wk</span>
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-[#fdf2f4] text-[#800020] border border-rose-200">${ttProfile.teaching_load} Periods/Wk</span>
           </div>
         ` : ''}
         <div class="space-y-2 pt-2">
@@ -2521,7 +2521,7 @@ function renderStudentsTable(students) {
       <td class="p-3.5 text-xs whitespace-nowrap">
         ${s.dob ? `
           <div class="font-bold text-slate-800">${escapeHtml(s.dob)}</div>
-          ${age !== null ? `<span class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-100 text-blue-900 border border-blue-300">${age} yrs old</span>` : ''}
+          ${age !== null ? `<span class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-extrabold bg-[#fdf2f4] text-[#800020] border border-rose-200">${age} yrs old</span>` : ''}
         ` : `<span class="text-slate-400 font-semibold">—</span>`}
       </td>
       <td class="p-3.5 text-xs text-slate-600 max-w-[200px] truncate" title="${escapeHtml(s.address || '')}">
@@ -2533,7 +2533,7 @@ function renderStudentsTable(students) {
         </span>
       </td>
       <td class="p-3.5">
-        <span class="text-xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+        <span class="text-xs font-bold px-2 py-0.5 rounded bg-[#fdf2f4] text-[#800020] border border-rose-200">
           ${escapeHtml(s.status)}
         </span>
       </td>
@@ -2743,7 +2743,7 @@ function renderStaffTable(staff) {
       </td>
       <td class="p-3.5 font-mono text-xs text-slate-600">${escapeHtml(st.epf_no || '—')}</td>
       <td class="p-3.5">
-        <span class="text-xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+        <span class="text-xs font-bold px-2 py-0.5 rounded bg-[#fdf2f4] text-[#800020] border border-rose-200">
           ${escapeHtml(st.status)}
         </span>
       </td>
@@ -3678,7 +3678,7 @@ function updateRoleBasedUI() {
         userRoleBadge.className = 'bg-[#d4af37] text-[#38050b] text-[10px] font-extrabold uppercase px-2 py-0.5 rounded';
       } else {
         userRoleBadge.textContent = 'TEACHER';
-        userRoleBadge.className = 'bg-blue-600 text-white text-[10px] font-extrabold uppercase px-2 py-0.5 rounded';
+        userRoleBadge.className = 'bg-[#5c0d1b] text-[#fde047] text-[10px] font-extrabold uppercase px-2 py-0.5 rounded border border-[#d4af37]/60';
       }
     }
 
@@ -4061,7 +4061,9 @@ function showToast(message, type = 'info') {
   if (!container) return;
 
   const toast = document.createElement('div');
-  const bgClass = type === 'error' ? 'bg-rose-700 text-white' : (type === 'success' ? 'bg-emerald-700 text-white' : 'bg-slate-800 text-white');
+  const bgClass = type === 'error' 
+    ? 'bg-[#800020] text-white border-2 border-rose-400' 
+    : (type === 'success' ? 'bg-[#38050b] text-[#fde047] border-2 border-[#d4af37]' : 'bg-[#5c0d1b] text-white border-2 border-[#d4af37]');
   toast.className = `${bgClass} px-4 py-2.5 rounded-lg shadow-xl text-xs font-bold flex items-center gap-2 border-l-4 border-[#d4af37] transition-all transform duration-300`;
   const toastIcon = type === 'success' ? 'shield' : (type === 'error' ? 'alert' : 'clipboard');
   toast.innerHTML = `${icon(toastIcon)} <span>${escapeHtml(message)}</span>`;
@@ -4118,7 +4120,7 @@ function updateHomeView() {
       roleBadge.className = 'bg-[#d4af37] text-[#38050b] text-[10px] font-extrabold uppercase px-2 py-0.5 rounded';
     } else {
       roleBadge.textContent = 'TEACHER';
-      roleBadge.className = 'bg-blue-600 text-white text-[10px] font-extrabold uppercase px-2 py-0.5 rounded';
+      roleBadge.className = 'bg-[#5c0d1b] text-[#fde047] text-[10px] font-extrabold uppercase px-2 py-0.5 rounded border border-[#d4af37]/60';
     }
   }
 
@@ -4211,8 +4213,8 @@ function renderPaymentsTable(list) {
   tbody.innerHTML = list.map(p => {
     const isPaid = (p.status || '').toLowerCase() === 'paid';
     const statusBadge = isPaid
-      ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">Paid</span>`
-      : `<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-amber-100 text-amber-800 border border-amber-300">Pending</span>`;
+      ? `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-[#fdf2f4] text-[#800020] border border-rose-200">Paid</span>`
+      : `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-amber-50 text-amber-900 border border-amber-300">Pending</span>`;
     const amt = Number(p.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     
     return `

@@ -577,16 +577,16 @@
           </h2>
         </div>
         <div class="directory-action-bar flex items-center gap-2 flex-nowrap shrink-0 overflow-x-auto max-w-full py-1">
-          <span id="studentsCountBadge" class="bg-blue-100 text-blue-800 text-xs font-extrabold px-3 py-2 rounded-lg shrink-0 whitespace-nowrap">
+          <span id="studentsCountBadge" class="bg-[#fdf2f4] text-[#800020] border border-rose-200 text-xs font-extrabold px-3 py-2 rounded-lg shrink-0 whitespace-nowrap">
             0 Enrolled
           </span>
           <a id="studentTemplateLink" href="/api/templates/students.xlsx" download="JMV_Student_Bulk_Upload_Template.xlsx" class="px-3.5 py-2 bg-white hover:bg-amber-50 text-[#800020] border border-[#d4af37] text-xs font-bold uppercase rounded-lg shadow-sm transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap" title="Download Student Excel Bulk Upload Template">
             <svg class="ui-icon" aria-hidden="true"><use href="#icon-clipboard"></use></svg> <span>Student Excel Template</span>
           </a>
-          <button id="bulkStudentBtn" onclick="openBulkUploadModal('student')" class="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold uppercase rounded-lg shadow transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap">
+          <button id="bulkStudentBtn" onclick="openBulkUploadModal('student')" class="px-3.5 py-2 bg-[#5c0d1b] hover:bg-[#38050b] text-[#fde047] border border-[#d4af37]/60 text-xs font-bold uppercase rounded-lg shadow transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap">
             <svg class="ui-icon" aria-hidden="true"><use href="#icon-plus"></use></svg> <span>Bulk Upload (Excel)</span>
           </button>
-          <button id="addStudentBtn" onclick="openAddStudentModal()" class="px-4 py-2 bg-[#800020] hover:bg-[#5c0d1b] text-white text-xs font-bold uppercase rounded-lg shadow transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap">
+          <button id="addStudentBtn" onclick="openAddStudentModal()" class="px-4 py-2 bg-[#38050b] hover:bg-[#5c0d1b] text-white border border-[#d4af37] text-xs font-bold uppercase rounded-lg shadow transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap">
             <svg class="ui-icon" aria-hidden="true"><use href="#icon-plus"></use></svg> <span data-en="Enroll New Student" data-si="නව සිසුවෙකු ඇතුළත් කරන්න">Enroll New Student</span>
           </button>
         </div>
@@ -811,7 +811,7 @@
             <span id="ttClassFormTeacherBadge" class="bg-amber-50 text-[#800020] border border-amber-300 text-xs font-extrabold px-3 py-1.5 rounded-lg flex items-center gap-1.5">
               <svg class="ui-icon" aria-hidden="true"><use href="#icon-users"></use></svg> <span id="ttClassFormTeacherText">Class Teacher: Loading...</span>
             </span>
-            <span id="ttTeacherLoadBadge" class="hidden bg-blue-50 text-blue-900 border border-blue-300 text-xs font-extrabold px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+            <span id="ttTeacherLoadBadge" class="hidden bg-[#fdf2f4] text-[#800020] border border-rose-200 text-xs font-extrabold px-3 py-1.5 rounded-lg flex items-center gap-1.5">
               <svg class="ui-icon" aria-hidden="true"><use href="#icon-chart"></use></svg> <span id="ttTeacherLoadText">Teaching Load: 0 Periods</span>
             </span>
           </div>
@@ -923,16 +923,16 @@
             </h2>
           </div>
           <div class="directory-action-bar flex items-center gap-2 flex-nowrap shrink-0 overflow-x-auto max-w-full py-1">
-            <span id="staffCountBadge" class="bg-amber-100 text-amber-800 text-xs font-extrabold px-3 py-2 rounded-lg shrink-0 whitespace-nowrap">
+            <span id="staffCountBadge" class="bg-[#d4af37]/20 text-[#38050b] border border-[#d4af37] text-xs font-extrabold px-3 py-2 rounded-lg shrink-0 whitespace-nowrap">
               0 Staff
             </span>
             <a id="staffTemplateLink" href="/api/templates/staff.xlsx" download="JMV_Teachers_Staff_Bulk_Upload_Template.xlsx" class="px-3.5 py-2 bg-white hover:bg-amber-50 text-[#800020] border border-[#d4af37] text-xs font-bold uppercase rounded-lg shadow-sm transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap" title="Download Teachers & Staff Excel Bulk Upload Template">
               <svg class="ui-icon" aria-hidden="true"><use href="#icon-clipboard"></use></svg> <span>Teachers Excel Template</span>
             </a>
-            <button id="bulkStaffBtn" onclick="openBulkUploadModal('staff')" class="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold uppercase rounded-lg shadow transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap">
+            <button id="bulkStaffBtn" onclick="openBulkUploadModal('staff')" class="px-3.5 py-2 bg-[#5c0d1b] hover:bg-[#38050b] text-[#fde047] border border-[#d4af37]/60 text-xs font-bold uppercase rounded-lg shadow transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap">
               <svg class="ui-icon" aria-hidden="true"><use href="#icon-plus"></use></svg> <span>Bulk Upload (Excel)</span>
             </button>
-            <button id="addStaffBtn" onclick="openAddStaffModal()" class="px-4 py-2 bg-[#800020] hover:bg-[#5c0d1b] text-white text-xs font-bold uppercase rounded-lg shadow transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap">
+            <button id="addStaffBtn" onclick="openAddStaffModal()" class="px-4 py-2 bg-[#38050b] hover:bg-[#5c0d1b] text-white border border-[#d4af37] text-xs font-bold uppercase rounded-lg shadow transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap">
               <svg class="ui-icon" aria-hidden="true"><use href="#icon-plus"></use></svg> <span data-en="Add Faculty Member" data-si="ගුරු සාමාජිකයෙකු එක් කරන්න">Add Faculty Member</span>
             </button>
           </div>
@@ -1019,7 +1019,7 @@
             </p>
           </div>
           <div class="flex items-center gap-2">
-            <button onclick="openPaymentModal()" class="px-4 py-2 bg-[#800020] hover:bg-[#5c0d1b] text-white text-xs font-bold uppercase rounded-lg shadow flex items-center gap-1.5 cursor-pointer">
+            <button onclick="openPaymentModal()" class="px-4 py-2 bg-[#38050b] hover:bg-[#5c0d1b] text-white border border-[#d4af37] text-xs font-bold uppercase rounded-lg shadow flex items-center gap-1.5 cursor-pointer">
               <svg class="ui-icon" aria-hidden="true"><use href="#icon-plus"></use></svg>
               <span data-en="Record New Payment" data-si="නව ගෙවීමක් සටහන් කරන්න">Record New Payment</span>
             </button>
@@ -1034,25 +1034,25 @@
           <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Collected</span>
-              <span class="p-2 rounded-xl bg-emerald-50 text-emerald-700"><svg class="w-5 h-5" aria-hidden="true"><use href="#icon-payments"></use></svg></span>
+              <span class="p-2 rounded-xl bg-[#fdf2f4] text-[#800020] border border-rose-200"><svg class="w-5 h-5" aria-hidden="true"><use href="#icon-payments"></use></svg></span>
             </div>
-            <div id="payKpiCollected" class="text-2xl font-black text-emerald-700 mt-2">LKR 0.00</div>
+            <div id="payKpiCollected" class="text-2xl font-black text-[#800020] mt-2">LKR 0.00</div>
             <p class="text-[11px] text-slate-400 mt-1">Verified school fee receipts</p>
           </div>
 
           <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Dues</span>
-              <span class="p-2 rounded-xl bg-amber-50 text-amber-700"><svg class="w-5 h-5" aria-hidden="true"><use href="#icon-alert"></use></svg></span>
+              <span class="p-2 rounded-xl bg-amber-50 text-amber-800 border border-amber-200"><svg class="w-5 h-5" aria-hidden="true"><use href="#icon-alert"></use></svg></span>
             </div>
-            <div id="payKpiPending" class="text-2xl font-black text-amber-700 mt-2">LKR 0.00</div>
+            <div id="payKpiPending" class="text-2xl font-black text-amber-800 mt-2">LKR 0.00</div>
             <p class="text-[11px] text-slate-400 mt-1">Outstanding collections</p>
           </div>
 
           <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Paid Transactions</span>
-              <span class="p-2 rounded-xl bg-blue-50 text-blue-700"><svg class="w-5 h-5" aria-hidden="true"><use href="#icon-shield"></use></svg></span>
+              <span class="p-2 rounded-xl bg-[#fdf2f4] text-[#800020] border border-rose-200"><svg class="w-5 h-5" aria-hidden="true"><use href="#icon-shield"></use></svg></span>
             </div>
             <div id="payKpiPaidCount" class="text-2xl font-black text-slate-900 mt-2">0</div>
             <p class="text-[11px] text-slate-400 mt-1">Receipts issued this year</p>
@@ -1061,9 +1061,9 @@
           <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Notices</span>
-              <span class="p-2 rounded-xl bg-rose-50 text-rose-700"><svg class="w-5 h-5" aria-hidden="true"><use href="#icon-clipboard"></use></svg></span>
+              <span class="p-2 rounded-xl bg-amber-50 text-amber-800 border border-amber-200"><svg class="w-5 h-5" aria-hidden="true"><use href="#icon-clipboard"></use></svg></span>
             </div>
-            <div id="payKpiPendingCount" class="text-2xl font-black text-rose-700 mt-2">0</div>
+            <div id="payKpiPendingCount" class="text-2xl font-black text-amber-800 mt-2">0</div>
             <p class="text-[11px] text-slate-400 mt-1">Due notice reminders</p>
           </div>
         </div>
@@ -1192,7 +1192,7 @@
               <div>
                 <div class="flex items-center justify-between mb-1.5">
                   <label class="block font-bold text-slate-700">Date of Birth (DOB)</label>
-                  <span id="studentCalculatedAgeBadge" class="hidden text-xs font-extrabold px-2 py-0.5 rounded bg-blue-100 text-blue-900 border border-blue-300"></span>
+                  <span id="studentCalculatedAgeBadge" class="hidden text-xs font-extrabold px-2 py-0.5 rounded bg-[#fdf2f4] text-[#800020] border border-rose-200"></span>
                 </div>
                 <input type="date" id="studentDobInput" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
               </div>
@@ -1357,20 +1357,20 @@
             </div>
 
             <!-- A/L Stream & Subject Panel (Shown when Education Level == Advanced Level) -->
-            <div id="alSubjectsContainer" class="hidden bg-blue-50/80 border-2 border-blue-300 rounded-xl p-5 space-y-4">
-              <div class="flex items-center justify-between border-b border-blue-200 pb-2.5">
-                <h4 class="font-extrabold text-[#800020] text-sm uppercase flex items-center gap-2">
+            <div id="alSubjectsContainer" class="hidden bg-[#fdf2f4]/60 border-2 border-[#d4af37]/60 rounded-xl p-5 space-y-4">
+              <div class="flex items-center justify-between border-b border-[#d4af37]/40 pb-2.5">
+                <h4 class="font-extrabold text-[#38050b] text-sm uppercase flex items-center gap-2">
                   <svg class="ui-icon" aria-hidden="true"><use href="#icon-graduation"></use></svg>
                   Advanced Level (A/L) Stream &amp; Subject Selection *
                 </h4>
-                <span class="text-xs bg-blue-700 text-white font-extrabold px-2.5 py-1 rounded">G.C.E. A/L</span>
+                <span class="text-xs bg-[#38050b] text-[#fde047] font-extrabold px-2.5 py-1 rounded border border-[#d4af37]">G.C.E. A/L</span>
               </div>
 
               <!-- Mandatory English Notice -->
-              <div class="flex items-center gap-2.5 p-3 bg-emerald-50 border border-emerald-300 rounded-lg text-emerald-900 text-sm">
-                <span class="text-emerald-700 font-extrabold text-base">✓</span>
+              <div class="flex items-center gap-2.5 p-3 bg-amber-50/80 border border-amber-300 rounded-lg text-amber-950 text-sm">
+                <span class="text-[#38050b] font-extrabold text-base">✓</span>
                 <div>
-                  <strong>Compulsory Core Subject:</strong> <span class="font-extrabold text-emerald-800">13 - General English</span> is default and mandatory for every A/L student.
+                  <strong>Compulsory Core Subject:</strong> <span class="font-extrabold text-[#38050b]">13 - General English</span> is default and mandatory for every A/L student.
                 </div>
               </div>
 
@@ -1789,7 +1789,7 @@
               <button type="button" onclick="fillLoginForm('eptheekshana', '')" class="flex-1 py-1.5 px-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-semibold text-center cursor-pointer">
                 <strong>Admin</strong> (All 4 buttons)
               </button>
-              <button type="button" onclick="fillLoginForm('teacher', '')" class="flex-1 py-1.5 px-2 bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-300 rounded font-semibold text-center cursor-pointer">
+              <button type="button" onclick="fillLoginForm('teacher', '')" class="flex-1 py-1.5 px-2 bg-[#fdf2f4] hover:bg-rose-100 text-[#38050b] border border-[#800020]/30 rounded font-semibold text-center cursor-pointer">
                 <strong>Teacher</strong> (Student &amp; Timetable)
               </button>
             </div>
@@ -1995,7 +1995,7 @@
 
         <div class="pt-3 border-t border-slate-200 flex justify-end gap-3">
           <button type="button" onclick="closeModals()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 font-bold uppercase cursor-pointer">Close</button>
-          <button type="submit" id="bulkUploadSubmitBtn" class="px-6 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold uppercase rounded-lg shadow cursor-pointer flex items-center gap-1.5">
+          <button type="submit" id="bulkUploadSubmitBtn" class="px-6 py-2 bg-[#38050b] hover:bg-[#5c0d1b] text-white border border-[#d4af37] font-bold uppercase rounded-lg shadow cursor-pointer flex items-center gap-1.5">
             <svg class="ui-icon" aria-hidden="true"><use href="#icon-plus"></use></svg> <span id="bulkUploadSubmitText">Upload &amp; Import Records</span>
           </button>
         </div>
@@ -2389,6 +2389,6 @@
   </footer>
 
   <!-- App Script with cache-busting parameter -->
-  <script src="/static/js/app.js?v=4.3"></script>
+  <script src="/static/js/app.js?v=4.4"></script>
 </body>
 </html>
