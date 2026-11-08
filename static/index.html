@@ -1129,6 +1129,7 @@
         </div>
       </div>
     </section>
+  </main>
 
   <!-- ======================================================================
        6. MODAL DIALOGS (Enroll Student & Add Faculty)
@@ -2221,15 +2222,15 @@
   <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2"></div>
 
   <!-- ======================================================================
-       7. PROFESSIONAL INSTITUTIONAL FOOTER (Royal Maroon & Imperial Gold)
+       7. PROFESSIONAL INSTITUTIONAL FOOTER (Royal Maroon & Imperial Gold - Full Width)
        ====================================================================== -->
-  <footer class="dashboard-footer bg-[#38050b] text-rose-100 border-t-4 border-[#d4af37] mt-20 relative shadow-2xl">
+  <footer class="dashboard-footer w-full bg-[#38050b] text-rose-100 border-t-4 border-[#d4af37] mt-20 relative shadow-2xl">
     
     <!-- Top subtle gold decorative accent line -->
     <div class="h-1 w-full bg-gradient-to-r from-transparent via-[#fde047]/40 to-transparent"></div>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12">
+    <div class="w-full px-6 sm:px-10 lg:px-16 xl:px-20 py-12 lg:py-16">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12 w-full">
         
         <!-- Col 1: JMV Heritage, Crest & Vision (lg:col-span-4) -->
         <div class="lg:col-span-4 space-y-4">
@@ -2249,7 +2250,7 @@
             To mould a generation of disciplined, intellectually empowered, and virtuous citizens who proudly uphold Sri Lankan values and educational excellence.
           </p>
 
-          <div class="p-3 rounded-xl bg-black/30 border border-[#d4af37]/30 space-y-1.5">
+          <div class="p-3.5 rounded-xl bg-black/30 border border-[#d4af37]/30 space-y-1.5">
             <div class="text-[11px] font-bold text-[#fde047] flex items-center gap-2">
               <svg class="ui-icon text-[#fde047]" aria-hidden="true"><use href="#icon-trophy"></use></svg>
               <span>පාසල් තේමා පාඨය:</span>
@@ -2271,7 +2272,7 @@
           <h4 class="text-xs font-black uppercase tracking-widest text-[#fde047] pb-2 border-b border-[#5c0d1b] flex items-center gap-2">
             <span>Core Modules</span>
           </h4>
-          <ul class="space-y-2 text-xs font-medium">
+          <ul class="space-y-2.5 text-xs font-medium">
             <li>
               <button onclick="switchTab('home')" class="inline-flex items-center gap-2.5 text-rose-100 hover:text-[#fde047] transition-all hover:translate-x-1 cursor-pointer">
                 <svg class="ui-icon" aria-hidden="true"><use href="#icon-home"></use></svg>
@@ -2372,9 +2373,9 @@
       </div>
     </div>
 
-    <!-- Bottom Copyright & Engineering Bar -->
+    <!-- Bottom Copyright & Engineering Bar (Full Width) -->
     <div class="border-t border-[#5c0d1b] bg-[#2a0308]/60 py-5">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-rose-200/80 gap-3">
+      <div class="w-full px-6 sm:px-10 lg:px-16 xl:px-20 flex flex-col sm:flex-row items-center justify-between text-xs text-rose-200/80 gap-3">
         <p class="text-center sm:text-left">
           &copy; 2026 WP/KE/Jayakody Maha Vidyalaya. All Rights Reserved.
         </p>
@@ -2392,6 +2393,6 @@
   </footer>
 
   <!-- App Script with cache-busting parameter -->
-  <script src="/static/js/app.js?v=4.1"></script>
+  <script src="/static/js/app.js?v=4.2"></script>
 </body>
 </html>
