@@ -404,7 +404,7 @@
       <div id="homeModulesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
 
         <!-- 1. STUDENTS BUTTON -->
-        <button id="homeBtnStudents" onclick="switchTab('students')" class="group relative flex flex-col items-center justify-center py-10 px-6 sm:py-12 sm:px-8 rounded-2xl bg-[#800020] hover:bg-[#5c0d1b] border-2 border-[#d4af37] hover:border-[#fde047] text-white shadow-xl hover:shadow-2xl hover:shadow-[#800020]/50 transition-all duration-200 transform hover:-translate-y-1.5 active:translate-y-0.5 cursor-pointer text-center">
+        <button id="homeBtnStudents" onclick="switchTab('students')" class="group relative flex flex-col items-center justify-center py-10 px-6 sm:py-12 sm:px-8 rounded-2xl bg-[#38050b] hover:bg-[#5c0d1b] border-2 border-[#d4af37] hover:border-[#fde047] text-white shadow-xl hover:shadow-2xl hover:shadow-[#38050b]/60 transition-all duration-200 transform hover:-translate-y-1.5 active:translate-y-0.5 cursor-pointer text-center">
           <div class="text-[#fde047] group-hover:scale-110 transition-transform mb-4">
             <svg class="w-16 h-16 sm:w-20 sm:h-20" aria-hidden="true"><use href="#icon-pro-students"></use></svg>
           </div>
@@ -414,7 +414,7 @@
         </button>
 
         <!-- 2. STAFF BUTTON (ADMIN ONLY) -->
-        <button id="homeBtnStaff" onclick="switchTab('staff')" class="group relative flex flex-col items-center justify-center py-10 px-6 sm:py-12 sm:px-8 rounded-2xl bg-[#800020] hover:bg-[#5c0d1b] border-2 border-[#d4af37] hover:border-[#fde047] text-white shadow-xl hover:shadow-2xl hover:shadow-[#800020]/50 transition-all duration-200 transform hover:-translate-y-1.5 active:translate-y-0.5 cursor-pointer text-center">
+        <button id="homeBtnStaff" onclick="switchTab('staff')" class="group relative flex flex-col items-center justify-center py-10 px-6 sm:py-12 sm:px-8 rounded-2xl bg-[#38050b] hover:bg-[#5c0d1b] border-2 border-[#d4af37] hover:border-[#fde047] text-white shadow-xl hover:shadow-2xl hover:shadow-[#38050b]/60 transition-all duration-200 transform hover:-translate-y-1.5 active:translate-y-0.5 cursor-pointer text-center">
           <span class="absolute top-3 right-3 text-[10px] bg-[#d4af37] text-[#38050b] font-black uppercase px-2.5 py-0.5 rounded shadow">ADMIN</span>
           <div class="text-[#fde047] group-hover:scale-110 transition-transform mb-4">
             <svg class="w-16 h-16 sm:w-20 sm:h-20" aria-hidden="true"><use href="#icon-pro-staff"></use></svg>
@@ -425,7 +425,7 @@
         </button>
 
         <!-- 3. TIME TABLES BUTTON -->
-        <button id="homeBtnTimetable" onclick="switchTab('timetable')" class="group relative flex flex-col items-center justify-center py-10 px-6 sm:py-12 sm:px-8 rounded-2xl bg-[#800020] hover:bg-[#5c0d1b] border-2 border-[#d4af37] hover:border-[#fde047] text-white shadow-xl hover:shadow-2xl hover:shadow-[#800020]/50 transition-all duration-200 transform hover:-translate-y-1.5 active:translate-y-0.5 cursor-pointer text-center">
+        <button id="homeBtnTimetable" onclick="switchTab('timetable')" class="group relative flex flex-col items-center justify-center py-10 px-6 sm:py-12 sm:px-8 rounded-2xl bg-[#38050b] hover:bg-[#5c0d1b] border-2 border-[#d4af37] hover:border-[#fde047] text-white shadow-xl hover:shadow-2xl hover:shadow-[#38050b]/60 transition-all duration-200 transform hover:-translate-y-1.5 active:translate-y-0.5 cursor-pointer text-center">
           <div class="text-[#fde047] group-hover:scale-110 transition-transform mb-4">
             <svg class="w-16 h-16 sm:w-20 sm:h-20" aria-hidden="true"><use href="#icon-pro-timetable"></use></svg>
           </div>
@@ -435,7 +435,7 @@
         </button>
 
         <!-- 4. PAYMENTS BUTTON (ADMIN ONLY) -->
-        <button id="homeBtnPayments" onclick="switchTab('payments')" class="group relative flex flex-col items-center justify-center py-10 px-6 sm:py-12 sm:px-8 rounded-2xl bg-[#800020] hover:bg-[#5c0d1b] border-2 border-[#d4af37] hover:border-[#fde047] text-white shadow-xl hover:shadow-2xl hover:shadow-[#800020]/50 transition-all duration-200 transform hover:-translate-y-1.5 active:translate-y-0.5 cursor-pointer text-center">
+        <button id="homeBtnPayments" onclick="switchTab('payments')" class="group relative flex flex-col items-center justify-center py-10 px-6 sm:py-12 sm:px-8 rounded-2xl bg-[#38050b] hover:bg-[#5c0d1b] border-2 border-[#d4af37] hover:border-[#fde047] text-white shadow-xl hover:shadow-2xl hover:shadow-[#38050b]/60 transition-all duration-200 transform hover:-translate-y-1.5 active:translate-y-0.5 cursor-pointer text-center">
           <span class="absolute top-3 right-3 text-[10px] bg-[#d4af37] text-[#38050b] font-black uppercase px-2.5 py-0.5 rounded shadow">ADMIN</span>
           <div class="text-[#fde047] group-hover:scale-110 transition-transform mb-4">
             <svg class="w-16 h-16 sm:w-20 sm:h-20" aria-hidden="true"><use href="#icon-pro-payments"></use></svg>
@@ -444,10 +444,6 @@
             Payments
           </span>
         </button>
-
-      </div>
-
-    </section>
 
       </div>
 
@@ -2393,6 +2389,6 @@
   </footer>
 
   <!-- App Script with cache-busting parameter -->
-  <script src="/static/js/app.js?v=4.2"></script>
+  <script src="/static/js/app.js?v=4.3"></script>
 </body>
 </html>
