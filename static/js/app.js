@@ -27,8 +27,10 @@ const AppState = {
   selectedTeacher: '',
   userHasManuallySelectedTimetable: false,
   marksList: [],
+  paymentsList: [],
+  paymentStats: null,
   stats: null,
-  activeTab: 'lookup',
+  activeTab: 'home',
   language: 'en'             // 'en' | 'si'
 };
 
@@ -55,15 +57,20 @@ document.addEventListener('DOMContentLoaded', () => {
       loadStudents();
       if (AppState.currentUser.role === 'admin') {
         loadStaff();
+        loadPayments();
       }
     }
+    updateHomeView();
   });
 
   // Check URL params for direct ID lookup e.g. ?id=JMV-STU-1001
   const urlParams = new URLSearchParams(window.location.search);
   const directId = urlParams.get('id');
   if (directId) {
+    switchTab('lookup');
     executeLookup(directId);
+  } else {
+    switchTab('home');
   }
 });
 
@@ -252,6 +259,7 @@ function switchTab(tabId) {
   }
 
   // Refresh data if needed (only if not already loaded)
+  if (tabId === 'home') updateHomeView();
   if (tabId === 'students' && (!AppState.studentsList || AppState.studentsList.length === 0)) loadStudents();
   if (tabId === 'marks' && (!AppState.marksList || AppState.marksList.length === 0)) loadAllMarksLedger();
   if (tabId === 'timetable' && (!AppState.timetableList || AppState.timetableList.length === 0)) loadTimetable();
@@ -263,6 +271,16 @@ function switchTab(tabId) {
       if (container) container.classList.add('hidden');
     } else {
       if (!AppState.staffList || AppState.staffList.length === 0) loadStaff();
+    }
+  }
+  if (tabId === 'payments') {
+    if (AppState.currentUser && AppState.currentUser.role === 'teacher') {
+      const banner = document.getElementById('paymentsTeacherRestrictedBanner');
+      const container = document.getElementById('paymentsMainContainer');
+      if (banner) banner.classList.remove('hidden');
+      if (container) container.classList.add('hidden');
+    } else {
+      if (!AppState.paymentsList || AppState.paymentsList.length === 0) loadPayments();
     }
   }
 }
@@ -2438,6 +2456,7 @@ async function loadStudents() {
     if (Array.isArray(students)) {
       AppState.studentsList = students;
       renderStudentsTable(students);
+      updateHomeView();
       if (!search && !grade && !house) {
         const activeStuCount = students.filter(s => ((s.status || 'Active').trim().toLowerCase() === 'active')).length;
         const stripStu = document.getElementById('stripStudents');
@@ -2577,6 +2596,7 @@ async function loadStaff() {
     if (Array.isArray(staff)) {
       AppState.staffList = staff;
       renderStaffTable(staff);
+      updateHomeView();
       if (!search && !dept) {
         const activeStaff = staff.filter(st => ((st.status || 'Active').trim().toLowerCase() === 'active'));
         const nonAcadCount = activeStaff.filter(st => {
@@ -2789,6 +2809,7 @@ async function loadStats(retryCount = 2) {
       return;
     }
     AppState.stats = stats;
+    updateHomeView();
 
     const stripStu = document.getElementById('stripStudents');
     const stripStf = document.getElementById('stripStaff');
@@ -2914,6 +2935,10 @@ function closeModals() {
   if (marksModal) marksModal.classList.add('hidden');
   if (bulkUploadModal) bulkUploadModal.classList.add('hidden');
   if (assignModal) assignModal.classList.add('hidden');
+  const payModal = document.getElementById('paymentModal');
+  const recModal = document.getElementById('receiptModal');
+  if (payModal) payModal.classList.add('hidden');
+  if (recModal) recModal.classList.add('hidden');
   document.body.style.overflow = '';
 }
 
@@ -2971,6 +2996,8 @@ function initModals() {
   const staffForm = document.getElementById('staffForm');
   const loginForm = document.getElementById('loginForm');
   const marksForm = document.getElementById('marksForm');
+  const payForm = document.getElementById('paymentForm');
+  if (payForm) payForm.addEventListener('submit', handlePaymentSubmit);
 
   const admInput = document.getElementById('studentAdmissionInput');
   if (admInput) {
@@ -3214,10 +3241,13 @@ function initModals() {
             loadStudents();
             if (data.user.role === 'admin') {
               loadStaff();
+              loadPayments();
             }
           }
           if (AppState.activeTab === 'marks') {
             loadAllMarksLedger();
+          } else {
+            switchTab('home');
           }
         } else {
           if (errBox) {
@@ -3653,33 +3683,70 @@ function updateRoleBasedUI() {
     }
 
     const navStaffTab = document.getElementById('navStaffTab');
+    const navPaymentsTab = document.getElementById('navPaymentsTab');
     const studentTemplateLink = document.getElementById('studentTemplateLink');
     const timetableForm = document.getElementById('timetableForm');
     const timetableActionHeader = document.getElementById('timetableActionHeader');
+    const homeBtnStudents = document.getElementById('homeBtnStudents');
+    const homeBtnStaff = document.getElementById('homeBtnStaff');
+    const homeBtnTimetable = document.getElementById('homeBtnTimetable');
+    const homeBtnPayments = document.getElementById('homeBtnPayments');
+    const homeModulesGrid = document.getElementById('homeModulesGrid');
+    const homeModulesSubtitle = document.getElementById('homeModulesSubtitle');
+    const homeStaffStatCard = document.getElementById('homeStaffStatCard');
+    const paymentsTeacherRestrictedBanner = document.getElementById('paymentsTeacherRestrictedBanner');
+    const paymentsMainContainer = document.getElementById('paymentsMainContainer');
+    const paymentsAdminLockBadge = document.getElementById('paymentsAdminLockBadge');
 
     if (u.role === 'teacher') {
       if (addStudentBtn) addStudentBtn.style.display = 'none';
       if (bulkStudentBtn) bulkStudentBtn.style.display = 'none';
       if (studentTemplateLink) studentTemplateLink.style.display = 'none';
       if (navStaffTab) navStaffTab.style.display = 'none';
+      if (navPaymentsTab) navPaymentsTab.style.display = 'none';
       if (staffAdminLockBadge) staffAdminLockBadge.classList.remove('hidden');
       if (staffTeacherRestrictedBanner) staffTeacherRestrictedBanner.classList.remove('hidden');
       if (staffMainContainer) staffMainContainer.classList.add('hidden');
+      if (paymentsTeacherRestrictedBanner) paymentsTeacherRestrictedBanner.classList.remove('hidden');
+      if (paymentsMainContainer) paymentsMainContainer.classList.add('hidden');
+      if (paymentsAdminLockBadge) paymentsAdminLockBadge.classList.remove('hidden');
       if (timetableForm) timetableForm.classList.add('hidden');
       if (timetableActionHeader) timetableActionHeader.style.display = 'none';
+
+      // Home Page Buttons for Teachers: ONLY Students & Timetable
+      if (homeBtnStudents) homeBtnStudents.style.display = 'flex';
+      if (homeBtnTimetable) homeBtnTimetable.style.display = 'flex';
+      if (homeBtnStaff) homeBtnStaff.style.display = 'none';
+      if (homeBtnPayments) homeBtnPayments.style.display = 'none';
+      if (homeStaffStatCard) homeStaffStatCard.style.display = 'none';
+      if (homeModulesGrid) homeModulesGrid.className = 'grid grid-cols-1 sm:grid-cols-2 max-w-3xl mx-auto gap-6 sm:gap-8';
     } else if (u.role === 'admin') {
       if (addStudentBtn) addStudentBtn.style.display = 'inline-flex';
       if (bulkStudentBtn) bulkStudentBtn.style.display = 'inline-flex';
       if (studentTemplateLink) studentTemplateLink.style.display = 'inline-flex';
       if (navStaffTab) navStaffTab.style.display = 'inline-flex';
+      if (navPaymentsTab) navPaymentsTab.style.display = 'inline-flex';
       if (staffAdminLockBadge) staffAdminLockBadge.classList.add('hidden');
       if (staffTeacherRestrictedBanner) staffTeacherRestrictedBanner.classList.add('hidden');
       if (staffMainContainer) staffMainContainer.classList.remove('hidden');
+      if (paymentsTeacherRestrictedBanner) paymentsTeacherRestrictedBanner.classList.add('hidden');
+      if (paymentsMainContainer) paymentsMainContainer.classList.remove('hidden');
+      if (paymentsAdminLockBadge) paymentsAdminLockBadge.classList.add('hidden');
       if (timetableForm) timetableForm.classList.remove('hidden');
       if (timetableActionHeader) timetableActionHeader.style.display = '';
+
+      // Home Page Buttons for Admins: Students, Staff, Timetable, Payments
+      if (homeBtnStudents) homeBtnStudents.style.display = 'flex';
+      if (homeBtnStaff) homeBtnStaff.style.display = 'flex';
+      if (homeBtnTimetable) homeBtnTimetable.style.display = 'flex';
+      if (homeBtnPayments) homeBtnPayments.style.display = 'flex';
+      if (homeStaffStatCard) homeStaffStatCard.style.display = 'flex';
+      if (homeModulesGrid) homeModulesGrid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8';
     }
+    updateHomeView();
   } else {
     const navStaffTab = document.getElementById('navStaffTab');
+    const navPaymentsTab = document.getElementById('navPaymentsTab');
     const studentTemplateLink = document.getElementById('studentTemplateLink');
     const timetableForm = document.getElementById('timetableForm');
     const timetableActionHeader = document.getElementById('timetableActionHeader');
@@ -3694,6 +3761,7 @@ function updateRoleBasedUI() {
     if (bulkStudentBtn) bulkStudentBtn.style.display = 'inline-flex';
     if (studentTemplateLink) studentTemplateLink.style.display = 'inline-flex';
     if (navStaffTab) navStaffTab.style.display = 'inline-flex';
+    if (navPaymentsTab) navPaymentsTab.style.display = 'inline-flex';
     if (staffAdminLockBadge) staffAdminLockBadge.classList.add('hidden');
     if (staffTeacherRestrictedBanner) staffTeacherRestrictedBanner.classList.add('hidden');
     if (staffMainContainer) staffMainContainer.classList.remove('hidden');
@@ -4026,4 +4094,318 @@ function debounce(func, wait) {
     clearTimeout(timeout);
     timeout = setTimeout(later, wait);
   };
+}
+
+/* --------------------------------------------------------------------------
+   Home Page View & Quick Search
+   -------------------------------------------------------------------------- */
+function updateHomeView() {
+  const u = AppState.currentUser;
+  const greeting = document.getElementById('homeUserGreeting');
+  const roleBadge = document.getElementById('homeUserRoleBadge');
+  const statStudents = document.getElementById('homeStatStudents');
+  const statStaff = document.getElementById('homeStatStaff');
+  const studentsCountBadge = document.getElementById('homeStudentsCountBadge');
+  const staffCountBadge = document.getElementById('homeStaffCountBadge');
+  const paymentsCountBadge = document.getElementById('homePaymentsCountBadge');
+
+  if (greeting && u) {
+    greeting.textContent = u.full_name || u.username;
+  }
+  if (roleBadge && u) {
+    if (u.role === 'admin') {
+      roleBadge.textContent = 'ADMIN';
+      roleBadge.className = 'bg-[#d4af37] text-[#38050b] text-[10px] font-extrabold uppercase px-2 py-0.5 rounded';
+    } else {
+      roleBadge.textContent = 'TEACHER';
+      roleBadge.className = 'bg-blue-600 text-white text-[10px] font-extrabold uppercase px-2 py-0.5 rounded';
+    }
+  }
+
+  const stuCount = AppState.studentsList?.length || (AppState.stats?.total_students) || 10;
+  const stfCount = AppState.staffList?.length || (AppState.stats?.total_staff) || 8;
+
+  if (statStudents) statStudents.textContent = stuCount;
+  if (statStaff) statStaff.textContent = stfCount;
+  if (studentsCountBadge) studentsCountBadge.textContent = `${stuCount} Active Students`;
+  if (staffCountBadge) staffCountBadge.textContent = `${stfCount} School Faculty`;
+  if (paymentsCountBadge) {
+    const payCount = AppState.paymentsList?.length || 8;
+    paymentsCountBadge.textContent = `${payCount} Fee Records`;
+  }
+}
+
+function handleHomeQuickSearch() {
+  const input = document.getElementById('homeQuickSearchInput');
+  const query = input ? input.value.trim() : '';
+  if (!query) {
+    showToast('Please enter a student/staff ID or name to search.', 'info');
+    return;
+  }
+  const mainSearchInput = document.getElementById('universalSearchInput');
+  if (mainSearchInput) mainSearchInput.value = query;
+  switchTab('lookup');
+  if (typeof executeUniversalSearch === 'function') {
+    executeUniversalSearch(query);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Payments Management (Role: Admin)
+   -------------------------------------------------------------------------- */
+async function loadPayments() {
+  if (AppState.currentUser && AppState.currentUser.role === 'teacher') return;
+  try {
+    const res = await fetch('/api/payments', { headers: getAuthHeaders() });
+    if (!res.ok) {
+      if (res.status === 403 || res.status === 401) return;
+      throw new Error(`HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    AppState.paymentsList = Array.isArray(data) ? data : [];
+    renderPaymentsTable(AppState.paymentsList);
+    loadPaymentStats();
+    populatePaymentStudentDropdown();
+    updateHomeView();
+  } catch (err) {
+    console.error('Failed to load payments:', err);
+  }
+}
+
+async function loadPaymentStats() {
+  try {
+    const res = await fetch('/api/payments/stats', { headers: getAuthHeaders() });
+    if (!res.ok) return;
+    const data = await res.json();
+    AppState.paymentStats = data;
+    const kpiCollected = document.getElementById('payKpiCollected');
+    const kpiPending = document.getElementById('payKpiPending');
+    const kpiPaidCount = document.getElementById('payKpiPaidCount');
+    const kpiPendingCount = document.getElementById('payKpiPendingCount');
+    if (kpiCollected) kpiCollected.textContent = `LKR ${Number(data.total_collected || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (kpiPending) kpiPending.textContent = `LKR ${Number(data.total_pending || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (kpiPaidCount) kpiPaidCount.textContent = data.count_paid || 0;
+    if (kpiPendingCount) kpiPendingCount.textContent = data.count_pending || 0;
+  } catch (e) {
+    console.warn('Failed to load payment stats:', e);
+  }
+}
+
+function renderPaymentsTable(list) {
+  const tbody = document.getElementById('paymentsTableBody');
+  const countEl = document.getElementById('payRecordCount');
+  if (countEl) countEl.textContent = (list || []).length;
+  if (!tbody) return;
+
+  if (!list || list.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="9" class="p-8 text-center text-slate-400">
+          <svg class="ui-icon mx-auto mb-2 text-slate-300" style="width:2rem;height:2rem" aria-hidden="true"><use href="#icon-payments"></use></svg>
+          No payment records found matching the current filters.
+        </td>
+      </tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(p => {
+    const isPaid = (p.status || '').toLowerCase() === 'paid';
+    const statusBadge = isPaid
+      ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">Paid</span>`
+      : `<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-amber-100 text-amber-800 border border-amber-300">Pending</span>`;
+    const amt = Number(p.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    
+    return `
+      <tr class="hover:bg-slate-50 transition-colors">
+        <td class="p-3.5 font-mono font-bold text-[#800020]">${escapeHtml(p.receipt_no || p.id)}</td>
+        <td class="p-3.5">
+          <div class="font-bold text-slate-900">${escapeHtml(p.student_name)}</div>
+          <div class="text-[11px] text-slate-500 font-mono">${escapeHtml(p.student_id)}</div>
+        </td>
+        <td class="p-3.5 font-bold text-slate-700">Grade ${escapeHtml(p.grade || '')}</td>
+        <td class="p-3.5 text-slate-800 font-medium">${escapeHtml(p.fee_type)}</td>
+        <td class="p-3.5 text-right font-mono font-black text-slate-900">LKR ${amt}</td>
+        <td class="p-3.5 text-slate-600">${escapeHtml(p.payment_method || 'Cash')}</td>
+        <td class="p-3.5 font-mono text-slate-500">${escapeHtml(p.payment_date || '')}</td>
+        <td class="p-3.5">${statusBadge}</td>
+        <td class="p-3.5 text-center">
+          <div class="flex items-center justify-center gap-1.5">
+            <button onclick="viewPaymentReceipt('${escapeHtml(p.id)}')" class="p-1.5 hover:bg-slate-200 rounded text-slate-700 cursor-pointer" title="View / Print Receipt">
+              <svg class="ui-icon" aria-hidden="true"><use href="#icon-printer"></use></svg>
+            </button>
+            <button onclick="handleDeletePayment('${escapeHtml(p.id)}')" class="p-1.5 hover:bg-rose-100 rounded text-rose-700 cursor-pointer" title="Delete record">
+              <svg class="ui-icon" aria-hidden="true"><use href="#icon-trash"></use></svg>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function filterPayments() {
+  const search = (document.getElementById('paySearchInput')?.value || '').toLowerCase().trim();
+  const grade = (document.getElementById('payGradeFilter')?.value || 'all').toLowerCase();
+  const status = (document.getElementById('payStatusFilter')?.value || 'all').toLowerCase();
+
+  const filtered = (AppState.paymentsList || []).filter(p => {
+    if (grade !== 'all' && String(p.grade).trim().toLowerCase() !== grade) return false;
+    if (status !== 'all' && (p.status || '').toLowerCase() !== status) return false;
+    if (search) {
+      const match = (p.receipt_no || '').toLowerCase().includes(search) ||
+                    (p.student_id || '').toLowerCase().includes(search) ||
+                    (p.student_name || '').toLowerCase().includes(search) ||
+                    (p.fee_type || '').toLowerCase().includes(search);
+      if (!match) return false;
+    }
+    return true;
+  });
+
+  renderPaymentsTable(filtered);
+}
+
+function populatePaymentStudentDropdown() {
+  const select = document.getElementById('payFormStudentSelect');
+  if (!select) return;
+  const students = AppState.studentsList || [];
+  let html = '<option value="">-- Select Student --</option>';
+  students.forEach(s => {
+    html += `<option value="${escapeHtml(s.id)}" data-name="${escapeHtml(s.name_with_initials || s.full_name)}" data-grade="${escapeHtml(s.grade || '')}">${escapeHtml(s.id)} - ${escapeHtml(s.name_with_initials || s.full_name)} (Grade ${s.grade || ''})</option>`;
+  });
+  select.innerHTML = html;
+}
+
+function openPaymentModal() {
+  if (!AppState.currentUser || AppState.currentUser.role !== 'admin') {
+    showToast('Payment entry is restricted to Administrators.', 'warning');
+    return;
+  }
+  populatePaymentStudentDropdown();
+  const dateInput = document.getElementById('payFormDate');
+  if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+  const modal = document.getElementById('paymentModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+async function handlePaymentSubmit(e) {
+  e.preventDefault();
+  const select = document.getElementById('payFormStudentSelect');
+  const opt = select ? select.options[select.selectedIndex] : null;
+  const studentId = select ? select.value : '';
+  const studentName = opt ? (opt.getAttribute('data-name') || opt.text) : '';
+  const grade = opt ? (opt.getAttribute('data-grade') || '') : '';
+  const feeType = document.getElementById('payFormFeeType')?.value;
+  const amount = parseFloat(document.getElementById('payFormAmount')?.value || 0);
+  const method = document.getElementById('payFormMethod')?.value;
+  const payDate = document.getElementById('payFormDate')?.value;
+  const status = document.getElementById('payFormStatus')?.value;
+  const term = document.getElementById('payFormTerm')?.value;
+  const remarks = document.getElementById('payFormRemarks')?.value;
+
+  if (!studentId || !amount || amount <= 0) {
+    showToast('Please select a student and enter a valid payment amount.', 'error');
+    return;
+  }
+
+  const payload = {
+    student_id: studentId,
+    student_name: studentName,
+    grade: grade,
+    fee_type: feeType,
+    amount: amount,
+    payment_method: method,
+    payment_date: payDate,
+    status: status,
+    term: term,
+    year: '2026',
+    remarks: remarks
+  };
+
+  try {
+    const res = await fetch('/api/payments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders()
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+    showToast('Payment record successfully recorded!', 'success');
+    closeModals();
+    loadPayments();
+  } catch (err) {
+    showToast(`Failed to record payment: ${err.message}`, 'error');
+  }
+}
+
+async function handleDeletePayment(paymentId) {
+  if (!confirm('Are you sure you want to delete this payment record? This action will be logged in the audit trail.')) {
+    return;
+  }
+  try {
+    const res = await fetch(`/api/payments/${encodeURIComponent(paymentId)}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    showToast('Payment record deleted.', 'info');
+    loadPayments();
+  } catch (err) {
+    showToast(`Failed to delete payment: ${err.message}`, 'error');
+  }
+}
+
+function viewPaymentReceipt(paymentId) {
+  const p = (AppState.paymentsList || []).find(item => item.id === paymentId);
+  if (!p) return;
+  const area = document.getElementById('receiptPrintArea');
+  if (!area) return;
+
+  const amt = Number(p.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  area.innerHTML = `
+    <div class="border-2 border-[#800020] rounded-xl p-5 space-y-4 font-sans bg-white text-slate-800">
+      <div class="flex items-center justify-between border-b-2 border-[#d4af37] pb-3">
+        <div class="flex items-center gap-3">
+          <img src="/static/img/JMV_Logo.png" class="w-12 h-12 object-contain" alt="Crest">
+          <div>
+            <div class="font-black text-[#800020] text-sm uppercase">Jayakody Maha Vidyalaya</div>
+            <div class="text-[10px] text-slate-600 font-bold">Official School Fee Receipt</div>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="text-[10px] text-slate-500 font-bold uppercase">Receipt No</div>
+          <div class="text-sm font-black font-mono text-[#800020]">${escapeHtml(p.receipt_no || p.id)}</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <div><span class="text-slate-500">Student Name:</span> <strong>${escapeHtml(p.student_name)}</strong></div>
+        <div><span class="text-slate-500">Student ID:</span> <strong class="font-mono">${escapeHtml(p.student_id)}</strong></div>
+        <div><span class="text-slate-500">Grade:</span> <strong>Grade ${escapeHtml(p.grade || '')}</strong></div>
+        <div><span class="text-slate-500">Academic Term:</span> <strong>${escapeHtml(p.term || 'Term 1')} (2026)</strong></div>
+        <div><span class="text-slate-500">Date Paid:</span> <strong>${escapeHtml(p.payment_date)}</strong></div>
+        <div><span class="text-slate-500">Payment Mode:</span> <strong>${escapeHtml(p.payment_method || 'Cash')}</strong></div>
+      </div>
+
+      <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+        <div class="flex justify-between items-center text-xs">
+          <span class="font-bold text-slate-700">${escapeHtml(p.fee_type)}</span>
+          <span class="font-black font-mono text-sm text-[#800020]">LKR ${amt}</span>
+        </div>
+        ${p.remarks ? `<div class="text-[11px] text-slate-500 mt-1 italic">Remarks: ${escapeHtml(p.remarks)}</div>` : ''}
+      </div>
+
+      <div class="flex justify-between items-center pt-2 text-[11px] text-slate-500">
+        <div>Status: <strong class="text-emerald-700 uppercase">${escapeHtml(p.status || 'Paid')}</strong></div>
+        <div>Issued by: <strong>${escapeHtml(p.received_by || 'School Administration')}</strong></div>
+      </div>
+    </div>
+  `;
+
+  const modal = document.getElementById('receiptModal');
+  if (modal) modal.classList.remove('hidden');
 }

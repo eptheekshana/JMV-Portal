@@ -147,6 +147,15 @@ SAMPLE_USERS = [
         "E P Theekshana (Administrator)",
         "eptheekshana@gmail.com",
         ""
+    ),
+    (
+        "USR-TEA-001",
+        "teacher",
+        "4d7a9d9b9bf0b4bde37e68128bc1baf6$e73b4a19e97b0fe1c11066ac47d4a3e0500152db02fe37f6dc7155a76b4360f3",
+        "teacher",
+        "Mrs. D.M.S. Dissanayake (Teacher)",
+        "dissanayake@jayakody.sch.lk",
+        "TCH-001"
     )
 ]
 
@@ -492,4 +501,22 @@ SAMPLE_STAFF = [('JMV-STF-001',
   'Active',
   '9-A, 10-A, 11-A, General English',
   'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=300&auto=format&fit=crop&q=80',
-  'Master-in-Charge of the Scrabble Club and College English Day Competitions.')]
+  'Master-in-Charge of the Scrabble Club and College English Day Competitions.')
+]
+
+PAYMENT_COLUMNS = (
+    "id", "receipt_no", "student_id", "student_name", "grade",
+    "fee_type", "amount", "payment_method", "payment_date",
+    "status", "term", "year", "remarks", "received_by"
+)
+
+SAMPLE_PAYMENTS = [
+    ("PAY-2026-001", "REC-2026-1001", "JMV-STU-1001", "Kavindu Jayawardena", "13", "School Facilities & Services", 3500.0, "Bank Transfer", "2026-01-15", "Paid", "Term 1", "2026", "Annual facilities and IT lab fee paid in full", "E P Theekshana (Administrator)"),
+    ("PAY-2026-002", "REC-2026-1002", "JMV-STU-1002", "Nethmi Wickramasinghe", "13", "School Facilities & Services", 3500.0, "Cash", "2026-01-18", "Paid", "Term 1", "2026", "Facilities fee received", "E P Theekshana (Administrator)"),
+    ("PAY-2026-003", "REC-2026-1003", "JMV-STU-1003", "Dineth Perera", "12", "Term Examination Fee", 1500.0, "Cash", "2026-02-02", "Paid", "Term 1", "2026", "Term 1 assessment and stationery fee", "E P Theekshana (Administrator)"),
+    ("PAY-2026-004", "REC-2026-1004", "JMV-STU-1004", "Tharushi Fernando", "12", "Sports & Development Fund", 2000.0, "Online Portal", "2026-02-05", "Paid", "Term 1", "2026", "Annual sports ground development contribution", "E P Theekshana (Administrator)"),
+    ("PAY-2026-005", "REC-2026-1005", "JMV-STU-1005", "Senura Silva", "11", "G.C.E. O/L Practical & Lab Fee", 2500.0, "Cash", "2026-02-10", "Paid", "Term 1", "2026", "Science laboratory chemicals and apparatus fee", "E P Theekshana (Administrator)"),
+    ("PAY-2026-006", "REC-2026-1006", "JMV-STU-1006", "Oshadi Mendis", "11", "School Facilities & Services", 3000.0, "Cash", "2026-02-20", "Pending", "Term 1", "2026", "Reminder notice issued to guardian", "E P Theekshana (Administrator)"),
+    ("PAY-2026-007", "REC-2026-1007", "JMV-STU-1007", "Thisara Bandara", "10", "Library & Media Unit Subscription", 1200.0, "Cash", "2026-02-22", "Paid", "Term 1", "2026", "Annual library membership & card", "E P Theekshana (Administrator)"),
+    ("PAY-2026-008", "REC-2026-1008", "JMV-STU-1008", "Chamodi Alwis", "10", "School Facilities & Services", 3000.0, "Bank Transfer", "2026-02-25", "Paid", "Term 1", "2026", "Bank deposit slip verified", "E P Theekshana (Administrator)")
+]

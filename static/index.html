@@ -219,6 +219,9 @@
     <symbol id="icon-trophy" viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0V4ZM5 5H3v2a4 4 0 0 0 4 4M19 5h2v2a4 4 0 0 1-4 4M12 13v5M8 21h8M9 18h6"/></symbol>
     <symbol id="icon-shield" viewBox="0 0 24 24"><path d="M12 3 20 6v5c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V6l8-3Z"/><path d="m9 12 2 2 4-4"/></symbol>
     <symbol id="icon-pin" viewBox="0 0 24 24"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+    <symbol id="icon-home" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+    <symbol id="icon-payments" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><path d="M6 15h2M10 15h4"/></symbol>
+    <symbol id="icon-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol>
   </svg>
 
   <!-- ======================================================================
@@ -319,7 +322,10 @@
   <nav class="sticky top-0 z-40 bg-white border-b-2 border-slate-200 shadow-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between">
       <div class="flex space-x-1 sm:space-x-2 overflow-x-auto py-2">
-        <button class="nav-tab-btn active px-4 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wide transition-all rounded-lg border-2 border-transparent text-[#6b0f1a] bg-[#fdf2f4] border-[#800020]" data-tab="lookup">
+        <button id="navHomeTab" class="nav-tab-btn active px-4 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wide transition-all rounded-lg border-2 border-[#800020] text-[#6b0f1a] bg-[#fdf2f4]" data-tab="home">
+          <svg class="ui-icon" aria-hidden="true"><use href="#icon-home"></use></svg> <span data-en="Home" data-si="මුල් පිටුව">Home</span>
+        </button>
+        <button class="nav-tab-btn px-4 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wide transition-all rounded-lg border-2 border-transparent text-slate-600 hover:text-[#800020] hover:bg-[#fdf2f4]" data-tab="lookup">
           <svg class="ui-icon" aria-hidden="true"><use href="#icon-search"></use></svg> <span data-en="Instant ID Lookup" data-si="ක්ෂණික අංක සෙවීම">Instant ID Lookup</span>
         </button>
         <button class="nav-tab-btn px-4 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wide transition-all rounded-lg border-2 border-transparent text-slate-600 hover:text-[#800020] hover:bg-[#fdf2f4]" data-tab="students">
@@ -333,7 +339,11 @@
           <span id="staffAdminLockBadge" class="hidden text-[10px] ml-1 bg-amber-100 text-amber-800 font-bold px-1.5 py-0.2 rounded border border-amber-300">ADMIN</span>
         </button>
         <button id="navTimetableTab" class="nav-tab-btn px-4 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wide transition-all rounded-lg border-2 border-transparent text-slate-600 hover:text-[#800020] hover:bg-[#fdf2f4]" data-tab="timetable">
-          <svg class="ui-icon" aria-hidden="true"><use href="#icon-calendar"></use></svg> <span>School Timetable</span>
+          <svg class="ui-icon" aria-hidden="true"><use href="#icon-calendar"></use></svg> <span data-en="School Timetable" data-si="පාසල් කාලසටහන">School Timetable</span>
+        </button>
+        <button id="navPaymentsTab" class="nav-tab-btn px-4 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wide transition-all rounded-lg border-2 border-transparent text-slate-600 hover:text-[#800020] hover:bg-[#fdf2f4]" data-tab="payments">
+          <svg class="ui-icon" aria-hidden="true"><use href="#icon-payments"></use></svg> <span data-en="Payments" data-si="ගෙවීම්">Payments</span>
+          <span id="paymentsAdminLockBadge" class="hidden text-[10px] ml-1 bg-amber-100 text-amber-800 font-bold px-1.5 py-0.2 rounded border border-amber-300">ADMIN</span>
         </button>
       </div>
 
@@ -358,9 +368,117 @@
     </div>
 
     <!-- --------------------------------------------------------------------
+         TAB 0: PORTAL HOME (MAIN FOUR BUTTONS ONLY)
+         -------------------------------------------------------------------- -->
+    <section id="tab-home" class="tab-pane active py-4 sm:py-8">
+
+      <!-- Main Four Module Buttons Grid -->
+      <div id="homeModulesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+
+        <!-- 1. STUDENTS BUTTON -->
+        <button id="homeBtnStudents" onclick="switchTab('students')" class="group relative bg-white border-2 border-slate-200 hover:border-[#800020] rounded-2xl p-7 sm:p-9 shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1.5 cursor-pointer text-left flex flex-col justify-between overflow-hidden">
+          <div class="h-2 w-full bg-gradient-to-r from-[#800020] to-rose-500 absolute top-0 left-0"></div>
+          <div>
+            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-rose-50 text-[#800020] border-2 border-rose-200 flex items-center justify-center mb-6 group-hover:scale-105 group-hover:bg-[#800020] group-hover:text-white transition-all duration-300 shadow-inner">
+              <svg class="w-8 h-8 sm:w-10 sm:h-10 transition-transform group-hover:rotate-3" aria-hidden="true"><use href="#icon-graduation"></use></svg>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-black text-slate-900 group-hover:text-[#800020] tracking-tight transition-colors">
+              Students
+            </h2>
+            <p class="text-xs text-slate-500 font-semibold mt-1.5" data-en="Student Directory &amp; Records" data-si="ශිෂ්‍ය දත්ත පද්ධතිය">
+              Student Directory &amp; Records
+            </p>
+          </div>
+          <div class="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-extrabold text-[#800020]">
+            <span id="homeStudentsCountBadge" class="bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200 text-[11px]">Active Students</span>
+            <span class="group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+              Open <svg class="w-4 h-4" aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+            </span>
+          </div>
+        </button>
+
+        <!-- 2. STAFF BUTTON (ADMIN ONLY) -->
+        <button id="homeBtnStaff" onclick="switchTab('staff')" class="group relative bg-white border-2 border-slate-200 hover:border-[#d4af37] rounded-2xl p-7 sm:p-9 shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1.5 cursor-pointer text-left flex flex-col justify-between overflow-hidden">
+          <div class="h-2 w-full bg-gradient-to-r from-amber-500 to-[#d4af37] absolute top-0 left-0"></div>
+          <div>
+            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-amber-50 text-amber-900 border-2 border-amber-200 flex items-center justify-center mb-6 group-hover:scale-105 group-hover:bg-[#d4af37] group-hover:text-[#38050b] transition-all duration-300 shadow-inner">
+              <svg class="w-8 h-8 sm:w-10 sm:h-10 transition-transform group-hover:rotate-3" aria-hidden="true"><use href="#icon-users"></use></svg>
+            </div>
+            <div class="flex items-center justify-between">
+              <h2 class="text-2xl sm:text-3xl font-black text-slate-900 group-hover:text-amber-900 tracking-tight transition-colors">
+                Staff
+              </h2>
+              <span class="text-[10px] bg-amber-100 text-amber-900 font-extrabold px-2 py-0.5 rounded border border-amber-300">ADMIN</span>
+            </div>
+            <p class="text-xs text-slate-500 font-semibold mt-1.5" data-en="Faculty &amp; Staff Directory" data-si="ගුරු හා අනධ්‍යයන මණ්ඩලය">
+              Faculty &amp; Staff Directory
+            </p>
+          </div>
+          <div class="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-extrabold text-amber-900">
+            <span id="homeStaffCountBadge" class="bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200 text-[11px]">School Faculty</span>
+            <span class="group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+              Open <svg class="w-4 h-4" aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+            </span>
+          </div>
+        </button>
+
+        <!-- 3. TIME TABLES BUTTON -->
+        <button id="homeBtnTimetable" onclick="switchTab('timetable')" class="group relative bg-white border-2 border-slate-200 hover:border-emerald-700 rounded-2xl p-7 sm:p-9 shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1.5 cursor-pointer text-left flex flex-col justify-between overflow-hidden">
+          <div class="h-2 w-full bg-gradient-to-r from-emerald-600 to-teal-500 absolute top-0 left-0"></div>
+          <div>
+            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-emerald-50 text-emerald-800 border-2 border-emerald-200 flex items-center justify-center mb-6 group-hover:scale-105 group-hover:bg-emerald-700 group-hover:text-white transition-all duration-300 shadow-inner">
+              <svg class="w-8 h-8 sm:w-10 sm:h-10 transition-transform group-hover:rotate-3" aria-hidden="true"><use href="#icon-calendar"></use></svg>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-black text-slate-900 group-hover:text-emerald-800 tracking-tight transition-colors">
+              Time tables
+            </h2>
+            <p class="text-xs text-slate-500 font-semibold mt-1.5" data-en="School Timetables (Grades 6–13)" data-si="පාසල් කාලසටහන">
+              School Timetables (Grades 6–13)
+            </p>
+          </div>
+          <div class="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-extrabold text-emerald-800">
+            <span class="bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 text-[11px]">2026 Master Grid</span>
+            <span class="group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+              Open <svg class="w-4 h-4" aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+            </span>
+          </div>
+        </button>
+
+        <!-- 4. PAYMENTS BUTTON (ADMIN ONLY) -->
+        <button id="homeBtnPayments" onclick="switchTab('payments')" class="group relative bg-white border-2 border-slate-200 hover:border-indigo-700 rounded-2xl p-7 sm:p-9 shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1.5 cursor-pointer text-left flex flex-col justify-between overflow-hidden">
+          <div class="h-2 w-full bg-gradient-to-r from-indigo-600 to-violet-500 absolute top-0 left-0"></div>
+          <div>
+            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-indigo-50 text-indigo-800 border-2 border-indigo-200 flex items-center justify-center mb-6 group-hover:scale-105 group-hover:bg-indigo-700 group-hover:text-white transition-all duration-300 shadow-inner">
+              <svg class="w-8 h-8 sm:w-10 sm:h-10 transition-transform group-hover:rotate-3" aria-hidden="true"><use href="#icon-payments"></use></svg>
+            </div>
+            <div class="flex items-center justify-between">
+              <h2 class="text-2xl sm:text-3xl font-black text-slate-900 group-hover:text-indigo-800 tracking-tight transition-colors">
+                Payments
+              </h2>
+              <span class="text-[10px] bg-amber-100 text-amber-900 font-extrabold px-2 py-0.5 rounded border border-amber-300">ADMIN</span>
+            </div>
+            <p class="text-xs text-slate-500 font-semibold mt-1.5" data-en="Fees &amp; Financial Ledger" data-si="පාසල් ගාස්තු හා ගෙවීම්">
+              Fees &amp; Financial Ledger
+            </p>
+          </div>
+          <div class="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-extrabold text-indigo-800">
+            <span id="homePaymentsCountBadge" class="bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-200 text-[11px]">Fee Records</span>
+            <span class="group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+              Open <svg class="w-4 h-4" aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+            </span>
+          </div>
+        </button>
+
+      </div>
+
+    </section>
+
+    </section>
+
+    <!-- --------------------------------------------------------------------
          TAB 1: INSTANT UNIVERSAL ID LOOKUP
          -------------------------------------------------------------------- -->
-    <section id="tab-lookup" class="tab-pane active space-y-8">
+    <section id="tab-lookup" class="tab-pane hidden space-y-8">
       
       <!-- Lookup Hero Box -->
       <div class="bg-white rounded-2xl p-6 sm:p-10 shadow-lg border-2 border-[#d4af37] relative overflow-hidden">
@@ -896,7 +1014,143 @@
 
     </section>
 
-  </main>
+    <!-- --------------------------------------------------------------------
+         TAB 6: PAYMENTS & FEE COLLECTION LEDGER (ADMIN ONLY)
+         -------------------------------------------------------------------- -->
+    <section id="tab-payments" class="tab-pane hidden space-y-6">
+      
+      <!-- Payments restricted banner (for teachers if accessed directly) -->
+      <div id="paymentsTeacherRestrictedBanner" class="hidden bg-amber-50 border-2 border-amber-300 rounded-2xl p-8 text-center space-y-3">
+        <svg class="ui-icon mx-auto text-amber-700" style="width:3rem;height:3rem" aria-hidden="true"><use href="#icon-lock"></use></svg>
+        <h3 class="text-lg font-extrabold text-amber-900 uppercase">Payments Module Restricted</h3>
+        <p class="text-sm text-amber-800">Financial records and fee collections are restricted to School Administrators only.</p>
+        <button onclick="switchTab('home')" class="mt-3 px-5 py-2 bg-[#800020] text-white text-xs font-bold uppercase rounded-lg shadow hover:bg-[#5c0d1b]">
+          Return to Home
+        </button>
+      </div>
+
+      <div id="paymentsMainContainer" class="space-y-6">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="inline-block w-2.5 h-6 bg-[#800020] rounded-sm"></span>
+              <h2 class="text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tight" data-en="Fee Collections &amp; Payments" data-si="පාසල් ගාස්තු හා ගෙවීම්">
+                Fee Collections &amp; Payments
+              </h2>
+              <span class="text-[10px] bg-amber-100 text-amber-900 font-extrabold px-2 py-0.5 rounded border border-amber-300">ADMIN</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1" data-en="Official school fee ledger, facilities collections, and receipt records" data-si="පාසල් පහසුකම් ගාස්තු හා ලැබීම් ලේඛනය">
+              Official school fee ledger, facilities collections, and receipt records for Jayakody Maha Vidyalaya.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="openPaymentModal()" class="px-4 py-2 bg-[#800020] hover:bg-[#5c0d1b] text-white text-xs font-bold uppercase rounded-lg shadow flex items-center gap-1.5 cursor-pointer">
+              <svg class="ui-icon" aria-hidden="true"><use href="#icon-plus"></use></svg>
+              <span data-en="Record New Payment" data-si="නව ගෙවීමක් සටහන් කරන්න">Record New Payment</span>
+            </button>
+            <button onclick="loadPayments()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg border border-slate-300 flex items-center gap-1.5 cursor-pointer" title="Refresh">
+              <svg class="ui-icon" aria-hidden="true"><use href="#icon-refresh"></use></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Financial KPI Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Collected</span>
+              <span class="p-2 rounded-xl bg-emerald-50 text-emerald-700"><svg class="w-5 h-5" aria-hidden="true"><use href="#icon-payments"></use></svg></span>
+            </div>
+            <div id="payKpiCollected" class="text-2xl font-black text-emerald-700 mt-2">LKR 0.00</div>
+            <p class="text-[11px] text-slate-400 mt-1">Verified school fee receipts</p>
+          </div>
+
+          <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Dues</span>
+              <span class="p-2 rounded-xl bg-amber-50 text-amber-700"><svg class="w-5 h-5" aria-hidden="true"><use href="#icon-alert"></use></svg></span>
+            </div>
+            <div id="payKpiPending" class="text-2xl font-black text-amber-700 mt-2">LKR 0.00</div>
+            <p class="text-[11px] text-slate-400 mt-1">Outstanding collections</p>
+          </div>
+
+          <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Paid Transactions</span>
+              <span class="p-2 rounded-xl bg-blue-50 text-blue-700"><svg class="w-5 h-5" aria-hidden="true"><use href="#icon-shield"></use></svg></span>
+            </div>
+            <div id="payKpiPaidCount" class="text-2xl font-black text-slate-900 mt-2">0</div>
+            <p class="text-[11px] text-slate-400 mt-1">Receipts issued this year</p>
+          </div>
+
+          <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Notices</span>
+              <span class="p-2 rounded-xl bg-rose-50 text-rose-700"><svg class="w-5 h-5" aria-hidden="true"><use href="#icon-clipboard"></use></svg></span>
+            </div>
+            <div id="payKpiPendingCount" class="text-2xl font-black text-rose-700 mt-2">0</div>
+            <p class="text-[11px] text-slate-400 mt-1">Due notice reminders</p>
+          </div>
+        </div>
+
+        <!-- Filters Strip -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap gap-3 items-center justify-between">
+          <div class="flex flex-wrap gap-2 items-center flex-1">
+            <input 
+              type="text" 
+              id="paySearchInput" 
+              placeholder="Search receipt, student ID or name..." 
+              oninput="filterPayments()" 
+              class="border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-[#800020] focus:outline-none w-full sm:w-64"
+            >
+            <select id="payGradeFilter" onchange="filterPayments()" class="border border-slate-300 rounded-lg px-3 py-2 text-xs bg-white focus:outline-none">
+              <option value="all">All Grades</option>
+              <option value="6">Grade 6</option>
+              <option value="7">Grade 7</option>
+              <option value="8">Grade 8</option>
+              <option value="9">Grade 9</option>
+              <option value="10">Grade 10</option>
+              <option value="11">Grade 11</option>
+              <option value="12">Grade 12</option>
+              <option value="13">Grade 13</option>
+            </select>
+            <select id="payStatusFilter" onchange="filterPayments()" class="border border-slate-300 rounded-lg px-3 py-2 text-xs bg-white focus:outline-none">
+              <option value="all">All Statuses</option>
+              <option value="paid">Paid</option>
+              <option value="pending">Pending</option>
+            </select>
+          </div>
+          <div class="text-xs text-slate-500">
+            Showing <strong id="payRecordCount" class="text-slate-800">0</strong> records
+          </div>
+        </div>
+
+        <!-- Payments Table -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead class="bg-slate-50 border-b border-slate-200 text-slate-700 uppercase font-extrabold tracking-wider">
+                <tr>
+                  <th class="p-3.5">Receipt #</th>
+                  <th class="p-3.5">Student</th>
+                  <th class="p-3.5">Grade</th>
+                  <th class="p-3.5">Fee Category</th>
+                  <th class="p-3.5 text-right">Amount (LKR)</th>
+                  <th class="p-3.5">Method</th>
+                  <th class="p-3.5">Date</th>
+                  <th class="p-3.5">Status</th>
+                  <th class="p-3.5 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="paymentsTableBody" class="divide-y divide-slate-100">
+                <!-- Populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
 
   <!-- ======================================================================
        6. MODAL DIALOGS (Enroll Student & Add Faculty)
@@ -1553,6 +1807,18 @@
               Sign In
             </button>
           </div>
+
+          <div class="pt-3 border-t border-slate-100 space-y-1.5 text-[11px] text-slate-500">
+            <span class="font-bold text-slate-700 block">Quick Demo Sign-in:</span>
+            <div class="flex gap-2">
+              <button type="button" onclick="fillLoginForm('eptheekshana', '')" class="flex-1 py-1.5 px-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-semibold text-center cursor-pointer">
+                <strong>Admin</strong> (All 4 buttons)
+              </button>
+              <button type="button" onclick="fillLoginForm('teacher', '')" class="flex-1 py-1.5 px-2 bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-300 rounded font-semibold text-center cursor-pointer">
+                <strong>Teacher</strong> (Student &amp; Timetable)
+              </button>
+            </div>
+          </div>
         </form>
       </div>
     </div>
@@ -1871,6 +2137,108 @@
     </div>
   </div>
 
+  <!-- Record Payment Modal (Admin Only) -->
+  <div id="paymentModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border-2 border-[#d4af37] overflow-hidden">
+      <!-- Modal Header -->
+      <div class="bg-gradient-to-r from-[#38050b] via-[#5c0d1b] to-[#38050b] text-white px-6 py-4 flex items-center justify-between border-b-2 border-[#d4af37]">
+        <div>
+          <h3 class="text-sm font-extrabold uppercase tracking-wide">Record Student Fee Payment</h3>
+          <p class="text-[11px] text-[#fde047]">Official Financial Receipt Entry</p>
+        </div>
+        <button onclick="closeModals()" class="text-white hover:text-[#fde047] text-2xl leading-none cursor-pointer">&times;</button>
+      </div>
+
+      <form id="paymentForm" class="p-6 space-y-4 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Select Student *</label>
+          <select id="payFormStudentSelect" required class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-[#800020] focus:outline-none bg-white">
+            <option value="">-- Select Student --</option>
+            <!-- Populated via JS -->
+          </select>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Fee Category *</label>
+            <select id="payFormFeeType" required class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-[#800020] focus:outline-none bg-white">
+              <option value="School Facilities & Services">School Facilities &amp; Services</option>
+              <option value="Term Examination Fee">Term Examination Fee</option>
+              <option value="Sports & Development Fund">Sports &amp; Development Fund</option>
+              <option value="G.C.E. O/L Practical & Lab Fee">G.C.E. O/L Practical &amp; Lab Fee</option>
+              <option value="Library & Media Unit Subscription">Library &amp; Media Unit Subscription</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Amount (LKR) *</label>
+            <input type="number" id="payFormAmount" required min="1" step="0.5" placeholder="e.g. 2500" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-[#800020] focus:outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Payment Method</label>
+            <select id="payFormMethod" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-[#800020] focus:outline-none bg-white">
+              <option value="Cash">Cash</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Online Portal">Online Portal</option>
+              <option value="Cheque">Cheque</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Payment Date *</label>
+            <input type="date" id="payFormDate" required class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-[#800020] focus:outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Status</label>
+            <select id="payFormStatus" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-[#800020] focus:outline-none bg-white">
+              <option value="Paid">Paid</option>
+              <option value="Pending">Pending</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Academic Term</label>
+            <select id="payFormTerm" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-[#800020] focus:outline-none bg-white">
+              <option value="Term 1">Term 1</option>
+              <option value="Term 2">Term 2</option>
+              <option value="Term 3">Term 3</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Remarks / Note</label>
+          <input type="text" id="payFormRemarks" placeholder="Optional payment remarks..." class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-[#800020] focus:outline-none">
+        </div>
+
+        <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+          <button type="button" onclick="closeModals()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 font-bold text-xs uppercase cursor-pointer">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-[#800020] hover:bg-[#5c0d1b] text-white font-extrabold text-xs uppercase rounded-lg shadow cursor-pointer">
+            Save Payment Record
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Printable Receipt Modal -->
+  <div id="receiptModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border-2 border-[#d4af37] overflow-hidden">
+      <div id="receiptPrintArea" class="p-6 space-y-4">
+        <!-- Receipt Content populated via JS -->
+      </div>
+      <div class="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end gap-2">
+        <button onclick="closeModals()" class="px-4 py-1.5 border border-slate-300 rounded-lg text-slate-600 font-bold text-xs uppercase cursor-pointer">Close</button>
+        <button onclick="window.print()" class="px-4 py-1.5 bg-[#800020] hover:bg-[#5c0d1b] text-white font-bold text-xs uppercase rounded-lg shadow flex items-center gap-1.5 cursor-pointer">
+          <svg class="ui-icon" aria-hidden="true"><use href="#icon-printer"></use></svg> Print Receipt
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Container -->
   <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2"></div>
 
@@ -1938,6 +2306,6 @@
   </footer>
 
   <!-- App Script with cache-busting parameter -->
-  <script src="/static/js/app.js?v=3.4"></script>
+  <script src="/static/js/app.js?v=3.7"></script>
 </body>
 </html>
