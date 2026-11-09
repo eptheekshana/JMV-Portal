@@ -2052,7 +2052,7 @@ function renderDossier(item, type) {
         </div>
         <div>
           <span class="block uppercase font-bold text-slate-400">Status</span>
-          <span class="font-bold text-[#800020] bg-[#fdf2f4] border border-rose-200 px-2 py-0.5 rounded text-[11px]">${escapeHtml(item.status)}</span>
+          <span class="font-bold ${(item.status || '').toLowerCase() === 'alumni' || (item.status || '').toLowerCase() === 'graduated' ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'text-[#800020] bg-[#fdf2f4] border border-rose-200'} px-2 py-0.5 rounded text-[11px]">${escapeHtml((item.status || '').toLowerCase() === 'graduated' ? 'Alumni' : (item.status || 'Active'))}</span>
         </div>
       </div>
     </div>
@@ -2209,7 +2209,7 @@ function renderDossier(item, type) {
         </div>
         <div>
           <span class="block uppercase font-bold text-slate-400">Status</span>
-          <span class="font-bold text-[#800020] bg-[#fdf2f4] border border-rose-200 px-2 py-0.5 rounded text-[11px]">${escapeHtml(item.status)}</span>
+          <span class="font-bold text-[#800020] bg-[#fdf2f4] border border-rose-200 px-2 py-0.5 rounded text-[11px]">${escapeHtml(item.status || 'Active')}</span>
         </div>
       </div>
     </div>
@@ -2533,8 +2533,14 @@ function renderStudentsTable(students) {
         </span>
       </td>
       <td class="p-3.5">
-        <span class="text-xs font-bold px-2 py-0.5 rounded bg-[#fdf2f4] text-[#800020] border border-rose-200">
-          ${escapeHtml(s.status)}
+        <span class="text-xs font-bold px-2 py-0.5 rounded ${
+          (s.status || '').toLowerCase() === 'alumni' || (s.status || '').toLowerCase() === 'graduated'
+            ? 'bg-amber-100 text-amber-900 border border-amber-300'
+            : (s.status || '').toLowerCase() === 'leave'
+              ? 'bg-slate-100 text-slate-700 border border-slate-200'
+              : 'bg-[#fdf2f4] text-[#800020] border border-rose-200'
+        }">
+          ${escapeHtml((s.status || '').toLowerCase() === 'graduated' ? 'Alumni' : (s.status || 'Active'))}
         </span>
       </td>
       <td class="p-3.5">
@@ -3516,7 +3522,8 @@ async function openEditModal(id, type) {
     document.getElementById('studentGuardianInput').value = s.guardian_name;
     document.getElementById('studentContactInput').value = s.guardian_contact;
     document.getElementById('studentAddressInput').value = s.address;
-    document.getElementById('studentStatusInput').value = s.status;
+    const stuStatus = (s.status && s.status.toLowerCase() === 'graduated') ? 'Alumni' : (s.status || 'Active');
+    document.getElementById('studentStatusInput').value = stuStatus;
     document.getElementById('studentExtraInput').value = s.extracurricular || '';
     document.getElementById('studentPhotoInput').value = s.photo_url || '';
     if (document.getElementById('studentHealthInput')) document.getElementById('studentHealthInput').value = s.health_issues || '';
