@@ -2099,6 +2099,31 @@ function renderDossier(item, type) {
       </div>
     </div>
 
+    <!-- Siblings, School Services & Fee Receipts -->
+    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-3">
+      <h4 class="font-extrabold text-[#800020] text-sm uppercase border-b border-slate-200 pb-2 flex items-center gap-2">
+        ${icon('payments')} Siblings, School Services &amp; Fee Receipts
+      </h4>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+        <div>
+          <span class="block uppercase font-bold text-slate-400">Siblings in School</span>
+          <span class="font-bold text-slate-800">${escapeHtml(item.siblings_in_school || 'None recorded')}</span>
+        </div>
+        <div>
+          <span class="block uppercase font-bold text-slate-400">School Services</span>
+          <span class="font-bold text-slate-800">${escapeHtml(item.school_services || 'None recorded')}</span>
+        </div>
+        <div>
+          <span class="block uppercase font-bold text-slate-400">School Development Society (SDS) Fee Receipt No</span>
+          <span class="font-mono font-bold ${item.sds_receipt_no ? 'text-[#800020]' : 'text-slate-400'}">${escapeHtml(item.sds_receipt_no || 'Not paid / not recorded')}</span>
+        </div>
+        <div>
+          <span class="block uppercase font-bold text-slate-400">Facilities Fee Receipt No</span>
+          <span class="font-mono font-bold ${item.facilities_receipt_no ? 'text-[#800020]' : 'text-slate-400'}">${escapeHtml(item.facilities_receipt_no || 'Not paid / not recorded')}</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Medical & Health Records -->
     <div class="bg-rose-50/60 p-5 rounded-xl border border-rose-200 space-y-2">
       <h4 class="font-extrabold text-[#800020] text-sm uppercase border-b border-rose-200 pb-2 flex items-center gap-2">
@@ -2339,7 +2364,10 @@ const AUDIT_FIELD_LABELS = {
   subjects: 'Subjects', ol_bucket_1: 'O/L Bucket 1', ol_bucket_2: 'O/L Bucket 2', ol_bucket_3: 'O/L Bucket 3',
   epf_no: 'EPF No', role: 'Role', department: 'Department', subjects_taught: 'Subjects Taught',
   qualifications: 'Qualifications', appointed_date: 'Appointed Date', contact_no: 'Phone', email: 'Email',
-  nic: 'NIC', assigned_classes: 'Assigned Classes'
+  nic: 'NIC', assigned_classes: 'Assigned Classes',
+  siblings_in_school: 'Siblings in School', school_services: 'School Services',
+  sds_receipt_no: 'SDS Fee Receipt No', facilities_receipt_no: 'Facilities Fee Receipt No',
+  receipt_no: 'Receipt No', fee_type: 'Fee Type', amount: 'Amount'
 };
 
 async function loadAuditHistory(entityId, entityType) {
@@ -3132,6 +3160,10 @@ function initModals() {
         extracurricular: document.getElementById('studentExtraInput').value.trim(),
         health_issues: document.getElementById('studentHealthInput') ? document.getElementById('studentHealthInput').value.trim() : '',
         notes: document.getElementById('studentNotesInput') ? document.getElementById('studentNotesInput').value.trim() : '',
+        siblings_in_school: document.getElementById('studentSiblingsInput')?.value.trim() || '',
+        school_services: document.getElementById('studentServicesInput')?.value.trim() || '',
+        sds_receipt_no: document.getElementById('studentSdsReceiptInput')?.value.trim() || '',
+        facilities_receipt_no: document.getElementById('studentFacilitiesReceiptInput')?.value.trim() || '',
         photo_url: document.getElementById('studentPhotoInput').value.trim() || `https://ui-avatars.com/api/?name=${encodeURIComponent(document.getElementById('studentInitialsInput').value.trim())}&background=5c0d1b&color=fff`
       };
 
@@ -3150,6 +3182,7 @@ function initModals() {
           showToast(`Student ${admissionNo} saved successfully!`, 'success');
           loadStudents();
           loadStats();
+          if (payload.sds_receipt_no || payload.facilities_receipt_no) loadPayments();
           if (AppState.currentEntity && AppState.currentEntity.admission_no === admissionNo) {
             executeLookup(admissionNo);
           }
@@ -3415,6 +3448,7 @@ function initModals() {
             loadStaff();
           } else {
             loadStudents();
+            if (AppState.currentUser && AppState.currentUser.role === 'admin') loadPayments();
           }
         } else {
           if (resBox) {
@@ -3528,6 +3562,10 @@ async function openEditModal(id, type) {
     document.getElementById('studentPhotoInput').value = s.photo_url || '';
     if (document.getElementById('studentHealthInput')) document.getElementById('studentHealthInput').value = s.health_issues || '';
     if (document.getElementById('studentNotesInput')) document.getElementById('studentNotesInput').value = s.notes || '';
+    if (document.getElementById('studentSiblingsInput')) document.getElementById('studentSiblingsInput').value = s.siblings_in_school || '';
+    if (document.getElementById('studentServicesInput')) document.getElementById('studentServicesInput').value = s.school_services || '';
+    if (document.getElementById('studentSdsReceiptInput')) document.getElementById('studentSdsReceiptInput').value = s.sds_receipt_no || '';
+    if (document.getElementById('studentFacilitiesReceiptInput')) document.getElementById('studentFacilitiesReceiptInput').value = s.facilities_receipt_no || '';
 
     document.body.style.overflow = 'hidden';
     document.getElementById('studentModal').classList.remove('hidden');
@@ -4292,8 +4330,25 @@ function openPaymentModal() {
   populatePaymentStudentDropdown();
   const dateInput = document.getElementById('payFormDate');
   if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+  const receiptInput = document.getElementById('payFormReceiptNo');
+  if (receiptInput) receiptInput.value = '';
+  const feeTypeSelect = document.getElementById('payFormFeeType');
+  if (feeTypeSelect && !feeTypeSelect.dataset.receiptHintBound) {
+    feeTypeSelect.addEventListener('change', updatePaymentReceiptHint);
+    feeTypeSelect.dataset.receiptHintBound = '1';
+  }
+  updatePaymentReceiptHint();
   const modal = document.getElementById('paymentModal');
   if (modal) modal.classList.remove('hidden');
+}
+
+// Fee categories whose receipt numbers are mirrored onto the student profile
+const STUDENT_RECEIPT_FEE_TYPES = ['School Development Society Fee', 'School Facilities & Services'];
+
+function updatePaymentReceiptHint() {
+  const feeType = document.getElementById('payFormFeeType')?.value || '';
+  const hint = document.getElementById('payFormReceiptHint');
+  if (hint) hint.classList.toggle('hidden', !STUDENT_RECEIPT_FEE_TYPES.includes(feeType));
 }
 
 async function handlePaymentSubmit(e) {
@@ -4310,6 +4365,7 @@ async function handlePaymentSubmit(e) {
   const status = document.getElementById('payFormStatus')?.value;
   const term = document.getElementById('payFormTerm')?.value;
   const remarks = document.getElementById('payFormRemarks')?.value;
+  const receiptNo = (document.getElementById('payFormReceiptNo')?.value || '').trim();
 
   if (!studentId || !amount || amount <= 0) {
     showToast('Please select a student and enter a valid payment amount.', 'error');
@@ -4327,7 +4383,8 @@ async function handlePaymentSubmit(e) {
     status: status,
     term: term,
     year: '2026',
-    remarks: remarks
+    remarks: remarks,
+    receipt_no: receiptNo
   };
 
   try {
@@ -4346,6 +4403,7 @@ async function handlePaymentSubmit(e) {
     showToast('Payment record successfully recorded!', 'success');
     closeModals();
     loadPayments();
+    if (STUDENT_RECEIPT_FEE_TYPES.includes(feeType)) loadStudents();
   } catch (err) {
     showToast(`Failed to record payment: ${err.message}`, 'error');
   }
@@ -4363,6 +4421,7 @@ async function handleDeletePayment(paymentId) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     showToast('Payment record deleted.', 'info');
     loadPayments();
+    loadStudents();
   } catch (err) {
     showToast(`Failed to delete payment: ${err.message}`, 'error');
   }

@@ -38,6 +38,10 @@ STUDENT_TEMPLATE_COLUMNS = [
     ("address", "Permanent Address", 36),
     ("health_issues", "Health Issues / Medical Notes", 32),
     ("extracurricular", "Extracurricular / Clubs / Sports", 32),
+    ("siblings_in_school", "Siblings in School (Name - Adm No - Grade)", 40),
+    ("school_services", "School Services", 32),
+    ("sds_receipt_no", "School Development Society (SDS) Fee Receipt No", 30),
+    ("facilities_receipt_no", "Facilities Fee Receipt No", 26),
     ("status", "Status (Active/Past)", 18),
     ("notes", "Special Notes / Remarks", 32),
     ("photo_url", "Photo URL (Optional)", 28),
@@ -87,6 +91,10 @@ STUDENT_SAMPLE_ROWS = [
         "address": "No. 15, Station Road, Ganemulla",
         "health_issues": "None",
         "extracurricular": "Cricket Team, ICT Club",
+        "siblings_in_school": "K.A.N. Perera - 11820 - Grade 7-B",
+        "school_services": "School Transport (Van), Library Membership",
+        "sds_receipt_no": "SDS-2026-0451",
+        "facilities_receipt_no": "FAC-2026-0912",
         "status": "Active",
         "notes": "Consistent academic performer",
         "photo_url": "",
@@ -112,6 +120,10 @@ STUDENT_SAMPLE_ROWS = [
         "address": "44/2, Kadawatha Road, Ganemulla",
         "health_issues": "Mild dust allergy",
         "extracurricular": "Senior Prefect, Commerce Society",
+        "siblings_in_school": "",
+        "school_services": "Prefect Duty, Hostel",
+        "sds_receipt_no": "SDS-2026-0452",
+        "facilities_receipt_no": "",
         "status": "Active",
         "notes": "9 A passes in G.C.E. O/L",
         "photo_url": "",
@@ -137,6 +149,10 @@ STUDENT_SAMPLE_ROWS = [
         "address": "Temple Road, Kandaliyaddapaluwa",
         "health_issues": "",
         "extracurricular": "Boy Scouts, Junior Athletics",
+        "siblings_in_school": "D.N. Rajapaksa - 10120 - Grade 11-A, D.S. Rajapaksa - 12011 - Grade 4-C",
+        "school_services": "",
+        "sds_receipt_no": "",
+        "facilities_receipt_no": "",
         "status": "Active",
         "notes": "",
         "photo_url": "",
@@ -210,6 +226,10 @@ STUDENT_INSTRUCTIONS = [
     ["Permanent Address", "NO", "Residential address."],
     ["Health Issues / Medical Notes", "NO", "Allergies, chronic conditions, or medical notes."],
     ["Extracurricular / Clubs / Sports", "NO", "Sports, societies, prefect roles."],
+    ["Siblings in School", "NO", "Brothers/sisters currently studying at JMV. Format: Name - Admission No - Grade, separate multiple siblings with commas."],
+    ["School Services", "NO", "School services the student uses or is involved in (e.g. School Transport, Hostel, Library, Prefect Duty)."],
+    ["School Development Society (SDS) Fee Receipt No", "NO", "Receipt number of the SDS fee payment. Automatically recorded in the Payments ledger (fee type 'School Development Society Fee')."],
+    ["Facilities Fee Receipt No", "NO", "Receipt number of the facilities fee payment. Automatically recorded in the Payments ledger (fee type 'School Facilities & Services')."],
     ["Status (Active/Past)", "NO", "Active, Past, or Transferred (defaults to Active)."],
     ["Special Notes / Remarks", "NO", "Any academic commendations or special remarks."],
     ["Photo URL (Optional)", "NO", "Direct URL to student photo (auto-avatar generated if blank)."],
@@ -638,6 +658,13 @@ STUDENT_HEADER_ALIASES = {
     "address": {"address", "permanent_address", "home_address", "residential_address"},
     "health_issues": {"health_issues", "health_issues_medical_notes", "medical_notes", "medical_conditions", "health", "allergies"},
     "extracurricular": {"extracurricular", "extracurricular_clubs_sports", "clubs_and_sports", "sports", "clubs", "extra_curricular"},
+    "siblings_in_school": {"siblings_in_school", "siblings", "sibling_details", "siblings_details", "brothers_sisters_in_school", "siblings_at_school"},
+    "school_services": {"school_services", "services", "student_services", "school_service"},
+    "sds_receipt_no": {"sds_receipt_no", "school_development_society_fee_receipt_no", "school_development_society_receipt_no",
+                       "sds_fee_receipt_no", "sds_receipt", "sds_receipt_number", "sds_fee_receipt_number",
+                       "school_development_society_fee_receipt_number"},
+    "facilities_receipt_no": {"facilities_receipt_no", "facilities_fee_receipt_no", "facility_fee_receipt_no", "facilities_receipt",
+                              "facilities_receipt_number", "facilities_fee_receipt_number", "facility_receipt_no"},
     "status": {"status", "student_status", "enrollment_status"},
     "notes": {"notes", "special_notes_remarks", "special_notes", "remarks", "comments"},
     "photo_url": {"photo_url", "photo", "image_url", "avatar_url"},
@@ -818,6 +845,11 @@ def map_rows_to_student_dicts(rows_2d):
             "notes": get_val("notes"),
             "photo_url": photo,
         }
+        # Newer optional columns: only set when present in the sheet so that uploading an
+        # older template never wipes existing values on update.
+        for opt_key in ("siblings_in_school", "school_services", "sds_receipt_no", "facilities_receipt_no"):
+            if opt_key in col_map:
+                record[opt_key] = get_val(opt_key)
         mapped_records.append((row_idx, record))
 
     return mapped_records

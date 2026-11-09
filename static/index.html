@@ -1539,6 +1539,45 @@
             </div>
           </div>
 
+          <!-- SECTION 4: Siblings, School Services & Fee Receipts -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-5">
+              <div class="flex items-center gap-2.5">
+                <span class="w-7 h-7 rounded-lg bg-[#800020] text-white font-extrabold text-xs flex items-center justify-center">04</span>
+                <div>
+                  <h4 class="font-extrabold text-slate-800 text-sm uppercase tracking-wide">Siblings, School Services &amp; Fee Receipts</h4>
+                  <p class="text-xs text-slate-500">Brothers/sisters studying at JMV, school services used, and SDS / facilities fee receipt numbers (synced with the Payments ledger).</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                  <span>Siblings in School</span>
+                  <span class="text-xs text-slate-400 font-normal">Optional • Name - Adm No - Grade</span>
+                </label>
+                <textarea id="studentSiblingsInput" rows="2" placeholder="e.g. K.A.N. Perera - 11820 - Grade 7-B, S.D. Perera - 12011 - Grade 4-C" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none"></textarea>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                  <span>School Services</span>
+                  <span class="text-xs text-slate-400 font-normal">Optional</span>
+                </label>
+                <textarea id="studentServicesInput" rows="2" placeholder="e.g. School Transport (Van), Hostel, Library Membership, Prefect Duty" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none"></textarea>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">School Development Society (SDS) Fee Receipt No</label>
+                <input type="text" id="studentSdsReceiptInput" maxlength="64" placeholder="e.g. SDS-2026-0451" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm font-mono focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Facilities Fee Receipt No</label>
+                <input type="text" id="studentFacilitiesReceiptInput" maxlength="64" placeholder="e.g. FAC-2026-0912" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm font-mono focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/15 focus:outline-none">
+              </div>
+              <p class="md:col-span-2 text-xs text-slate-500">New receipt numbers entered here are automatically added to the Payments ledger. Payments recorded under these fee categories also update these fields.</p>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -2138,6 +2177,7 @@
             <label class="block font-bold text-slate-700 mb-1">Fee Category *</label>
             <select id="payFormFeeType" required class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-[#800020] focus:outline-none bg-white">
               <option value="School Facilities & Services">School Facilities &amp; Services</option>
+              <option value="School Development Society Fee">School Development Society (SDS) Fee</option>
               <option value="Term Examination Fee">Term Examination Fee</option>
               <option value="Sports & Development Fund">Sports &amp; Development Fund</option>
               <option value="G.C.E. O/L Practical & Lab Fee">G.C.E. O/L Practical &amp; Lab Fee</option>
@@ -2182,6 +2222,12 @@
               <option value="Term 3">Term 3</option>
             </select>
           </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Receipt No <span class="font-normal text-slate-400">(auto-generated if blank)</span></label>
+          <input type="text" id="payFormReceiptNo" maxlength="64" placeholder="e.g. SDS-2026-0451" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs font-mono focus:ring-2 focus:ring-[#800020] focus:outline-none">
+          <p id="payFormReceiptHint" class="text-[11px] text-slate-500 mt-1 hidden">This receipt number will also be saved on the student's profile.</p>
         </div>
 
         <div>

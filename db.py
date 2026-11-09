@@ -65,6 +65,29 @@ AUDIT_COLUMNS = {
     "last_updated_at": "VARCHAR(32) NOT NULL DEFAULT ''",
 }
 
+# Student family / services / fee-receipt columns (added to existing databases on startup)
+STUDENT_EXTRA_COLUMNS_MARIADB = {
+    "siblings_in_school": "TEXT NULL",
+    "school_services": "TEXT NULL",
+    "sds_receipt_no": "VARCHAR(64) NOT NULL DEFAULT ''",
+    "facilities_receipt_no": "VARCHAR(64) NOT NULL DEFAULT ''",
+}
+STUDENT_EXTRA_COLUMNS_SQLITE = {
+    "siblings_in_school": "TEXT",
+    "school_services": "TEXT",
+    "sds_receipt_no": "TEXT NOT NULL DEFAULT ''",
+    "facilities_receipt_no": "TEXT NOT NULL DEFAULT ''",
+}
+
+# Fee categories whose receipt numbers are mirrored on the student record.
+SDS_FEE_TYPE = "School Development Society Fee"
+FACILITIES_FEE_TYPE = "School Facilities & Services"
+RECEIPT_FIELD_FEE_TYPES = {
+    "sds_receipt_no": SDS_FEE_TYPE,
+    "facilities_receipt_no": FACILITIES_FEE_TYPE,
+}
+FEE_TYPE_RECEIPT_FIELDS = {v: k for k, v in RECEIPT_FIELD_FEE_TYPES.items()}
+
 # State tracking
 ACTIVE_ENGINE = "unknown"  # "mariadb" or "sqlite"
 ENGINE_STATUS_MSG = ""
@@ -237,11 +260,15 @@ def init_mariadb_schema(conn):
                      WHERE table_schema = DATABASE()
                        AND table_name = 'staff'
                        AND column_name IN ('dob','address','created_by')) AS stf_cols,
+                    (SELECT COUNT(*) FROM information_schema.columns
+                     WHERE table_schema = DATABASE()
+                       AND table_name = 'students'
+                       AND column_name IN ('siblings_in_school','school_services','sds_receipt_no','facilities_receipt_no')) AS stu_extra_cols,
                     (SELECT COUNT(*) FROM school_timetable) AS tt_cnt,
                     (SELECT COUNT(*) FROM staff WHERE subjects_taught IS NOT NULL AND subjects_taught != '' AND subjects_taught != 'None') AS stf_tt_cnt
             """)
             chk = cur.fetchone()
-            if chk and chk.get("tbl_cnt") == 8 and chk.get("stf_cols") == 3 and chk.get("tt_cnt", 0) >= 850 and chk.get("stf_tt_cnt", 0) >= 45:
+            if chk and chk.get("tbl_cnt") == 8 and chk.get("stf_cols") == 3 and chk.get("stu_extra_cols") == 4 and chk.get("tt_cnt", 0) >= 850 and chk.get("stf_tt_cnt", 0) >= 45:
                 return
         except Exception:
             pass
@@ -277,6 +304,10 @@ def init_mariadb_schema(conn):
             guardian_nic VARCHAR(15) NOT NULL DEFAULT '',
             guardian_mobile VARCHAR(20) NOT NULL DEFAULT '',
             relation_to_student VARCHAR(50) NOT NULL DEFAULT '',
+            siblings_in_school TEXT NULL,
+            school_services TEXT NULL,
+            sds_receipt_no VARCHAR(64) NOT NULL DEFAULT '',
+            facilities_receipt_no VARCHAR(64) NOT NULL DEFAULT '',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -513,6 +544,7 @@ def _migrate_existing_mariadb_schema(cur):
         "guardian_nic": "VARCHAR(15) NOT NULL DEFAULT ''",
         "guardian_mobile": "VARCHAR(20) NOT NULL DEFAULT ''",
         "relation_to_student": "VARCHAR(50) NOT NULL DEFAULT ''",
+        **STUDENT_EXTRA_COLUMNS_MARIADB,
         "updated_at": "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
     }
     for column, definition in additions.items():
@@ -756,6 +788,10 @@ def init_sqlite_schema(conn):
         guardian_nic TEXT NOT NULL DEFAULT '',
         guardian_mobile TEXT NOT NULL DEFAULT '',
         relation_to_student TEXT NOT NULL DEFAULT '',
+        siblings_in_school TEXT,
+        school_services TEXT,
+        sds_receipt_no TEXT NOT NULL DEFAULT '',
+        facilities_receipt_no TEXT NOT NULL DEFAULT '',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
@@ -901,6 +937,10 @@ def init_sqlite_schema(conn):
         for _col, _def in AUDIT_COLUMNS.items():
             if _col not in _have:
                 cur.execute(f"ALTER TABLE {_tbl} ADD COLUMN {_col} {_def}")
+        if _tbl == "students":
+            for _col, _def in STUDENT_EXTRA_COLUMNS_SQLITE.items():
+                if _col not in _have:
+                    cur.execute(f"ALTER TABLE students ADD COLUMN {_col} {_def}")
 
     # Ensure default admin and teacher users exist
     cur.execute("SELECT COUNT(*) FROM users")
@@ -1505,6 +1545,7 @@ def create_student(data, actor=None):
     record_audit("student", sanitized.get("id"), sanitized.get("name_with_initials"), "create", actor,
                  {f: {"old": "", "new": str(sanitized.get(f))} for f in STUDENT_FIELDS
                   if f != "id" and sanitized.get(f) not in (None, "")})
+    _sync_student_receipts_to_payments(sanitized, {}, actor)
     return get_student_by_id(sanitized.get("id"))
 
 def update_student(student_id, data, actor=None):
@@ -1525,6 +1566,7 @@ def update_student(student_id, data, actor=None):
     if changes:
         _stamp("students", student_id, actor)
         record_audit("student", student_id, merged.get("name_with_initials"), "update", actor, changes)
+    _sync_student_receipts_to_payments({**merged, "id": student_id}, current, actor)
     return get_student_by_id(student_id)
 
 def delete_student(student_id, actor=None):
@@ -2109,9 +2151,78 @@ def get_payment_stats():
         "total_records": len(payments)
     }
 
+def _new_payment_id():
+    return f"PAY-{datetime.now().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:6].upper()}"
+
+
+def _set_student_receipt_field(student_id, field, receipt_no):
+    """Write a receipt number straight onto the student row (no payment re-sync, avoids loops)."""
+    if field not in RECEIPT_FIELD_FEE_TYPES or not student_id:
+        return
+    execute_query(
+        f"UPDATE students SET `{field}`=%s WHERE id=%s",
+        (receipt_no or "", student_id), commit=True
+    )
+    invalidate_stats_cache()
+
+
+def _sync_student_receipts_to_payments(student, previous, actor=None):
+    """
+    Mirror the student's SDS / Facilities receipt numbers into the payments ledger.
+    - Receipt already recorded for this student & fee type -> nothing to do.
+    - A payment carrying the previous receipt no exists -> rename its receipt_no.
+    - Otherwise -> create a new payment entry (amount 0.00, to be completed by the bursar).
+    Clearing a receipt number on the student never deletes financial records.
+    """
+    student_id = str(student.get("id") or student.get("admission_no") or "").strip()
+    if not student_id:
+        return
+    previous = previous or {}
+    for field, fee_type in RECEIPT_FIELD_FEE_TYPES.items():
+        new_no = str(student.get(field) or "").strip()
+        old_no = str(previous.get(field) or "").strip()
+        if not new_no or (previous and new_no == old_no):
+            continue
+        try:
+            existing = execute_query(
+                "SELECT id FROM payments WHERE student_id=%s AND fee_type=%s AND receipt_no=%s",
+                (student_id, fee_type, new_no), fetchone=True
+            )
+            if existing:
+                continue
+            prior = None
+            if old_no:
+                prior = execute_query(
+                    "SELECT * FROM payments WHERE student_id=%s AND fee_type=%s AND receipt_no=%s",
+                    (student_id, fee_type, old_no), fetchone=True
+                )
+            if prior:
+                execute_query("UPDATE payments SET receipt_no=%s WHERE id=%s", (new_no, prior["id"]), commit=True)
+                record_audit("payment", prior["id"], f"{prior.get('student_name')} ({new_no})", "update", actor,
+                             {"receipt_no": {"old": old_no, "new": new_no}})
+                continue
+            payment_id = _new_payment_id()
+            vals = (
+                payment_id, new_no, student_id,
+                str(student.get("name_with_initials") or student.get("full_name") or "").strip(),
+                str(student.get("grade") or "").strip(),
+                fee_type, 0.0, "Cash", datetime.now().strftime("%Y-%m-%d"), "Paid",
+                "Term 1", str(datetime.now().year),
+                "Receipt number entered on student profile - update amount if required",
+                _actor_name(actor) or "Administrator",
+            )
+            cols = ", ".join(PAYMENT_FIELDS)
+            placeholders = ", ".join(["%s"] * len(PAYMENT_FIELDS))
+            execute_query(f"INSERT INTO payments ({cols}) VALUES ({placeholders})", vals, commit=True)
+            record_audit("payment", payment_id, f"{vals[3]} ({new_no})", "create", actor,
+                         {"fee_type": fee_type, "source": "student profile"})
+        except Exception as exc:
+            print(f"[RECEIPT SYNC ERROR] {student_id} {field}: {exc}")
+
+
 def create_payment(data, actor=None):
-    payment_id = data.get("id") or f"PAY-{datetime.now().strftime('%Y%m%d%H%M%S')}-{secrets.randbelow(1000):03d}"
-    receipt_no = data.get("receipt_no") or f"REC-{datetime.now().strftime('%Y')}-{secrets.randbelow(9000) + 1000}"
+    payment_id = data.get("id") or _new_payment_id()
+    receipt_no = str(data.get("receipt_no") or "").strip() or f"REC-{datetime.now().strftime('%Y')}-{secrets.randbelow(9000) + 1000}"
     actor_name = _actor_name(actor) or "Administrator"
 
     try:
@@ -2119,20 +2230,22 @@ def create_payment(data, actor=None):
     except (ValueError, TypeError):
         amount_val = 0.0
 
+    student_id = str(data.get("student_id") or "").strip()
+    fee_type = str(data.get("fee_type") or FACILITIES_FEE_TYPE).strip()
     vals = (
         payment_id,
         receipt_no,
-        data.get("student_id", "").strip(),
-        data.get("student_name", "").strip(),
+        student_id,
+        str(data.get("student_name") or "").strip(),
         str(data.get("grade", "")).strip(),
-        data.get("fee_type", "School Facilities & Services").strip(),
+        fee_type,
         amount_val,
-        data.get("payment_method", "Cash").strip(),
-        data.get("payment_date", datetime.now().strftime("%Y-%m-%d")).strip(),
-        data.get("status", "Paid").strip(),
-        data.get("term", "Term 1").strip(),
-        data.get("year", "2026").strip(),
-        data.get("remarks", "").strip(),
+        str(data.get("payment_method") or "Cash").strip(),
+        str(data.get("payment_date") or datetime.now().strftime("%Y-%m-%d")).strip(),
+        str(data.get("status") or "Paid").strip(),
+        str(data.get("term") or "Term 1").strip(),
+        str(data.get("year") or "2026").strip(),
+        str(data.get("remarks") or "").strip(),
         actor_name
     )
     cols = ", ".join(PAYMENT_FIELDS)
@@ -2142,6 +2255,18 @@ def create_payment(data, actor=None):
         vals, commit=True
     )
     record_audit("payment", payment_id, f"{data.get('student_name')} ({receipt_no})", "create", actor, changes={"amount": amount_val})
+
+    # Mirror SDS / Facilities receipt numbers onto the student record
+    receipt_field = FEE_TYPE_RECEIPT_FIELDS.get(fee_type)
+    if receipt_field and student_id:
+        student = get_student_by_id(student_id)
+        if student:
+            old_no = student.get(receipt_field) or ""
+            if old_no != receipt_no:
+                _set_student_receipt_field(student_id, receipt_field, receipt_no)
+                _stamp("students", student_id, actor)
+                record_audit("student", student_id, student.get("name_with_initials"), "update", actor,
+                             {receipt_field: {"old": old_no, "new": receipt_no}})
     return execute_query("SELECT * FROM payments WHERE id = %s", (payment_id,), fetchone=True)
 
 def delete_payment(payment_id, actor=None):
@@ -2150,6 +2275,22 @@ def delete_payment(payment_id, actor=None):
         return False
     execute_query("DELETE FROM payments WHERE id = %s", (payment_id,), commit=True)
     record_audit("payment", payment_id, rec.get("receipt_no", payment_id), "delete", actor, changes="Payment record deleted")
+
+    # If the student record pointed at this receipt, fall back to the latest remaining one (or clear it)
+    receipt_field = FEE_TYPE_RECEIPT_FIELDS.get(rec.get("fee_type") or "")
+    student_id = rec.get("student_id")
+    if receipt_field and student_id:
+        student = get_student_by_id(student_id)
+        if student and (student.get(receipt_field) or "") == (rec.get("receipt_no") or ""):
+            latest = execute_query(
+                "SELECT receipt_no FROM payments WHERE student_id=%s AND fee_type=%s "
+                "ORDER BY payment_date DESC, created_at DESC",
+                (student_id, rec.get("fee_type")), fetchone=True
+            )
+            new_no = (latest or {}).get("receipt_no") or ""
+            _set_student_receipt_field(student_id, receipt_field, new_no)
+            record_audit("student", student_id, student.get("name_with_initials"), "update", actor,
+                         {receipt_field: {"old": rec.get("receipt_no") or "", "new": new_no}})
     return True
 
 

@@ -1,6 +1,6 @@
 """Sample records for WP/KE/Jayakody Maha Vidyalaya (based on JMV-Web details)."""
 
-STUDENT_COLUMNS = ("id", "admission_no", "full_name", "name_with_initials", "gender", "dob", "grade", "stream", "medium", "house", "guardian_name", "guardian_contact", "address", "enrollment_date", "status", "extracurricular", "photo_url", "notes", "health_issues", "academic_level", "subjects", "ol_bucket_1", "ol_bucket_2", "ol_bucket_3")
+STUDENT_COLUMNS = ("id", "admission_no", "full_name", "name_with_initials", "gender", "dob", "grade", "stream", "medium", "house", "guardian_name", "guardian_contact", "address", "enrollment_date", "status", "extracurricular", "photo_url", "notes", "health_issues", "academic_level", "subjects", "ol_bucket_1", "ol_bucket_2", "ol_bucket_3", "siblings_in_school", "school_services", "sds_receipt_no", "facilities_receipt_no")
 
 STAFF_COLUMNS = ("id", "epf_no", "full_name", "name_with_initials", "gender", "dob", "role", "department", "subjects_taught", "qualifications", "appointed_date", "contact_no", "email", "address", "nic", "status", "assigned_classes", "photo_url", "notes")
 
