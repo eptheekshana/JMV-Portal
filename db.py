@@ -102,7 +102,7 @@ def _get_mariadb_config():
                         .strip())
     cfg = {
         "host": os.environ.get("DB_HOST", "").strip(),
-        "port": int(os.environ.get("DB_PORT", "3306")),
+        "port": int(os.environ.get("DB_PORT", "3306") or "3306"),
         "user": os.environ.get("DB_USER", "").strip(),
         "password": raw_pw,
         "database": os.environ.get("DB_NAME", "").strip(),
@@ -214,11 +214,13 @@ def test_mariadb():
     global _LAST_HEALTH_STATUS, _LAST_HEALTH_TIME
     if not pymysql:
         return False, "PyMySQL driver not available"
+    cfg = _get_mariadb_config()
+    if not cfg.get("host") or not cfg.get("user") or not cfg.get("database"):
+        return False, "MariaDB credentials not configured in environment (.env)"
     now = time.time()
     if _LAST_HEALTH_STATUS and (now - _LAST_HEALTH_TIME) < 15.0:
         return _LAST_HEALTH_STATUS
     try:
-        cfg = _get_mariadb_config()
         conn = _mariadb_pool.get_connection()
         with conn.cursor() as cur:
             cur.execute("SELECT VERSION()")
@@ -1151,8 +1153,8 @@ def execute_query(sql, params=(), fetchone=False, fetchall=False, commit=False):
 def check_connection():
     ok, msg = test_mariadb()
     cfg = _get_mariadb_config()
-    host = cfg.get("host", "")
-    db_name = cfg.get("database", "")
+    host = cfg.get("host") or "not-configured"
+    db_name = cfg.get("database") or "not-configured"
     if ok:
         return True, f"Connected to MariaDB: {host} (Database: {db_name})"
     else:
@@ -1163,8 +1165,8 @@ def get_engine_status():
     return {
         "engine": ACTIVE_ENGINE,
         "message": ENGINE_STATUS_MSG,
-        "mariadb_host": cfg.get("host", ""),
-        "mariadb_db": cfg.get("database", "")
+        "mariadb_host": cfg.get("host") or "",
+        "mariadb_db": cfg.get("database") or ""
     }
 
 def get_all_students(search=None, grade=None, house=None):
